@@ -1,0 +1,64 @@
+from fastapi import APIRouter, Depends, HTTPException
+
+from app.core.config import settings
+from app.dependencies import get_sparql_client
+from app.services.queries.misc import MiscQueries
+from app.services.sparql_client import SparqlClient
+from app.utils.parsers import group_by_uri, parse_sparql_response
+
+router = APIRouter(prefix=f"{settings.DEPLOY_PATH}", tags=["misc"])
+
+
+@router.get("/semantic_search")
+async def semantic_search(q: str, client: SparqlClient = Depends(get_sparql_client)):
+    if not q:
+        return {"error": "Consulta no proporcionada"}
+
+    query = MiscQueries.SEMANTIC_SEARCH % (q, q)
+    try:
+        response = await client.query(query)
+        data = parse_sparql_response(response)
+        # Original code used procesar_json which filtered out some types
+        # We can implement filtering here if needed, but for now return raw parsed data
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get(
+    "/all_classes",
+    tags=["ontologia"],
+    description="Obtiene todas las clases de la ontología",
+    summary="Clases de la ontología",
+)
+async def all_classes(client: SparqlClient = Depends(get_sparql_client)):
+    query = MiscQueries.ALL_CLASSES
+    try:
+        response = await client.query(query)
+        data = parse_sparql_response(response)
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_object_any_type/{type}/{id:path}")
+async def get_object_any_type(
+    type: str, id: str, client: SparqlClient = Depends(get_sparql_client)
+):
+    if "exposicion" == type:
+        type = "exhibition"
+    elif "persona" == type:
+        type = "human%20actant"
+    elif "institucion" == type:
+        type = "institution"
+    elif "empresa" == type:
+        type = "company"
+
+    query = MiscQueries.GET_OBJECT_ANY_TYPE % (type, id)
+    try:
+        response = await client.query(query)
+        flat_data = parse_sparql_response(response)
+        grouped_data = group_by_uri(flat_data)  # Group by URI if needed
+        return grouped_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

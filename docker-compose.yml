@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: complexhibit-api
+    ports:
+      - "8000:8000"
+    environment:
+      - URI_ONTOLOGIA=${URI_ONTOLOGIA}
+      - VIRTUOSO_URL=http://virtuoso:8890/sparql
+      - DEFAULT_GRAPH_URL=https://w3id.org/OntoExhibit/Data
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - USER_SERVICE_URL=${USER_SERVICE_URL}
+      - DEPLOY_PATH=/api/v1
+    volumes:
+      - ./backend/app:/app/app
+    depends_on:
+      - virtuoso
+    restart: unless-stopped
+    networks:
+      - complexhibit-network
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/v1/')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    container_name: complexhibit-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - complexhibit-network
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      - API_URL=${API_URL}
+    restart: unless-stopped
+
+  virtuoso:
+    image: openlink/virtuoso-opensource-7:latest
+    container_name: complexhibit-virtuoso
+    ports:
+      - "8890:8890"
+      - "1111:1111"
+    environment:
+      - DBA_PASSWORD=${VIRTUOSO_DBA_PASSWORD:-dba}
+      - SPARQL_UPDATE=true
+      - DEFAULT_GRAPH=http://localhost:8890/DAV/home/dba/rdf_sink
+    volumes:
+      - virtuoso-data:/database
+      - ./backend/virtuoso.ini:/database/virtuoso.ini
+      - ./backend/result.nt:/database/result.nt:ro
+    restart: unless-stopped
+    networks:
+      - complexhibit-network
+    healthcheck:
+      test: ["CMD", "isql", "1111", "dba", "dba", "exec=status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  virtuoso-data:
+    driver: local
+
+networks:
+  complexhibit-network:
+    driver: bridge

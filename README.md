@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Complexhibit / OntoExhibit
+
+This is the monorepo for the Complexhibit project, consisting of a FastAPI backend and a Next.js frontend.
+
+## Project Structure
+
+- **`backend/`**: Contains the FastAPI application, ontology files, and data processing scripts.
+- **`frontend/`**: Contains the Next.js web application.
+- **`docker-compose.yml`**: Orchestrates the services (Backend, Frontend, Virtuoso).
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed.
+
+### Configuration (.env)
+
+The project uses environment variables for configuration.
+
+1.  **Root `.env`**: This file is used by `docker-compose` to configure the services.
+    - Copy `.env.template` to `.env` in the root directory (if not already present).
+    - Key variables:
+        - `URI_ONTOLOGIA`: Base URI for the ontology.
+        - `DJANGO_SECRET_KEY`: Secret key for the backend (legacy name, used for FastAPI security).
+        - `VIRTUOSO_DBA_PASSWORD`: Password for the Virtuoso database.
+        - `NEXT_PUBLIC_API_URL`: URL for the backend API (client-side).
+        - `API_URL`: URL for the backend API (server-side/Docker internal).
+
+2.  **Backend `.env`**: Located in `backend/.env`.
+    - This file is **only** used for local development (running backend without Docker). When running with Docker, all configuration comes from `docker-compose.yml` and the root `.env`.
+
+### Running the Application
+
+You can use the provided initialization scripts for a quick setup (checks Docker, creates .env, starts services, loads data):
+
+**Windows:**
+```powershell
+.\init.ps1
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Linux/Mac:**
+```bash
+chmod +x init.sh
+./init.sh
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Or manually with Docker Compose:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+docker-compose up -d --build
+```
 
-## Learn More
+### Accessing the Services
 
-To learn more about Next.js, take a look at the following resources:
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Backend API**: [http://localhost:8000/api/v1/](http://localhost:8000/api/v1/)
+- **Virtuoso SPARQL Endpoint**: [http://localhost:8890/sparql](http://localhost:8890/sparql)
+- **Virtuoso Conductor**: [http://localhost:8890/conductor](http://localhost:8890/conductor)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Development
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Backend
+See [backend/README.md](backend/README.md) for detailed backend development instructions.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Frontend
+See [frontend/README.md](frontend/README.md) for detailed frontend development instructions.
