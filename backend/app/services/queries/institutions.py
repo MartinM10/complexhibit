@@ -74,20 +74,35 @@ class InstitutionQueries:
             LIMIT {limit}
         """
 
-    GET_INSTITUCION = f"""
+    GET_INSTITUTION = f"""
         {PREFIXES}
         SELECT DISTINCT ?label ?uri ?apelation ?label_place
         WHERE 
         {{
-            <https://w3id.org/OntoExhibit#%s> rdfs:label ?label .
-            BIND(<https://w3id.org/OntoExhibit#%s> as ?uri)
+            {{
+                ?uri rdf:type <https://w3id.org/OntoExhibit#Institution> .
+                ?uri rdfs:label ?label
+            }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Cultural_Institution> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Art_Center> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Cultural_Center> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#ExhibitionSpace> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Interpretation_Center> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Library> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Museum> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Educational_Institution> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#University> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Foundation_(Institution)> . ?uri rdfs:label ?label }}
+            
+            FILTER (regex(str(?uri), "%s", "i"))
+
             OPTIONAL 
             {{ 
-                <https://w3id.org/OntoExhibit#%s> <https://w3id.org/OntoExhibit#hasLocation> ?location.
+                ?uri <https://w3id.org/OntoExhibit#hasLocation> ?location.
                 ?location <https://w3id.org/OntoExhibit#isLocatedAt> ?place .
                 ?place rdfs:label ?label_place
             }}
-            OPTIONAL {{ <https://w3id.org/OntoExhibit#%s> <https://w3id.org/OntoExhibit#apelation> ?apelation }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#apelation> ?apelation }}
         }}
     """
 

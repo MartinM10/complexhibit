@@ -18,8 +18,34 @@ class ExhibitionQueries:
     """
 
     @staticmethod
-    def get_all_exposiciones(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None) -> str:
-        filter_clause = f'FILTER regex(?label, "{text_search}", "i")' if text_search else ""
+    def get_all_exposiciones(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None, 
+                             start_date: str = None, end_date: str = None, curator_name: str = None, place: str = None,
+                             organizer: str = None, sponsor: str = None) -> str:
+        
+        filters = []
+        if text_search:
+            # Search in label OR curator OR organizer
+            filters.append(f'(regex(?label, "{text_search}", "i") || regex(?curator_name, "{text_search}", "i") || regex(?organizer, "{text_search}", "i"))')
+        
+        if start_date:
+            filters.append(f'regex(?label_starting_date, "{start_date}", "i")')
+
+        if end_date:
+            filters.append(f'regex(?label_ending_date, "{end_date}", "i")')
+            
+        if curator_name:
+            filters.append(f'regex(?curator_name, "{curator_name}", "i")')
+
+        if place:
+            filters.append(f'regex(?label_place, "{place}", "i")')
+
+        if organizer:
+            filters.append(f'regex(?organizer, "{organizer}", "i")')
+
+        if sponsor:
+             filters.append(f'regex(?sponsor, "{sponsor}", "i")')
+
+        filter_clause = f"FILTER ({' && '.join(filters)})" if filters else ""
         
         pagination_filter = ""
         if last_label and last_uri:
@@ -33,30 +59,49 @@ class ExhibitionQueries:
 
         return f"""
             {PREFIXES}
-            SELECT DISTINCT ?label ?uri ?label_place ?label_starting_date ?label_ending_date
+            SELECT DISTINCT ?label ?uri ?label_place ?label_starting_date ?label_ending_date ?curator_name ?organizer ?sponsor
             WHERE 
             {{
                 ?uri rdf:type <https://w3id.org/OntoExhibit#Exhibition> .
                 ?uri rdfs:label ?label .
-                {filter_clause}
-                {pagination_filter}
-                OPTIONAL 
-                {{ 
-                    ?uri <https://w3id.org/OntoExhibit#tookPlaceAt> ?place .
+                
+                OPTIONAL {{ 
+                    ?uri <https://w3id.org/OntoExhibit#takesPlaceAt> ?place .
                     ?place rdfs:label ?label_place
                 }}
-                OPTIONAL
-                {{
+                OPTIONAL {{
                     ?uri <https://w3id.org/OntoExhibit#hadOpening> ?opening .
                     ?opening <https://w3id.org/OntoExhibit#tookPlaceIn> ?time .
                     ?time rdfs:label ?label_starting_date
                 }}
-                OPTIONAL
-                {{
+                OPTIONAL {{
                     ?uri <https://w3id.org/OntoExhibit#hadClosing> ?closing .
                     ?closing <https://w3id.org/OntoExhibit#tookPlaceIn> ?time .
                     ?time rdfs:label ?label_ending_date
                 }}
+                
+                # Curator logic
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#curatedBy> ?curator .
+                    ?curator <https://w3id.org/OntoExhibit#isTheRoleOf> ?curator_person .
+                    ?curator_person rdfs:label ?curator_name
+                }}
+
+                # Organizer logic
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#hasParentOrganization> ?org_uri .
+                    ?org_uri rdfs:label ?organizer
+                }}
+
+                # Sponsor logic
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#exposicionPatrocinadaPor> ?spon_uri .
+                    ?spon_uri <https://w3id.org/OntoExhibit#isTheRoleOf> ?spon_person .
+                    ?spon_person rdfs:label ?sponsor
+                }}
+
+                {filter_clause}
+                {pagination_filter}
             }} 
             ORDER BY lcase(?label) ?uri
             LIMIT {limit}
@@ -128,3 +173,32 @@ class ExhibitionQueries:
 
         POST_EXHIBITION += "\t}\n}"
         return POST_EXHIBITION
+
+    GET_EXHIBITION_BY_ID = f"""
+        {PREFIXES}
+        SELECT DISTINCT ?label ?uri ?label_place ?label_starting_date ?label_ending_date
+        WHERE 
+        {{
+            ?uri rdf:type <https://w3id.org/OntoExhibit#Exhibition> .
+            ?uri rdfs:label ?label .
+            FILTER (regex(str(?uri), "%s", "i"))
+
+            OPTIONAL 
+            {{ 
+                ?uri <https://w3id.org/OntoExhibit#tookPlaceAt> ?place .
+                ?place rdfs:label ?label_place
+            }}
+            OPTIONAL
+            {{
+                ?uri <https://w3id.org/OntoExhibit#hadOpening> ?opening .
+                ?opening <https://w3id.org/OntoExhibit#tookPlaceIn> ?time .
+                ?time rdfs:label ?label_starting_date
+            }}
+            OPTIONAL
+            {{
+                ?uri <https://w3id.org/OntoExhibit#hadClosing> ?closing .
+                ?closing <https://w3id.org/OntoExhibit#tookPlaceIn> ?time .
+                ?time rdfs:label ?label_ending_date
+            }}
+        }} 
+    """

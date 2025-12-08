@@ -5,9 +5,9 @@ param(
     [switch]$SkipDataLoad = $false
 )
 
-Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "║     OntoExhibit - Inicialización del Proyecto             ║" -ForegroundColor Cyan
-Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
+Write-Host "     OntoExhibit - Inicializacion del Proyecto          " -ForegroundColor Cyan
+Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
 Write-Host ""
 
 # 1. Verificar Docker
@@ -15,9 +15,9 @@ Write-Host "[1/6] Verificando Docker..." -ForegroundColor Yellow
 try {
     docker --version | Out-Null
     docker-compose --version | Out-Null
-    Write-Host "✓ Docker está instalado" -ForegroundColor Green
+    Write-Host "[OK] Docker esta instalado" -ForegroundColor Green
 } catch {
-    Write-Host "✗ Error: Docker no está instalado o no está en el PATH" -ForegroundColor Red
+    Write-Host "[ERROR] Docker no esta instalado o no esta en el PATH" -ForegroundColor Red
     exit 1
 }
 
@@ -31,9 +31,9 @@ $requiredFiles = @(
 
 foreach ($file in $requiredFiles) {
     if (Test-Path $file) {
-        Write-Host "✓ $file encontrado" -ForegroundColor Green
+        Write-Host "[OK] $file encontrado" -ForegroundColor Green
     } else {
-        Write-Host "✗ Error: $file no encontrado" -ForegroundColor Red
+        Write-Host "[ERROR] $file no encontrado" -ForegroundColor Red
         exit 1
     }
 }
@@ -43,27 +43,27 @@ Write-Host "[3/6] Configurando variables de entorno..." -ForegroundColor Yellow
 if (-not (Test-Path ".env")) {
     if (Test-Path ".env.template") {
         Copy-Item ".env.template" ".env"
-        Write-Host "✓ Archivo .env creado desde .env.template" -ForegroundColor Green
-        Write-Host "  ⚠ Recuerda editar .env con tus configuraciones" -ForegroundColor Yellow
+        Write-Host "[OK] Archivo .env creado desde .env.template" -ForegroundColor Green
+        Write-Host "  [?] Recuerda editar .env con tus configuraciones" -ForegroundColor Yellow
     } else {
-        Write-Host "✗ Error: No se encontró .env.template" -ForegroundColor Red
+        Write-Host "[ERROR] No se encontro .env.template" -ForegroundColor Red
         exit 1
     }
 } else {
-    Write-Host "✓ Archivo .env ya existe" -ForegroundColor Green
+    Write-Host "[OK] Archivo .env ya existe" -ForegroundColor Green
 }
 
 # 4. Detener contenedores existentes
 Write-Host "[4/6] Limpiando contenedores existentes..." -ForegroundColor Yellow
 docker-compose down -v 2>$null
-Write-Host "✓ Contenedores detenidos" -ForegroundColor Green
+Write-Host "[OK] Contenedores detenidos" -ForegroundColor Green
 
 # 5. Iniciar servicios
 Write-Host "[5/6] Iniciando servicios..." -ForegroundColor Yellow
 docker-compose up -d
 
-# Esperar a que Virtuoso esté listo
-Write-Host "  Esperando a que Virtuoso esté disponible..." -ForegroundColor Cyan
+# Esperar a que Virtuoso este listo
+Write-Host "  Esperando a que Virtuoso este disponible..." -ForegroundColor Cyan
 $max_attempts = 60
 $attempt = 0
 $connected = $false
@@ -84,9 +84,9 @@ while (-not $connected -and $attempt -lt $max_attempts) {
 }
 
 if ($connected) {
-    Write-Host "✓ Virtuoso está disponible" -ForegroundColor Green
+    Write-Host "[OK] Virtuoso esta disponible" -ForegroundColor Green
 } else {
-    Write-Host "✗ Error: Virtuoso no respondió después de $max_attempts intentos" -ForegroundColor Red
+    Write-Host "[ERROR] Virtuoso no respondio despues de $max_attempts intentos" -ForegroundColor Red
     Write-Host "  Ejecuta: docker logs complexhibit-virtuoso" -ForegroundColor Yellow
     exit 1
 }
@@ -98,10 +98,10 @@ if (-not $SkipDataLoad) {
     
     try {
         & ".\backend\scripts\load_data.ps1"
-        Write-Host "✓ Datos cargados exitosamente" -ForegroundColor Green
+        Write-Host "[OK] Datos cargados exitosamente" -ForegroundColor Green
     } catch {
-        Write-Host "✗ Error al cargar datos: $_" -ForegroundColor Red
-        Write-Host "  Puedes cargar los datos manualmente más tarde con:" -ForegroundColor Yellow
+        Write-Host "[ERROR] Error al cargar datos: $_" -ForegroundColor Red
+        Write-Host "  Puedes cargar los datos manualmente mas tarde con:" -ForegroundColor Yellow
         Write-Host "  .\backend\scripts\load_data.ps1" -ForegroundColor White
     }
 } else {
@@ -110,22 +110,22 @@ if (-not $SkipDataLoad) {
 
 # Resumen
 Write-Host ""
-Write-Host "╔════════════════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "║              ✓ Inicialización Completada                  ║" -ForegroundColor Green
-Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host "--------------------------------------------------------" -ForegroundColor Green
+Write-Host "              [OK] Inicializacion Completada            " -ForegroundColor Green
+Write-Host "--------------------------------------------------------" -ForegroundColor Green
 Write-Host ""
 Write-Host "Servicios disponibles:" -ForegroundColor Cyan
-Write-Host "  • API:                http://localhost:8000/api/v1/" -ForegroundColor White
-Write-Host "  • Virtuoso Conductor: http://localhost:8890/conductor" -ForegroundColor White
-Write-Host "  • SPARQL Endpoint:    http://localhost:8890/sparql" -ForegroundColor White
+Write-Host "  - API:                http://localhost:8000/api/v1/" -ForegroundColor White
+Write-Host "  - Virtuoso Conductor: http://localhost:8890/conductor" -ForegroundColor White
+Write-Host "  - SPARQL Endpoint:    http://localhost:8890/sparql" -ForegroundColor White
 Write-Host ""
 Write-Host "Credenciales Virtuoso:" -ForegroundColor Cyan
-Write-Host "  • Usuario:   dba" -ForegroundColor White
-Write-Host "  • Contraseña: dba (o la configurada en .env)" -ForegroundColor White
+Write-Host "  - Usuario:   dba" -ForegroundColor White
+Write-Host "  - Contrasena: dba (o la configurada en .env)" -ForegroundColor White
 Write-Host ""
-Write-Host "Comandos útiles:" -ForegroundColor Cyan
-Write-Host "  • Ver logs:           docker-compose logs -f" -ForegroundColor White
-Write-Host "  • Detener servicios:  docker-compose down" -ForegroundColor White
-Write-Host "  • Reiniciar:          docker-compose restart" -ForegroundColor White
-Write-Host "  • Cargar datos:       .\backend\scripts\load_data.ps1" -ForegroundColor White
+Write-Host "Comandos utiles:" -ForegroundColor Cyan
+Write-Host "  - Ver logs:           docker-compose logs -f" -ForegroundColor White
+Write-Host "  - Detener servicios:  docker-compose down" -ForegroundColor White
+Write-Host "  - Reiniciar:          docker-compose restart" -ForegroundColor White
+Write-Host "  - Cargar datos:       .\backend\scripts\load_data.ps1" -ForegroundColor White
 Write-Host ""

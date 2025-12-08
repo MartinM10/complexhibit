@@ -8,7 +8,7 @@ $VIRTUOSO_HOST = "localhost"
 $VIRTUOSO_PORT = "1111"
 $VIRTUOSO_USER = "dba"
 $VIRTUOSO_PASSWORD = if ($env:VIRTUOSO_DBA_PASSWORD) { $env:VIRTUOSO_DBA_PASSWORD } else { "dba" }
-$GRAPH_URI = "http://localhost:8890/OntoExhibit"
+$GRAPH_URI = "https://w3id.org/OntoExhibit/Data"
 $DATA_FILE = "/database/result.nt"
 
 # Esperar a que Virtuoso esté listo

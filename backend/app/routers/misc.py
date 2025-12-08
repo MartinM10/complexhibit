@@ -25,6 +25,30 @@ async def semantic_search(q: str, client: SparqlClient = Depends(get_sparql_clie
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/filter_options/{filter_type}")
+async def get_filter_options(filter_type: str, client: SparqlClient = Depends(get_sparql_client)):
+    query = ""
+    if filter_type == "gender":
+        query = MiscQueries.GET_DISTINCT_GENDERS
+    elif filter_type == "activity":
+         query = MiscQueries.GET_DISTINCT_ACTIVITIES
+    elif filter_type == "artwork_type":
+        query = MiscQueries.GET_DISTINCT_ARTWORK_TYPES
+    elif filter_type == "topic":
+        query = MiscQueries.GET_DISTINCT_TOPICS
+    else:
+        raise HTTPException(status_code=400, detail="Invalid filter type")
+
+    try:
+        response = await client.query(query)
+        data = parse_sparql_response(response)
+        # Flatten list of dicts to list of values
+        values = [item.get('value') for item in data if item.get('value')]
+        return {"data": values}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get(
     "/all_classes",
     tags=["ontologia"],
@@ -45,20 +69,23 @@ async def all_classes(client: SparqlClient = Depends(get_sparql_client)):
 async def get_object_any_type(
     type: str, id: str, client: SparqlClient = Depends(get_sparql_client)
 ):
-    if "exposicion" == type:
+    type = type.lower()
+    if type in ["exposicion", "exhibition"]:
         type = "exhibition"
-    elif "persona" == type:
-        type = "human%20actant"
-    elif "institucion" == type:
+    elif type in ["persona", "person", "human_actant", "actant"]:
+        type = "human_actant"
+    elif type in ["institucion", "institution"]:
         type = "institution"
-    elif "empresa" == type:
+    elif type in ["empresa", "company"]:
         type = "company"
+    elif type in ["artwork", "obra", "work", "work_manifestation"]:
+        type = "work_manifestation"
 
     query = MiscQueries.GET_OBJECT_ANY_TYPE % (type, id)
     try:
         response = await client.query(query)
         flat_data = parse_sparql_response(response)
         grouped_data = group_by_uri(flat_data)  # Group by URI if needed
-        return grouped_data
+        return {"data": grouped_data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

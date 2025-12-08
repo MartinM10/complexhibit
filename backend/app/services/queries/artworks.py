@@ -19,8 +19,33 @@ class ArtworkQueries:
     """
 
     @staticmethod
-    def get_all_obras(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None) -> str:
-        filter_clause = f'FILTER regex(?label, "{text_search}", "i")' if text_search else ""
+    def get_all_obras(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None, 
+                      author_name: str = None, type_filter: str = None, start_date: str = None, owner: str = None,
+                      topic: str = None, exhibition: str = None) -> str:
+        
+        filters = []
+        if text_search:
+            filters.append(f'(regex(?label, "{text_search}", "i") || regex(?author, "{text_search}", "i") || regex(?type, "{text_search}", "i"))')
+        
+        if author_name:
+             filters.append(f'regex(?author, "{author_name}", "i")')
+
+        if type_filter:
+             filters.append(f'regex(?type, "{type_filter}", "i")')
+
+        if start_date:
+             filters.append(f'regex(?label_starting_date, "{start_date}", "i")')
+
+        if owner:
+             filters.append(f'regex(?owner, "{owner}", "i")')
+
+        if topic:
+             filters.append(f'regex(?topic, "{topic}", "i")')
+
+        if exhibition:
+             filters.append(f'regex(?exhibition, "{exhibition}", "i")')
+
+        filter_clause = f"FILTER ({' && '.join(filters)})" if filters else ""
         
         pagination_filter = ""
         if last_label and last_uri:
@@ -40,8 +65,7 @@ class ArtworkQueries:
             {{
                 ?uri rdf:type <https://w3id.org/OntoExhibit#Work_Manifestation> .
                 ?uri rdfs:label ?label .
-                {filter_clause}
-                {pagination_filter}
+
                 OPTIONAL 
                 {{ 
                     ?uri <https://w3id.org/OntoExhibit#type> ?type .
@@ -50,23 +74,43 @@ class ArtworkQueries:
                 {{
                     ?uri <https://w3id.org/OntoExhibit#apelation> ?apelation
                 }}
+
                 OPTIONAL
                 {{
                     ?uri <https://w3id.org/OntoExhibit#hasOwner> ?uri_owner .
-                    ?uri_owner <https://w3id.org/OntoExhibit#isTheRoleOf> ?uri_person .
-                    ?uri_person rdfs:label ?owner
+                    ?uri_owner <https://w3id.org/OntoExhibit#isRoleOf> ?uri_owner_role .
+                    ?uri_owner_role rdfs:label ?owner
                 }}
                 OPTIONAL
                 {{
-                    ?uri <https://w3id.org/OntoExhibit#wasExhibitedAt> ?uri_exhibition .
+                     ?uri <https://w3id.org/OntoExhibit#hasProduction> ?prod .
+                     OPTIONAL {{
+                        ?prod <https://w3id.org/OntoExhibit#hasProductionAuthor> ?uri_author .
+                        ?uri_author rdfs:label ?author .
+                     }}
+                     OPTIONAL {{
+                        ?prod <https://w3id.org/OntoExhibit#hasTimeSpan> ?tr .
+                        ?date <https://w3id.org/OntoExhibit#isStartingDateOf> ?tr .
+                        ?date rdfs:label ?label_starting_date .
+                     }}
+                     OPTIONAL {{
+                        ?prod <https://w3id.org/OntoExhibit#hasTimeSpan> ?tr .
+                        ?date <https://w3id.org/OntoExhibit#isEndingDateOf> ?tr .
+                        ?date rdfs:label ?label_ending_date .
+                     }}
+                }}
+                OPTIONAL
+                {{
+                    ?uri <https://w3id.org/OntoExhibit#isDisplayedAt> ?uri_exhibition .
                     ?uri_exhibition rdfs:label ?exhibition
                 }}
                 OPTIONAL
                 {{
-                    ?uri <https://w3id.org/OntoExhibit#hasSubjectThemeTopic> ?uri_topic .
+                    ?uri <https://w3id.org/OntoExhibit#hasTheme> ?uri_topic .
                     ?uri_topic rdfs:label ?topic
                 }}
-                # ... (Other optionals as in original query)
+                {filter_clause}
+                {pagination_filter}
             }} 
             ORDER BY lcase(?label) ?uri
             LIMIT {limit}
@@ -100,3 +144,41 @@ class ArtworkQueries:
         query += "\t}\n}"
         
         return query
+
+    GET_ARTWORK_BY_ID = f"""
+        {PREFIXES}
+        SELECT DISTINCT ?label ?uri ?type ?apelation ?label_place ?label_starting_date ?label_ending_date ?author ?owner 
+            ?topic ?exhibition
+        WHERE 
+        {{
+            ?uri rdf:type <https://w3id.org/OntoExhibit#Work_Manifestation> .
+            ?uri rdfs:label ?label .
+            FILTER (regex(str(?uri), "%s", "i"))
+            
+            OPTIONAL 
+            {{ 
+                ?uri <https://w3id.org/OntoExhibit#type> ?type .
+            }}
+            OPTIONAL 
+            {{
+                ?uri <https://w3id.org/OntoExhibit#apelation> ?apelation
+            }}
+            OPTIONAL
+            {{
+                ?uri <https://w3id.org/OntoExhibit#hasOwner> ?uri_owner .
+                ?uri_owner <https://w3id.org/OntoExhibit#isTheRoleOf> ?uri_person .
+                ?uri_person rdfs:label ?owner
+            }}
+            OPTIONAL
+            {{
+                ?uri <https://w3id.org/OntoExhibit#isDisplayedAt> ?uri_exhibition .
+                ?uri_exhibition rdfs:label ?exhibition
+            }}
+            OPTIONAL
+            {{
+                ?uri <https://w3id.org/OntoExhibit#hasTheme> ?uri_topic .
+                ?uri_topic rdfs:label ?topic
+            }}
+        }} 
+    """
+

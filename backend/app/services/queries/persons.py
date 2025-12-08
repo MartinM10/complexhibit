@@ -21,8 +21,31 @@ class PersonQueries:
     """
 
     @staticmethod
-    def get_all_personas(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None) -> str:
-        filter_clause = f'FILTER regex(?label, "{text_search}", "i")' if text_search else ""
+    def get_all_personas(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None,
+                         birth_place: str = None, birth_date: str = None, death_date: str = None, 
+                         gender: str = None, activity: str = None) -> str:
+        
+        filters = []
+        if text_search:
+            # Search in label OR birth place label OR activity
+            filters.append(f'(regex(?label, "{text_search}", "i") || regex(?birth_place_label, "{text_search}", "i") || regex(?activity, "{text_search}", "i"))')
+        
+        if birth_place:
+            filters.append(f'regex(?birth_place_label, "{birth_place}", "i")')
+
+        if birth_date:
+            filters.append(f'regex(?birth_date_label, "{birth_date}", "i")')
+            
+        if death_date:
+            filters.append(f'regex(?death_date_label, "{death_date}", "i")')
+
+        if gender:
+            filters.append(f'regex(?gender, "^{gender}$", "i")')
+
+        if activity:
+            filters.append(f'regex(?activity, "{activity}", "i")')
+
+        filter_clause = f"FILTER ({' && '.join(filters)})" if filters else ""
         
         pagination_filter = ""
         if last_label and last_uri:
@@ -36,7 +59,7 @@ class PersonQueries:
 
         return f"""
             {PREFIXES}
-            SELECT distinct ?uri ?label
+            SELECT distinct ?uri ?label ?birth_place_label ?birth_date_label ?death_date_label ?gender ?activity
             WHERE 
             {{
                 {{
@@ -52,6 +75,28 @@ class PersonQueries:
                 {{
                     ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> .
                     ?uri rdfs:label ?label
+                }}
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth .
+                    OPTIONAL {{ 
+                        ?birth <https://w3id.org/OntoExhibit#hasPlaceOfBirth> ?place .
+                        ?place rdfs:label ?birth_place_label 
+                    }}
+                    OPTIONAL {{
+                        ?birth <https://w3id.org/OntoExhibit#hasTimeSpan> ?time .
+                        ?time rdfs:label ?birth_date_label
+                    }}
+                }}
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#died> ?death .
+                    ?death <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_death .
+                    ?time_death rdfs:label ?death_date_label
+                }}
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#gender> ?gender
+                }}
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#activity_type> ?activity
                 }}
                 {filter_clause}
                 {pagination_filter}
@@ -82,7 +127,7 @@ class PersonQueries:
             OPTIONAL 
             {{
                 ?uri <https://w3id.org/OntoExhibit#wasBorn> ?uri_born .
-                ?uri_born <https://w3id.org/OntoExhibit#tookPlaceAt> ?uri_place .
+                ?uri_born <https://w3id.org/OntoExhibit#takesPlaceAt> ?uri_place .
                 ?uri_place rdfs:label ?label_place
             }}
             OPTIONAL

@@ -9,33 +9,62 @@ interface ItemCardProps {
   imageUrl?: string;
 }
 
-export default function ItemCard({ uri, label, description, type, imageUrl }: ItemCardProps) {
+export default function ItemCard({ uri, label, description, type, imageUrl, subtitle, extra }: any) {
   // Extract ID from URI or use a safe fallback
   const id = uri.split("/").pop() || "";
   
   return (
     <Link 
       href={`/detail/${type}/${id}`}
-      className="group relative flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all hover:border-indigo-300"
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 hover:border-indigo-300"
     >
-      {imageUrl && (
-        <div className="aspect-h-3 aspect-w-4 bg-gray-200 sm:aspect-none sm:h-48">
-          <img
+      {imageUrl ? (
+        <div className="aspect-h-3 aspect-w-4 bg-gray-200 sm:aspect-none sm:h-48 relative">
+           <img
             src={imageUrl}
             alt={label}
-            className="h-full w-full object-cover object-center sm:h-full sm:w-full"
+            className="h-full w-full object-cover object-center sm:h-full sm:w-full transition-transform duration-300 group-hover:scale-105"
           />
+           <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] uppercase font-bold px-2 py-1 rounded-md backdrop-blur-sm">
+             {type}
+           </div>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 h-32 flex items-center justify-center relative">
+             <div className="absolute top-2 right-2 bg-gray-200 text-gray-600 text-[10px] uppercase font-bold px-2 py-1 rounded-md">
+             {type}
+           </div>
+           {/* Fallback icon or pattern could go here */}
         </div>
       )}
-      <div className="flex flex-1 flex-col space-y-2 p-4">
-        <h3 className="text-lg font-medium text-gray-900 group-hover:text-indigo-600">
+      
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 line-clamp-2 leading-tight mb-1">
           {label}
         </h3>
-        {description && (
-          <p className="text-sm text-gray-500 line-clamp-3">{description}</p>
+        
+        {subtitle && (
+            <p className="text-xs font-medium text-indigo-500 mb-2 uppercase tracking-wide">
+                {subtitle}
+            </p>
         )}
-        <div className="mt-auto pt-4 flex items-center text-sm font-medium text-indigo-600">
-          View Details <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+
+        {description && (
+          <p className="text-sm text-gray-500 line-clamp-3 mb-3 flex-1">{description}</p>
+        )}
+        
+        {extra && (
+            <div className="mt-auto pt-3 border-t border-gray-100 text-xs text-gray-500 flex flex-wrap gap-2">
+                {Object.entries(extra).map(([k, v]) => (
+                    v ? <span key={k} className="bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                        <span className="font-semibold text-gray-700 mr-1">{k}:</span>{String(v)}
+                    </span> : null
+                ))}
+            </div>
+        )}
+
+        <div className="mt-4 flex items-center text-sm font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
+          View Details <ArrowRight className="ml-1 h-4 w-4" />
         </div>
       </div>
     </Link>

@@ -13,18 +13,18 @@ from app.utils.parsers import parse_sparql_response
 router = APIRouter(prefix=f"{settings.DEPLOY_PATH}", tags=["obras"])
 
 
-@router.get("/count_obras", summary="Número de individuos de la clase obra")
-async def count_obras(client: SparqlClient = Depends(get_sparql_client)):
+@router.get("/count_artworks", summary="Count of individuals of class artwork")
+async def count_artworks(client: SparqlClient = Depends(get_sparql_client)):
     try:
         query = ArtworkQueries.COUNT_OBRAS
         response = await client.query(query)
         parsed = parse_sparql_response(response)
         count = parsed[0]["count"] if parsed else 0
-        return StandardResponseModel(data={"count": count}, message="Operación realizada con éxito")
+        return StandardResponseModel(data={"count": count}, message="Operation successful")
     except Exception as e:
         error_response = ErrorResponseModel(
             error_code="INTERNAL_SERVER_ERROR",
-            error_message="Ocurrió un error interno en el servidor",
+            error_message="Internal Server Error",
             error_details={"error": str(e)},
         )
         raise HTTPException(status_code=500, detail=error_response.dict())
@@ -32,19 +32,20 @@ async def count_obras(client: SparqlClient = Depends(get_sparql_client)):
 
 from fastapi.responses import ORJSONResponse
 
-# ... imports
-
 from typing import Optional
-
-# ... imports
-
 from app.utils.cursor import decode_cursor, encode_cursor
 
-@router.get("/all_obras", summary="Individuos de la clase obra", response_class=ORJSONResponse)
-async def all_obras(
+@router.get("/all_artworks", summary="Individuals of class artwork", response_class=ORJSONResponse)
+async def all_artworks(
     cursor: Optional[str] = None,
-    page_size: int = 10, 
+    page_size: int = 20, 
     q: Optional[str] = None,
+    author_name: Optional[str] = None,
+    type_filter: Optional[str] = None,
+    start_date: Optional[str] = None,
+    owner: Optional[str] = None,
+    topic: Optional[str] = None,
+    exhibition: Optional[str] = None,
     client: SparqlClient = Depends(get_sparql_client)
 ):
     last_label, last_uri = None, None
@@ -53,7 +54,18 @@ async def all_obras(
         if decoded:
             last_label, last_uri = decoded
 
-    query = ArtworkQueries.get_all_obras(limit=page_size + 1, last_label=last_label, last_uri=last_uri, text_search=q)
+    query = ArtworkQueries.get_all_obras(
+        limit=page_size + 1, 
+        last_label=last_label, 
+        last_uri=last_uri, 
+        text_search=q,
+        author_name=author_name,
+        type_filter=type_filter,
+        start_date=start_date,
+        owner=owner,
+        topic=topic,
+        exhibition=exhibition
+    )
     try:
         response = await client.query(query)
         data = parse_sparql_response(response)
@@ -70,8 +82,21 @@ async def all_obras(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/post_obra", status_code=status.HTTP_201_CREATED)
-async def post_obra(obra: ObraDeArte, client: SparqlClient = Depends(get_sparql_client)):
+
+
+@router.get("/get_artwork/{id:path}")
+async def get_artwork(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    query = ArtworkQueries.GET_ARTWORK_BY_ID % id
+    try:
+        response = await client.query(query)
+        data = parse_sparql_response(response)
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/create_artwork", status_code=status.HTTP_201_CREATED)
+async def create_artwork(obra: ObraDeArte, client: SparqlClient = Depends(get_sparql_client)):
     try:
         query = ArtworkQueries.add_obra(obra)
         response = await client.update(query)

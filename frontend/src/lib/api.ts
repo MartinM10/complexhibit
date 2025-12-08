@@ -23,42 +23,50 @@ export async function fetchFromApi(endpoint: string, params: Record<string, stri
 export async function getFromType(type: string, params: Record<string, string> = {}) {
   // Map frontend types to API endpoints
   let endpoint = "";
-  if (type === 'exhibition') endpoint = '/all_exposiciones';
-  else if (type === 'artwork') endpoint = '/all_obras';
-  else if (type === 'institution') endpoint = '/all_instituciones';
-  else if (type === 'actant' || type === 'actor' || type === 'human_actant') endpoint = '/all_personas';
-  else endpoint = `/get_from_type/${encodeURIComponent(type)}`;
+  if (type === 'exhibition') endpoint = '/all_exhibitions';
+  else if (type === 'artwork') endpoint = '/all_artworks';
+  else if (type === 'institution') endpoint = '/all_institutions';
+  else if (type === 'actant' || type === 'actor' || type === 'human_actant' || type === 'person') endpoint = '/all_persons';
+  else endpoint = `/get_object_any_type/${encodeURIComponent((type === 'person' ? 'human actant' : type).replace(/_/g, ' '))}`;
 
   console.log(`Mapped type '${type}' to endpoint: ${endpoint}`);
   return fetchFromApi(endpoint, params);
 }
 
 export async function getDataProperties(type: string, id: string) {
-  return fetchFromApi(`/get_data_properties_from_individual/${type}/${id}`);
+    // Fallback to generic object fetch
+    return fetchFromApi(`/get_object_any_type/${type}/${id}`);
 }
 
 export async function getTypesFromId(type: string, id: string) {
-  return fetchFromApi(`/get_types_from_id/${type}/${id}`);
+  // We haven't implemented this specifically, but maybe object properties include type?
+  // Or we can add a simple endpoint. For now, try generic.
+  return fetchFromApi(`/get_object_any_type/${type}/${id}`); 
 }
 
 export async function getRolesPlayed(type: string, id: string) {
-  return fetchFromApi(`/get_roles_played_from_individual/${type}/${id}`);
+    // Not implemented in backend yet
+  return Promise.resolve({ data: {} });
 }
 
 export async function getParticipants(id: string) {
-  return fetchFromApi(`/get_participants_people_from_exhibition/${id}`);
+    // Not implemented in backend yet
+  return Promise.resolve({ data: {} });
 }
 
 export async function getArtworks(id: string) {
-  return fetchFromApi(`/get_artworks_exposed_from_exhibition/${id}`);
+    // Not implemented in backend yet
+  return Promise.resolve({ data: {} });
 }
 
 export async function getExhibitionMaking(id: string) {
-  return fetchFromApi(`/get_exhibition_making_from_exhibition/${id}`);
+    // Not implemented in backend yet
+  return Promise.resolve({ data: {} });
 }
 
 export async function getDatesAndPlace(id: string) {
-  return fetchFromApi(`/get_dates_and_place_from_exhibition/${id}`);
+  // Covered by get_exhibition
+  return fetchFromApi(`/get_exhibition/${id}`);
 }
 
 // Add more specific fetchers as needed based on views.py logic
@@ -67,9 +75,9 @@ export async function getGenericDetail(type: string, id: string) {
 }
 
 export async function getActorDetails(id: string) {
-  return fetchFromApi(`/get_actor_details/${id}`);
+  return fetchFromApi(`/get_person/${id}`);
 }
 
 export async function getArtworkDetails(id: string) {
-  return fetchFromApi(`/get_artwork_details/${id}`);
+  return fetchFromApi(`/get_artwork/${id}`);
 }
