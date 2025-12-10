@@ -36,6 +36,10 @@ async def get_filter_options(filter_type: str, client: SparqlClient = Depends(ge
         query = MiscQueries.GET_DISTINCT_ARTWORK_TYPES
     elif filter_type == "topic":
         query = MiscQueries.GET_DISTINCT_TOPICS
+    elif filter_type == "exhibition_type":
+        query = MiscQueries.GET_DISTINCT_EXHIBITION_TYPES
+    elif filter_type == "exhibition_theme":
+        query = MiscQueries.GET_DISTINCT_EXHIBITION_THEMES
     else:
         raise HTTPException(status_code=400, detail="Invalid filter type")
 

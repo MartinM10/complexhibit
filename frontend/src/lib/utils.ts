@@ -26,8 +26,22 @@ export function obtainTranslatedType(str: string): string | null {
   return null;
 }
 
-export function cleanLabel(label: string): string {
+export function cleanLabel(label: any): string {
+  // Handle null, undefined, or empty values
   if (!label) return "";
+  
+  // Handle arrays - join non-empty values or return empty string
+  if (Array.isArray(label)) {
+    const nonEmpty = label.filter(Boolean);
+    if (nonEmpty.length === 0) return "";
+    return cleanLabel(nonEmpty[0]); // Clean the first item
+  }
+  
+  // Ensure we have a string
+  if (typeof label !== 'string') {
+    return String(label);
+  }
+  
   // If label contains " (http", it might be "Name (URI) ..."
   // We want to extract "Name"
   const uriMatch = label.match(/^(.*?)\s*\(https?:\/\//);

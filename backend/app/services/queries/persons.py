@@ -21,29 +21,58 @@ class PersonQueries:
     """
 
     @staticmethod
-    def get_all_personas(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None,
+    def get_personas_ids(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None,
                          birth_place: str = None, birth_date: str = None, death_date: str = None, 
                          gender: str = None, activity: str = None) -> str:
         
         filters = []
-        if text_search:
-            # Search in label OR birth place label OR activity
-            filters.append(f'(regex(?label, "{text_search}", "i") || regex(?birth_place_label, "{text_search}", "i") || regex(?activity, "{text_search}", "i"))')
+        inner_joins = []
         
-        if birth_place:
-            filters.append(f'regex(?birth_place_label, "{birth_place}", "i")')
+        if text_search:
+            filters.append(f'(regex(?label, "{text_search}", "i") || regex(?inner_birth_place_label, "{text_search}", "i") || regex(?inner_activity, "{text_search}", "i"))')
+            inner_joins.append("""
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth_ts .
+                    OPTIONAL { ?birth_ts <https://w3id.org/OntoExhibit#hasPlaceOfBirth> ?place_ts . ?place_ts rdfs:label ?inner_birth_place_label }
+                }
+            """)
+            inner_joins.append("OPTIONAL { ?uri <https://w3id.org/OntoExhibit#activity_type> ?inner_activity }")
+        
+        if birth_place and not text_search:
+            filters.append(f'regex(?inner_birth_place_label, "{birth_place}", "i")')
+            inner_joins.append("""
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth_bp .
+                    OPTIONAL { ?birth_bp <https://w3id.org/OntoExhibit#hasPlaceOfBirth> ?place_bp . ?place_bp rdfs:label ?inner_birth_place_label }
+                }
+            """)
 
         if birth_date:
-            filters.append(f'regex(?birth_date_label, "{birth_date}", "i")')
+            filters.append(f'regex(?inner_birth_date_label, "{birth_date}", "i")')
+            inner_joins.append("""
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth_bd .
+                    OPTIONAL { ?birth_bd <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_bd . ?time_bd rdfs:label ?inner_birth_date_label }
+                }
+            """)
             
         if death_date:
-            filters.append(f'regex(?death_date_label, "{death_date}", "i")')
+            filters.append(f'regex(?inner_death_date_label, "{death_date}", "i")')
+            inner_joins.append("""
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#died> ?death_dd .
+                    ?death_dd <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_death_dd .
+                    ?time_death_dd rdfs:label ?inner_death_date_label
+                }
+            """)
 
         if gender:
-            filters.append(f'regex(?gender, "^{gender}$", "i")')
+            filters.append(f'regex(?inner_gender, "^{gender}$", "i")')
+            inner_joins.append("OPTIONAL { ?uri <https://w3id.org/OntoExhibit#gender> ?inner_gender }")
 
-        if activity:
-            filters.append(f'regex(?activity, "{activity}", "i")')
+        if activity and not text_search:
+            filters.append(f'regex(?inner_activity, "{activity}", "i")')
+            inner_joins.append("OPTIONAL { ?uri <https://w3id.org/OntoExhibit#activity_type> ?inner_activity }")
 
         filter_clause = f"FILTER ({' && '.join(filters)})" if filters else ""
         
@@ -57,9 +86,11 @@ class PersonQueries:
                 )
             """
 
+        inner_joins_str = "\n".join(inner_joins)
+
         return f"""
             {PREFIXES}
-            SELECT distinct ?uri ?label ?birth_place_label ?birth_date_label ?death_date_label ?gender ?activity
+            SELECT distinct ?uri ?label
             WHERE 
             {{
                 {{
@@ -76,28 +107,7 @@ class PersonQueries:
                     ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> .
                     ?uri rdfs:label ?label
                 }}
-                OPTIONAL {{
-                    ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth .
-                    OPTIONAL {{ 
-                        ?birth <https://w3id.org/OntoExhibit#hasPlaceOfBirth> ?place .
-                        ?place rdfs:label ?birth_place_label 
-                    }}
-                    OPTIONAL {{
-                        ?birth <https://w3id.org/OntoExhibit#hasTimeSpan> ?time .
-                        ?time rdfs:label ?birth_date_label
-                    }}
-                }}
-                OPTIONAL {{
-                    ?uri <https://w3id.org/OntoExhibit#died> ?death .
-                    ?death <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_death .
-                    ?time_death rdfs:label ?death_date_label
-                }}
-                OPTIONAL {{
-                    ?uri <https://w3id.org/OntoExhibit#gender> ?gender
-                }}
-                OPTIONAL {{
-                    ?uri <https://w3id.org/OntoExhibit#activity_type> ?activity
-                }}
+                {inner_joins_str}
                 {filter_clause}
                 {pagination_filter}
             }}
@@ -105,40 +115,154 @@ class PersonQueries:
             LIMIT {limit}
         """
 
+    @staticmethod
+    def get_personas_details(uris: list[str]) -> str:
+        if not uris:
+            return ""
+        
+        uris_str = " ".join([f"<{u}>" for u in uris])
+        
+        return f"""
+            {PREFIXES}
+            SELECT ?uri (SAMPLE(?inner_label) as ?label) 
+                   (SAMPLE(?inner_birth_place_label) as ?birth_place_label)
+                   (SAMPLE(?inner_birth_date_label) as ?birth_date_label)
+                   (SAMPLE(?inner_death_date_label) as ?death_date_label)
+                   (SAMPLE(?inner_gender) as ?gender)
+                   (GROUP_CONCAT(DISTINCT ?inner_activity; separator="|") as ?activity)
+            WHERE 
+            {{
+                VALUES ?uri {{ {uris_str} }}
+                
+                ?uri rdfs:label ?inner_label .
+                
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth .
+                    OPTIONAL {{ 
+                        ?birth <https://w3id.org/OntoExhibit#hasPlaceOfBirth> ?place .
+                        ?place rdfs:label ?inner_birth_place_label 
+                    }}
+                    OPTIONAL {{
+                        ?birth <https://w3id.org/OntoExhibit#hasTimeSpan> ?time .
+                        ?time rdfs:label ?inner_birth_date_label
+                    }}
+                }}
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#died> ?death .
+                    ?death <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_death .
+                    ?time_death rdfs:label ?inner_death_date_label
+                }}
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#gender> ?inner_gender
+                }}
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#activity_type> ?inner_activity
+                }}
+            }}
+            GROUP BY ?uri
+        """
+
     GET_PERSONS_AND_GROUPS = f"""
         {PREFIXES}
-        SELECT DISTINCT ?label ?uri ?label_place ?label_date 
+        SELECT ?uri 
+               (SAMPLE(?inner_label) as ?label)
+               (SAMPLE(?inner_label_place) as ?label_place)
+               (SAMPLE(?inner_place_uri) as ?place_uri)
+               (SAMPLE(?inner_label_date) as ?label_date)
+               (SAMPLE(?inner_death_date) as ?death_date)
+               (SAMPLE(?inner_gender) as ?gender)
+               (GROUP_CONCAT(DISTINCT ?inner_activity; separator="|") as ?activity)
         WHERE 
         {{
             {{
                 ?uri rdf:type <https://w3id.org/OntoExhibit#Human_Actant> .
-                ?uri rdfs:label ?label
+                ?uri rdfs:label ?inner_label
             }}
             UNION
             {{
                 ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E21_Person> .
-                ?uri rdfs:label ?label
+                ?uri rdfs:label ?inner_label
             }}
             UNION
             {{
                 ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> .
-                ?uri rdfs:label ?label
+                ?uri rdfs:label ?inner_label
             }}
             OPTIONAL 
             {{
-                ?uri <https://w3id.org/OntoExhibit#wasBorn> ?uri_born .
-                ?uri_born <https://w3id.org/OntoExhibit#takesPlaceAt> ?uri_place .
-                ?uri_place rdfs:label ?label_place
+                ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth .
+                OPTIONAL {{
+                    ?birth <https://w3id.org/OntoExhibit#hasPlaceOfBirth> ?inner_place_uri .
+                    ?inner_place_uri rdfs:label ?inner_label_place
+                }}
+                OPTIONAL {{
+                    ?birth <https://w3id.org/OntoExhibit#hasTimeSpan> ?birth_date .
+                    ?birth_date rdfs:label ?inner_label_date
+                }}
             }}
             OPTIONAL
             {{
-                ?uri <https://w3id.org/OntoExhibit#wasBorn> ?uri_born .
-                ?uri_born <https://w3id.org/OntoExhibit#tookPlaceIn> ?uri_date .
-                ?uri_date rdfs:label ?label_date
+                ?uri <https://w3id.org/OntoExhibit#hasDeath> ?death .
+                ?death <https://w3id.org/OntoExhibit#hasTimeSpan> ?death_date_uri .
+                ?death_date_uri rdfs:label ?inner_death_date
             }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#gender> ?inner_gender }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#activity_type> ?inner_activity }}
             FILTER (regex(str(?uri), "%s", "i"))
-        }} ORDER BY ?label
+        }} 
+        GROUP BY ?uri
+        ORDER BY ?label
     """
+
+    @staticmethod
+    def get_actor_roles(actor_id: str) -> str:
+        """Get all exhibitions where the actor participated in any role."""
+        return f"""
+            {PREFIXES}
+            SELECT DISTINCT ?exhibition_uri ?exhibition_label ?role_type
+            WHERE {{
+                BIND(<https://w3id.org/OntoExhibit#human_actant/{actor_id}> AS ?actor)
+                
+                # Actor has a role
+                ?actor <https://w3id.org/OntoExhibit#hasRole> ?role .
+                
+                # The role is connected to exhibition making via various properties
+                {{
+                    # Exhibiting actant
+                    ?role <https://w3id.org/OntoExhibit#isExhibitingActantIn> ?making .
+                    BIND("Exhibitor" AS ?role_type)
+                }}
+                UNION
+                {{
+                    # Curator: role is curatedBy of making
+                    ?making <https://w3id.org/OntoExhibit#curatedBy> ?role .
+                    BIND("Curator" AS ?role_type)
+                }}
+                UNION
+                {{
+                    # Organizer: role is organizedBy of making
+                    ?making <https://w3id.org/OntoExhibit#organizedBy> ?role .
+                    BIND("Organizer" AS ?role_type)
+                }}
+                UNION
+                {{
+                    # Funder: role is fundedBy of making
+                    ?making <https://w3id.org/OntoExhibit#fundedBy> ?role .
+                    BIND("Funder" AS ?role_type)
+                }}
+                UNION
+                {{
+                    # Lender: role is lentBy of making
+                    ?making <https://w3id.org/OntoExhibit#lentBy> ?role .
+                    BIND("Lender" AS ?role_type)
+                }}
+                
+                # Get the exhibition from making
+                ?making <https://w3id.org/OntoExhibit#madeExhibition> ?exhibition_uri .
+                ?exhibition_uri rdfs:label ?exhibition_label .
+            }}
+            ORDER BY ?exhibition_label
+        """
 
     COUNT_ACTANTS = f"""
         {PREFIXES}
@@ -181,8 +305,8 @@ class PersonQueries:
             POST_PERSONA += f'\t\t{sujeto}> {uri_ontologia}name> "{persona.name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
 
         if persona.country or persona.birth_date:
-            POST_PERSONA += f"\t\t{sujeto}> {uri_ontologia}wasBorn> {sujeto}/birth> .\n"
-            POST_PERSONA += f"\t\t{sujeto}/birth> {uri_ontologia}broughtIntoLife> {sujeto}> .\n"
+            POST_PERSONA += f"\t\t{sujeto}> {uri_ontologia}hasBirth> {sujeto}/birth> .\n"
+            POST_PERSONA += f"\t\t{sujeto}/birth> {uri_ontologia}isBirthOf> {sujeto}> .\n"
 
             if persona.country:
                 uri_lugar = (
@@ -192,8 +316,8 @@ class PersonQueries:
                     f"\t\t{uri_lugar}> <{RDF.type}> {uri_ontologia}TerritorialEntity> .\n"
                 )
                 POST_PERSONA += f'\t\t{uri_lugar}> <{RDFS.label}> "{persona.country.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
-                POST_PERSONA += f"\t\t{sujeto}/birth> <https://w3id.org/OntoExhibit#tookPlaceAt> {uri_lugar}> .\n"
-                POST_PERSONA += f"\t\t{uri_lugar}> <https://w3id.org/OntoExhibit#wasThePlaceOf> {sujeto}/birth> .\n"
+                POST_PERSONA += f"\t\t{sujeto}/birth> <https://w3id.org/OntoExhibit#takesPlaceAt> {uri_lugar}> .\n"
+                POST_PERSONA += f"\t\t{uri_lugar}> <https://w3id.org/OntoExhibit#isPlaceOfBirthOf> {sujeto}/birth> .\n"
 
             if persona.birth_date:
                 fecha = validar_fecha(persona.birth_date)
@@ -222,15 +346,14 @@ class PersonQueries:
                         POST_PERSONA += f'\t\t{uri_fecha} <{RDFS.label}> "{fecha_str}"^^<http://www.w3.org/2001/XMLSchema#date> .\n'
 
                     POST_PERSONA += (
-                        f"\t\t{sujeto}/birth> {uri_ontologia}tookPlaceIn> {uri_fecha} .\n"
+                        f"\t\t{sujeto}/birth> {uri_ontologia}hasTimeSpan> {uri_fecha} .\n"
                     )
                     POST_PERSONA += (
-                        f"\t\t{uri_fecha} {uri_ontologia}isTheTimeSpanOf> {sujeto}/birth> .\n"
+                        f"\t\t{uri_fecha} {uri_ontologia}isTimeSpanOf> {sujeto}/birth> .\n"
                     )
 
         if persona.death_date:
-            POST_PERSONA += f"\t\t{sujeto}> {uri_ontologia}died> {sujeto}/death> .\n"
-            POST_PERSONA += f"\t\t{sujeto}/death> {uri_ontologia}isTheDeathOf> {sujeto}> .\n"
+            POST_PERSONA += f"\t\t{sujeto}/death> {uri_ontologia}isDeathOf> {sujeto}> .\n"
 
             fecha = validar_fecha(persona.death_date)
             if fecha:
@@ -251,9 +374,9 @@ class PersonQueries:
                     )
                     POST_PERSONA += f'\t\t{uri_fecha} <{RDFS.label}> "{fecha_str}"^^<http://www.w3.org/2001/XMLSchema#date> .\n'
 
-                POST_PERSONA += f"\t\t{sujeto}/death> {uri_ontologia}tookPlaceIn> {uri_fecha} .\n"
+                POST_PERSONA += f"\t\t{sujeto}/death> {uri_ontologia}hasTimeSpan> {uri_fecha} .\n"
                 POST_PERSONA += (
-                    f"\t\t{uri_fecha} {uri_ontologia}isTheTimeSpanOf> {sujeto}/death> .\n"
+                    f"\t\t{uri_fecha} {uri_ontologia}isTimeSpanOf> {sujeto}/death> .\n"
                 )
 
         if persona.activity:

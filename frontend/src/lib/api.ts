@@ -45,7 +45,10 @@ export async function getTypesFromId(type: string, id: string) {
 }
 
 export async function getRolesPlayed(type: string, id: string) {
-    // Not implemented in backend yet
+  // Fetch roles/exhibitions where this actor participated
+  if (type === 'actor' || type === 'human_actant' || type === 'person') {
+    return fetchFromApi(`/get_actor_roles/${id}`);
+  }
   return Promise.resolve({ data: {} });
 }
 

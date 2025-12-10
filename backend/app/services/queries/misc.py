@@ -60,3 +60,20 @@ class MiscQueries:
             ?t rdfs:label ?value .
         }} ORDER BY ?value
     """
+
+    GET_DISTINCT_EXHIBITION_TYPES = f"""
+        {PREFIXES}
+        SELECT DISTINCT ?value WHERE {{
+            ?s rdf:type <https://w3id.org/OntoExhibit#Exhibition> .
+            ?s <https://w3id.org/OntoExhibit#type> ?value .
+        }} ORDER BY ?value
+    """
+
+    GET_DISTINCT_EXHIBITION_THEMES = f"""
+        {PREFIXES}
+        SELECT DISTINCT ?value WHERE {{
+            ?s rdf:type <https://w3id.org/OntoExhibit#Exhibition> .
+            ?s <https://w3id.org/OntoExhibit#hasTheme> ?t .
+            ?t rdfs:label ?value .
+        }} ORDER BY ?value
+    """

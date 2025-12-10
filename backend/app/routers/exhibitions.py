@@ -46,6 +46,8 @@ async def all_exhibitions(
     place: Optional[str] = None,
     organizer: Optional[str] = None,
     sponsor: Optional[str] = None,
+    theme: Optional[str] = None,
+    type: Optional[str] = None,
     client: SparqlClient = Depends(get_sparql_client)
 ):
     last_label, last_uri = None, None
@@ -54,7 +56,8 @@ async def all_exhibitions(
         if decoded:
             last_label, last_uri = decoded
 
-    query = ExhibitionQueries.get_all_exposiciones(
+    # STEP 1: Fetch filtered and paginated IDs
+    query_ids = ExhibitionQueries.get_exposiciones_ids(
         limit=page_size + 1, 
         last_label=last_label, 
         last_uri=last_uri, 
@@ -64,21 +67,51 @@ async def all_exhibitions(
         end_date=end_date,
         place=place,
         organizer=organizer,
-        sponsor=sponsor
+        sponsor=sponsor,
+        theme=theme,
+        exhibition_type=type
     )
+    
     try:
-        response = await client.query(query)
-        data = parse_sparql_response(response)
+        response_ids = await client.query(query_ids)
+        data_ids = parse_sparql_response(response_ids)
         
-        next_cursor = None
-        if len(data) > page_size:
-            data = data[:page_size]
-            last_item = data[-1]
-            if "label" in last_item and "uri" in last_item:
-                next_cursor = encode_cursor(last_item["label"], last_item["uri"])
+        if not data_ids:
+             return ORJSONResponse(content={"data": [], "next_cursor": None})
 
-        return ORJSONResponse(content={"data": data, "next_cursor": next_cursor})
+        # Cursor Logic
+        next_cursor = None
+        if len(data_ids) > page_size:
+            data_ids = data_ids[:page_size]
+            last_item = data_ids[-1]
+            # Note: get_exposiciones_ids returns 'inner_label', not 'label'
+            if "inner_label" in last_item and "uri" in last_item:
+                next_cursor = encode_cursor(last_item["inner_label"], last_item["uri"])
+
+        # Extract URIs
+        uris = [item["uri"] for item in data_ids]
+        
+        # STEP 2: Fetch details for these IDs
+        query_details = ExhibitionQueries.get_exposiciones_details(uris)
+        response_details = await client.query(query_details)
+        data_details = parse_sparql_response(response_details)
+        
+        # Merge/Sort: Map details by URI
+        details_map = {item["uri"]: item for item in data_details}
+        
+        # Reconstruct list in the original order (from data_ids)
+        final_data = []
+        for item_id in data_ids:
+            uri = item_id["uri"]
+            if uri in details_map:
+                final_data.append(details_map[uri])
+            else:
+                # Fallback if details query missed something (unlikely), use ID data
+                final_data.append(item_id)
+
+        return ORJSONResponse(content={"data": final_data, "next_cursor": next_cursor})
     except Exception as e:
+        print(f"Error in all_exhibitions: {e}") 
         raise HTTPException(status_code=500, detail=str(e))
 
 

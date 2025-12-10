@@ -30,11 +30,15 @@ export default function ItemCard({ uri, label, description, type, imageUrl, subt
            </div>
         </div>
       ) : (
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 h-32 flex items-center justify-center relative">
-             <div className="absolute top-2 right-2 bg-gray-200 text-gray-600 text-[10px] uppercase font-bold px-2 py-1 rounded-md">
-             {type}
-           </div>
-           {/* Fallback icon or pattern could go here */}
+        <div className="aspect-h-3 aspect-w-4 bg-gray-100 sm:aspect-none sm:h-48 relative overflow-hidden">
+             <img 
+                src={`https://placehold.co/600x400/f1f5f9/475569?text=${type.charAt(0).toUpperCase() + type.slice(1)}`}
+                alt="Placeholder"
+                className="h-full w-full object-cover opacity-80 hover:opacity-100 transition-opacity"
+             />
+             <div className="absolute top-2 right-2 bg-white/80 text-gray-800 text-[10px] uppercase font-bold px-2 py-1 rounded-md backdrop-blur-sm">
+               {type}
+             </div>
         </div>
       )}
       
@@ -57,7 +61,7 @@ export default function ItemCard({ uri, label, description, type, imageUrl, subt
             <div className="mt-auto pt-3 border-t border-gray-100 text-xs text-gray-500 flex flex-wrap gap-2">
                 {Object.entries(extra).map(([k, v]) => (
                     v ? <span key={k} className="bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
-                        <span className="font-semibold text-gray-700 mr-1">{k}:</span>{String(v)}
+                        <span className="font-semibold text-gray-700 mr-1">{k}:</span>{String(v).split('|').join(', ')}
                     </span> : null
                 ))}
             </div>

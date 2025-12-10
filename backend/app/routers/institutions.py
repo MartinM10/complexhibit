@@ -46,19 +46,45 @@ async def all_institutions(
         if decoded:
             last_label, last_uri = decoded
 
-    query = InstitutionQueries.get_all_instituciones(limit=page_size + 1, last_label=last_label, last_uri=last_uri, text_search=q)
+    # STEP 1: Fetch filtered and paginated IDs
+    query_ids = InstitutionQueries.get_instituciones_ids(limit=page_size + 1, last_label=last_label, last_uri=last_uri, text_search=q)
+    
     try:
-        response = await client.query(query)
-        data = parse_sparql_response(response)
+        response_ids = await client.query(query_ids)
+        data_ids = parse_sparql_response(response_ids)
         
+        if not data_ids:
+             return ORJSONResponse(content={"data": [], "next_cursor": None})
+
+        # Cursor Logic
         next_cursor = None
-        if len(data) > page_size:
-            data = data[:page_size]  # Remove the extra item
-            last_item = data[-1]
+        if len(data_ids) > page_size:
+            data_ids = data_ids[:page_size]
+            last_item = data_ids[-1]
             if "label" in last_item and "uri" in last_item:
                 next_cursor = encode_cursor(last_item["label"], last_item["uri"])
 
-        return ORJSONResponse(content={"data": data, "next_cursor": next_cursor})
+        # Extract URIs
+        uris = [item["uri"] for item in data_ids]
+        
+        # STEP 2: Fetch details for these IDs
+        query_details = InstitutionQueries.get_instituciones_details(uris)
+        response_details = await client.query(query_details)
+        data_details = parse_sparql_response(response_details)
+        
+        # Merge/Sort: Map details by URI
+        details_map = {item["uri"]: item for item in data_details}
+        
+        # Reconstruct list in the original order (from data_ids)
+        final_data = []
+        for item_id in data_ids:
+            uri = item_id["uri"]
+            if uri in details_map:
+                final_data.append(details_map[uri])
+            else:
+                final_data.append(item_id)
+
+        return ORJSONResponse(content={"data": final_data, "next_cursor": next_cursor})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

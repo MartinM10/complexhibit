@@ -17,6 +17,18 @@ def generate_sentences(arg, sujeto) -> list:
     for key, value in arg:
         key = pascal_case_to_camel_case(key)
 
+        # Property Mapping to Ontology
+        PROPERTY_MAPPING = {
+            "organiza": "hasOrganizer",
+            "exposicionPatrocinadaPor": "hasSponsor",
+            "comisario": "hasCurator",
+            "lugarCelebracion": "takesPlaceAt", # Assuming data property usage or legacy compatibility
+            "tieneDispositivoDeInscripcion": "hasMediationDispositif",
+            # Add others if needed
+        }
+        if key in PROPERTY_MAPPING:
+            key = PROPERTY_MAPPING[key]
+
         if "id" != key and "type" not in key and key not in OBJECT_PROPERTIES and value:
             if isinstance(value, list):
                 for v in value:

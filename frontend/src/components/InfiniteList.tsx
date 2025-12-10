@@ -7,6 +7,8 @@ import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { unCamel, cleanLabel } from "@/lib/utils";
 import { Search, Loader2 } from "lucide-react";
 
+
+
 interface InfiniteListProps {
   initialData: any[];
   initialCursor: string | null;
@@ -68,11 +70,18 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
   };
 
   // Effect to refetch when search changes (debounced slightly or direct)
+  // Skip on initial mount when searchQuery is empty to preserve server-rendered data
+  const [isInitialMount, setIsInitialMount] = useState(true);
+  
   useEffect(() => {
+    // On initial mount with no query, don't override server data
+    if (isInitialMount && !searchQuery && Object.keys(filters).length === 0) {
+      setIsInitialMount(false);
+      return;
+    }
+    setIsInitialMount(false);
+    
     const timeoutId = setTimeout(async () => {
-      // Only fetch if query changed from initial state (which is empty)
-      // or if we are typing.
-      
       // We need to fetch the FIRST page of results for the new query
       setIsLoading(true);
       try {
@@ -94,7 +103,6 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
       }
     }, 500); // 500ms debounce
 
-    return () => clearTimeout(timeoutId);
     return () => clearTimeout(timeoutId);
   }, [searchQuery, filters, type]);
 
@@ -126,6 +134,9 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
             fetchOptions('topic', 'topic');
     } else if (type === 'institution') {
         fetchOptions('activity', 'activity');
+    } else if (type === 'exhibition') {
+        fetchOptions('exhibition_type', 'exhibition_type');
+        fetchOptions('exhibition_theme', 'exhibition_theme');
     }
   }, [type]);
 
@@ -208,6 +219,18 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
                             value={filters.sponsor || ''}
                             onChange={(e) => handleFilterChange('sponsor', e.target.value)}
                             className="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 outline-none"
+                        />
+                        
+                        <FilterSelect 
+                            paramKey="theme" 
+                            placeholder="Theme" 
+                            options={filterOptions['exhibition_theme'] || []} 
+                        />
+
+                        <FilterSelect 
+                            paramKey="type" 
+                            placeholder="Type" 
+                            options={filterOptions['exhibition_type'] || []} 
                         />
                     </>
                  )}
@@ -338,11 +361,12 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
                     }
                     
                     if (type === 'exhibition') {
+                        if (item.label_starting_date) extra = { ...extra, "Opening": item.label_starting_date };
+                        if (item.label_ending_date) extra = { ...extra, "Closing": item.label_ending_date };
                         if (item.curator_name) extra = { ...extra, "Curator": item.curator_name };
-                        if (item.organizer) extra = { ...extra, "Organizer": item.organizer };
-                        if (item.sponsor) extra = { ...extra, "Sponsor": item.sponsor };
+                        if (item.theme_label) extra = { ...extra, "Theme": item.theme_label };
+                        if (item.type_label) extra = { ...extra, "Type": item.type_label };
                         if (item.label_place) extra = { ...extra, "Place": item.label_place };
-                        if (item.label_starting_date) extra = { ...extra, "Date": `${item.label_starting_date}${item.label_ending_date ? ' - ' + item.label_ending_date : ''}` };
                     }
                     
                     if (type === 'artwork') {

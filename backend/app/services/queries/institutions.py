@@ -25,12 +25,11 @@ class InstitutionQueries:
     """
 
     @staticmethod
-    def get_all_instituciones(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None) -> str:
+    def get_instituciones_ids(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None) -> str:
         filter_clause = f'FILTER regex(?label, "{text_search}", "i")' if text_search else ""
         
         pagination_filter = ""
         if last_label and last_uri:
-            # Escape quotes in label to prevent SPARQL injection/errors
             safe_label = last_label.replace('"', '\\"')
             pagination_filter = f"""
                 FILTER (
@@ -41,7 +40,7 @@ class InstitutionQueries:
 
         return f"""
             {PREFIXES}
-            SELECT DISTINCT ?label ?uri ?apelation ?label_place ?representative ?organizer ?financer ?lender ?owner
+            SELECT DISTINCT ?label ?uri
             WHERE 
             {{
                 {{
@@ -61,22 +60,43 @@ class InstitutionQueries:
                 
                 {filter_clause}
                 {pagination_filter}
-
-                OPTIONAL 
-                {{ 
-                    ?uri <https://w3id.org/OntoExhibit#hasLocation> ?location.
-                    ?location <https://w3id.org/OntoExhibit#isLocatedAt> ?place .
-                    ?place rdfs:label ?label_place
-                }}
-                OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#apelation> ?apelation }}
             }} 
             ORDER BY lcase(?label) ?uri
             LIMIT {limit}
         """
 
+    @staticmethod
+    def get_instituciones_details(uris: list[str]) -> str:
+        if not uris:
+            return ""
+        
+        uris_str = " ".join([f"<{u}>" for u in uris])
+        
+        return f"""
+            {PREFIXES}
+            SELECT ?uri (SAMPLE(?inner_label) as ?label) 
+                   (SAMPLE(?inner_apelation) as ?apelation)
+                   (GROUP_CONCAT(DISTINCT ?inner_label_place; separator="|") as ?label_place)
+            WHERE 
+            {{
+                VALUES ?uri {{ {uris_str} }}
+                
+                ?uri rdfs:label ?inner_label .
+
+                OPTIONAL 
+                {{ 
+                    ?uri <https://w3id.org/OntoExhibit#hasLocation> ?location.
+                    ?location <https://w3id.org/OntoExhibit#isLocatedAt> ?place .
+                    ?place rdfs:label ?inner_label_place
+                }}
+                OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#apelation> ?inner_apelation }}
+            }} 
+            GROUP BY ?uri
+        """
+
     GET_INSTITUTION = f"""
         {PREFIXES}
-        SELECT DISTINCT ?label ?uri ?apelation ?label_place
+        SELECT DISTINCT ?label ?uri ?apelation ?label_place ?place_uri
         WHERE 
         {{
             {{
@@ -99,8 +119,8 @@ class InstitutionQueries:
             OPTIONAL 
             {{ 
                 ?uri <https://w3id.org/OntoExhibit#hasLocation> ?location.
-                ?location <https://w3id.org/OntoExhibit#isLocatedAt> ?place .
-                ?place rdfs:label ?label_place
+                ?location <https://w3id.org/OntoExhibit#isLocatedAt> ?place_uri .
+                ?place_uri rdfs:label ?label_place
             }}
             OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#apelation> ?apelation }}
         }}
