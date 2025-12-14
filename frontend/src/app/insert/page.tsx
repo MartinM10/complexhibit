@@ -12,7 +12,7 @@ import Link from "next/link";
 import { ArrowLeft, PlusCircle, Loader2, AlertCircle, CheckCircle, Database } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-type EntityType = "exhibition" | "artwork" | "actor" | "institution";
+type EntityType = "exhibition" | "artwork" | "actant" | "institution";
 
 interface FormField {
   name: string;
@@ -21,6 +21,7 @@ interface FormField {
   required?: boolean;
   options?: string[];
   placeholder?: string;
+  fetchOptions?: string; // API endpoint to fetch options
 }
 
 // Field names match backend models in domain.py
@@ -31,8 +32,7 @@ const entityFields: Record<EntityType, FormField[]> = {
     { name: "fecha_fin", label: "Closing Date", type: "date", required: true },
     { name: "sede", label: "Venue", type: "text", placeholder: "e.g., Museum of Modern Art" },
     { name: "lugar_celebracion", label: "Location", type: "text", placeholder: "e.g., New York, USA" },
-    { name: "coordenadas", label: "Coordinates", type: "text", placeholder: "e.g., 40.7614,-73.9776" },
-    { name: "tipo_exposicion", label: "Exhibition Type", type: "select", options: ["Permanent", "Temporary", "Travelling", "Other"] },
+    { name: "tipo_exposicion", label: "Exhibition Type", type: "select", options: ["Permanent", "Temporary", "Travelling"] },
   ],
   artwork: [
     { name: "name", label: "Artwork Title", type: "text", required: true, placeholder: "e.g., Starry Night" },
@@ -42,14 +42,14 @@ const entityFields: Record<EntityType, FormField[]> = {
     { name: "production_place", label: "Place of Creation", type: "text", placeholder: "e.g., Saint-Rémy-de-Provence, France" },
     { name: "type", label: "Artwork Type", type: "select", options: ["Painting", "Sculpture", "Installation", "Photography", "Drawing", "Print", "Mixed Media", "Other"] },
   ],
-  actor: [
+  actant: [
     { name: "name", label: "Full Name", type: "text", required: true, placeholder: "e.g., Pablo Picasso" },
-    { name: "type", label: "Actor Type", type: "select", options: ["Individual", "Group"] },
+    { name: "type", label: "Actant Type", type: "select", options: ["Individual", "Group"] },
     { name: "gender", label: "Gender", type: "select", options: ["Male", "Female", "Other", "Unknown"] },
     { name: "birth_date", label: "Birth Date", type: "date" },
     { name: "country", label: "Birth Country", type: "text", placeholder: "e.g., Spain" },
     { name: "death_date", label: "Death Date", type: "date" },
-    { name: "activity", label: "Activity/Profession", type: "text", placeholder: "e.g., Painter, Sculptor (comma-separated)" },
+    { name: "activity", label: "Activity/Profession", type: "select", fetchOptions: "/filter_options/activity" },
   ],
   institution: [
     { name: "nombre", label: "Institution Name", type: "text", required: true, placeholder: "e.g., Museo del Prado" },
@@ -58,27 +58,28 @@ const entityFields: Record<EntityType, FormField[]> = {
     { name: "lugar_sede", label: "Location/City", type: "text", placeholder: "e.g., Madrid, Spain" },
     { name: "direccion_postal", label: "Address", type: "text", placeholder: "Full postal address" },
     { name: "pagina_web", label: "Website", type: "text", placeholder: "e.g., https://www.museodelprado.es" },
-    { name: "coordenadas", label: "Coordinates", type: "text", placeholder: "e.g., 40.4138,-3.6921" },
   ],
 };
 
-// Map entity types to their backend endpoints
+// Map entity types to their backend endpoints (FIXED: direct paths without resource prefix)
 const entityEndpoints: Record<EntityType, string> = {
-  exhibition: "/exposiciones/create_exhibition",
-  artwork: "/obras/create_artwork",
-  actor: "/personas/create_person",
-  institution: "/instituciones/create_institution",
+  exhibition: "/create_exhibition",
+  artwork: "/create_artwork",
+  actant: "/create_person",
+  institution: "/create_institution",
 };
 
 export default function InsertDataPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
-  const [entityType, setEntityType] = useState<EntityType>("actor");
+  const [entityType, setEntityType] = useState<EntityType>("actant");
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [createdUri, setCreatedUri] = useState("");
+  const [dynamicOptions, setDynamicOptions] = useState<Record<string, string[]>>({});
+  const [loadingOptions, setLoadingOptions] = useState<Record<string, boolean>>({});
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -86,6 +87,33 @@ export default function InsertDataPage() {
       router.push("/auth/login");
     }
   }, [authLoading, isAuthenticated, router]);
+
+  // Fetch dynamic options for select fields
+  useEffect(() => {
+    const fields = entityFields[entityType];
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+    
+    fields.forEach(async (field) => {
+      if (field.fetchOptions && !dynamicOptions[field.fetchOptions]) {
+        setLoadingOptions((prev) => ({ ...prev, [field.name]: true }));
+        try {
+          const response = await fetch(`${apiUrl}${field.fetchOptions}`);
+          if (response.ok) {
+            const data = await response.json();
+            // Handle different response formats
+            const options = Array.isArray(data) 
+              ? data.map((item: any) => item.value || item.label || item)
+              : data.options || [];
+            setDynamicOptions((prev) => ({ ...prev, [field.fetchOptions!]: options }));
+          }
+        } catch (err) {
+          console.error(`Failed to fetch options for ${field.name}:`, err);
+        } finally {
+          setLoadingOptions((prev) => ({ ...prev, [field.name]: false }));
+        }
+      }
+    });
+  }, [entityType]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -105,24 +133,21 @@ export default function InsertDataPage() {
 
     // Handle special transformations based on entity type
     if (type === "artwork" && data.author_name) {
-      // Backend expects author as dict with name
       result.author = { name: data.author_name };
       delete result.author_name;
     }
 
     if (type === "exhibition" && data.tipo_exposicion) {
-      // Backend expects array
       result.tipo_exposicion = [data.tipo_exposicion];
     }
 
     if (type === "institution" && data.tipo_institucion) {
-      // Backend expects array
       result.tipo_institucion = [data.tipo_institucion];
     }
 
-    if (type === "actor" && data.activity) {
-      // Split comma-separated activities into array
-      result.activity = data.activity.split(",").map((a: string) => a.trim()).filter(Boolean);
+    if (type === "actant" && data.activity) {
+      // Keep as single value for now, backend handles it
+      result.activity = data.activity;
     }
 
     return result;
@@ -183,10 +208,17 @@ export default function InsertDataPage() {
   }
 
   if (!isAuthenticated) {
-    return null; // Will redirect
+    return null;
   }
 
   const fields = entityFields[entityType];
+
+  const getFieldOptions = (field: FormField): string[] => {
+    if (field.fetchOptions && dynamicOptions[field.fetchOptions]) {
+      return dynamicOptions[field.fetchOptions];
+    }
+    return field.options || [];
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -266,19 +298,27 @@ export default function InsertDataPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   />
                 ) : field.type === "select" ? (
-                  <select
-                    id={field.name}
-                    name={field.name}
-                    value={formData[field.name] || ""}
-                    onChange={handleChange}
-                    required={field.required}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  >
-                    <option value="">Select...</option>
-                    {field.options?.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      id={field.name}
+                      name={field.name}
+                      value={formData[field.name] || ""}
+                      onChange={handleChange}
+                      required={field.required}
+                      disabled={loadingOptions[field.name]}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-gray-100"
+                    >
+                      <option value="">
+                        {loadingOptions[field.name] ? "Loading..." : "Select..."}
+                      </option>
+                      {getFieldOptions(field).map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                    {loadingOptions[field.name] && (
+                      <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+                    )}
+                  </div>
                 ) : (
                   <input
                     type={field.type}
