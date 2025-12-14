@@ -1,13 +1,22 @@
-import json
+"""
+Exhibition router endpoints.
+
+Provides REST API endpoints for accessing and managing exhibition data.
+"""
+
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import ORJSONResponse
 
 from app.core.config import settings
 from app.dependencies import get_sparql_client
 from app.models.domain import Exposicion
 from app.models.responses import ErrorResponseModel, StandardResponseModel
+from app.routers.pagination import paginated_query
 from app.services.queries.exhibitions import ExhibitionQueries
 from app.services.sparql_client import SparqlClient
+from app.utils.cursor import decode_cursor
 from app.utils.parsers import parse_sparql_response
 
 router = APIRouter(prefix=f"{settings.DEPLOY_PATH}", tags=["exposiciones"])
@@ -15,6 +24,7 @@ router = APIRouter(prefix=f"{settings.DEPLOY_PATH}", tags=["exposiciones"])
 
 @router.get("/count_exhibitions", summary="Count of individuals of class exhibition")
 async def count_exhibitions(client: SparqlClient = Depends(get_sparql_client)):
+    """Get total count of exhibitions in the knowledge graph."""
     try:
         query = ExhibitionQueries.COUNT_EXPOSICIONES
         response = await client.query(query)
@@ -30,12 +40,11 @@ async def count_exhibitions(client: SparqlClient = Depends(get_sparql_client)):
         raise HTTPException(status_code=500, detail=error_response.dict())
 
 
-from fastapi.responses import ORJSONResponse
-
-from typing import Optional
-from app.utils.cursor import decode_cursor, encode_cursor
-
-@router.get("/all_exhibitions", summary="Individuals of class exhibition", response_class=ORJSONResponse)
+@router.get(
+    "/all_exhibitions", 
+    summary="Individuals of class exhibition", 
+    response_class=ORJSONResponse
+)
 async def all_exhibitions(
     cursor: Optional[str] = None,
     page_size: int = 10, 
@@ -50,13 +59,19 @@ async def all_exhibitions(
     type: Optional[str] = None,
     client: SparqlClient = Depends(get_sparql_client)
 ):
+    """
+    Get paginated list of exhibitions with optional filtering.
+    
+    Uses cursor-based pagination for stable, efficient results.
+    """
+    # Decode cursor
     last_label, last_uri = None, None
     if cursor:
         decoded = decode_cursor(cursor)
         if decoded:
             last_label, last_uri = decoded
 
-    # STEP 1: Fetch filtered and paginated IDs
+    # Build IDs query with all filters
     query_ids = ExhibitionQueries.get_exposiciones_ids(
         limit=page_size + 1, 
         last_label=last_label, 
@@ -72,67 +87,35 @@ async def all_exhibitions(
         exhibition_type=type
     )
     
-    try:
-        response_ids = await client.query(query_ids)
-        data_ids = parse_sparql_response(response_ids)
-        
-        if not data_ids:
-             return ORJSONResponse(content={"data": [], "next_cursor": None})
-
-        # Cursor Logic
-        next_cursor = None
-        if len(data_ids) > page_size:
-            data_ids = data_ids[:page_size]
-            last_item = data_ids[-1]
-            # Note: get_exposiciones_ids returns 'inner_label', not 'label'
-            if "inner_label" in last_item and "uri" in last_item:
-                next_cursor = encode_cursor(last_item["inner_label"], last_item["uri"])
-
-        # Extract URIs
-        uris = [item["uri"] for item in data_ids]
-        
-        # STEP 2: Fetch details for these IDs
-        query_details = ExhibitionQueries.get_exposiciones_details(uris)
-        response_details = await client.query(query_details)
-        data_details = parse_sparql_response(response_details)
-        
-        # Merge/Sort: Map details by URI
-        details_map = {item["uri"]: item for item in data_details}
-        
-        # Reconstruct list in the original order (from data_ids)
-        final_data = []
-        for item_id in data_ids:
-            uri = item_id["uri"]
-            if uri in details_map:
-                final_data.append(details_map[uri])
-            else:
-                # Fallback if details query missed something (unlikely), use ID data
-                final_data.append(item_id)
-
-        return ORJSONResponse(content={"data": final_data, "next_cursor": next_cursor})
-    except Exception as e:
-        print(f"Error in all_exhibitions: {e}") 
-        raise HTTPException(status_code=500, detail=str(e))
+    # Use shared pagination utility
+    result = await paginated_query(
+        client=client,
+        get_ids_query=query_ids,
+        get_details_func=ExhibitionQueries.get_exposiciones_details,
+        page_size=page_size,
+        label_field="inner_label"
+    )
+    
+    return ORJSONResponse(content=result)
 
 
 @router.get("/get_exhibition/{id:path}")
 async def get_exhibition(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get detailed information for a specific exhibition by ID."""
     query_main = ExhibitionQueries.GET_EXHIBITION_BY_ID % id
     query_artworks = ExhibitionQueries.GET_EXHIBITION_ARTWORKS % id
+    
     try:
         response_main = await client.query(query_main)
         data_main = parse_sparql_response(response_main)
         
-        # Optimize by checking if we even found the exhibition before fetching artworks
+        # Only fetch artworks if exhibition was found
         if data_main:
-             response_artworks = await client.query(query_artworks)
-             data_artworks = parse_sparql_response(response_artworks)
-             if data_artworks:
-                  data_main[0]["artworks"] = data_artworks[0].get("artworks", "")
-             else:
-                  data_main[0]["artworks"] = ""
+            response_artworks = await client.query(query_artworks)
+            data_artworks = parse_sparql_response(response_artworks)
+            data_main[0]["artworks"] = data_artworks[0].get("artworks", "") if data_artworks else ""
         
-        combined_query = query_main + "\n\n# SEPARATED ARTWORKS QUERY FOR OPTIMIZATION \n\n" + query_artworks
+        combined_query = f"{query_main}\n\n# ARTWORKS QUERY\n\n{query_artworks}"
         
         return {"data": data_main, "sparql": combined_query}
     except Exception as e:
@@ -141,11 +124,13 @@ async def get_exhibition(id: str, client: SparqlClient = Depends(get_sparql_clie
 
 @router.post("/create_exhibition", status_code=status.HTTP_201_CREATED)
 async def create_exhibition(
-    exposicion: Exposicion, client: SparqlClient = Depends(get_sparql_client)
+    exposicion: Exposicion, 
+    client: SparqlClient = Depends(get_sparql_client)
 ):
+    """Create a new exhibition in the knowledge graph."""
     try:
         query = ExhibitionQueries.add_exposicion(exposicion)
         response = await client.update(query)
         return response
     except Exception as e:
-        return {"error": f"Error adding exhibition. {str(e)}"}
+        raise HTTPException(status_code=500, detail=f"Error adding exhibition: {str(e)}")

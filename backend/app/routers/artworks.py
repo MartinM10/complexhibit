@@ -1,13 +1,22 @@
-import json
+"""
+Artwork router endpoints.
+
+Provides REST API endpoints for accessing and managing artwork data.
+"""
+
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import ORJSONResponse
 
 from app.core.config import settings
 from app.dependencies import get_sparql_client
 from app.models.domain import ObraDeArte
 from app.models.responses import ErrorResponseModel, StandardResponseModel
+from app.routers.pagination import paginated_query
 from app.services.queries.artworks import ArtworkQueries
 from app.services.sparql_client import SparqlClient
+from app.utils.cursor import decode_cursor
 from app.utils.parsers import parse_sparql_response
 
 router = APIRouter(prefix=f"{settings.DEPLOY_PATH}", tags=["obras"])
@@ -15,6 +24,7 @@ router = APIRouter(prefix=f"{settings.DEPLOY_PATH}", tags=["obras"])
 
 @router.get("/count_artworks", summary="Count of individuals of class artwork")
 async def count_artworks(client: SparqlClient = Depends(get_sparql_client)):
+    """Get total count of artworks in the knowledge graph."""
     try:
         query = ArtworkQueries.COUNT_OBRAS
         response = await client.query(query)
@@ -30,12 +40,11 @@ async def count_artworks(client: SparqlClient = Depends(get_sparql_client)):
         raise HTTPException(status_code=500, detail=error_response.dict())
 
 
-from fastapi.responses import ORJSONResponse
-
-from typing import Optional
-from app.utils.cursor import decode_cursor, encode_cursor
-
-@router.get("/all_artworks", summary="Individuals of class artwork", response_class=ORJSONResponse)
+@router.get(
+    "/all_artworks", 
+    summary="Individuals of class artwork", 
+    response_class=ORJSONResponse
+)
 async def all_artworks(
     cursor: Optional[str] = None,
     page_size: int = 20, 
@@ -48,13 +57,19 @@ async def all_artworks(
     exhibition: Optional[str] = None,
     client: SparqlClient = Depends(get_sparql_client)
 ):
+    """
+    Get paginated list of artworks with optional filtering.
+    
+    Uses cursor-based pagination for stable, efficient results.
+    """
+    # Decode cursor
     last_label, last_uri = None, None
     if cursor:
         decoded = decode_cursor(cursor)
         if decoded:
             last_label, last_uri = decoded
 
-    # STEP 1: Fetch filtered and paginated IDs
+    # Build IDs query with all filters
     query_ids = ArtworkQueries.get_obras_ids(
         limit=page_size + 1, 
         last_label=last_label, 
@@ -68,51 +83,21 @@ async def all_artworks(
         exhibition=exhibition
     )
     
-    try:
-        response_ids = await client.query(query_ids)
-        data_ids = parse_sparql_response(response_ids)
-        
-        if not data_ids:
-             return ORJSONResponse(content={"data": [], "next_cursor": None})
-
-        # Cursor Logic
-        next_cursor = None
-        if len(data_ids) > page_size:
-            data_ids = data_ids[:page_size]
-            last_item = data_ids[-1]
-            # Note: get_obras_ids returns 'inner_label', not 'label'
-            if "inner_label" in last_item and "uri" in last_item:
-                next_cursor = encode_cursor(last_item["inner_label"], last_item["uri"])
-
-        # Extract URIs
-        uris = [item["uri"] for item in data_ids]
-        
-        # STEP 2: Fetch details for these IDs
-        query_details = ArtworkQueries.get_obras_details(uris)
-        response_details = await client.query(query_details)
-        data_details = parse_sparql_response(response_details)
-        
-        # Merge/Sort: Map details by URI
-        details_map = {item["uri"]: item for item in data_details}
-        
-        # Reconstruct list in the original order (from data_ids)
-        final_data = []
-        for item_id in data_ids:
-            uri = item_id["uri"]
-            if uri in details_map:
-                final_data.append(details_map[uri])
-            else:
-                final_data.append(item_id)
-
-        return ORJSONResponse(content={"data": final_data, "next_cursor": next_cursor})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
+    # Use shared pagination utility
+    result = await paginated_query(
+        client=client,
+        get_ids_query=query_ids,
+        get_details_func=ArtworkQueries.get_obras_details,
+        page_size=page_size,
+        label_field="inner_label"
+    )
+    
+    return ORJSONResponse(content=result)
 
 
 @router.get("/get_artwork/{id:path}")
 async def get_artwork(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get detailed information for a specific artwork by ID."""
     query = ArtworkQueries.GET_ARTWORK_BY_ID % id
     try:
         response = await client.query(query)
@@ -123,10 +108,14 @@ async def get_artwork(id: str, client: SparqlClient = Depends(get_sparql_client)
 
 
 @router.post("/create_artwork", status_code=status.HTTP_201_CREATED)
-async def create_artwork(obra: ObraDeArte, client: SparqlClient = Depends(get_sparql_client)):
+async def create_artwork(
+    obra: ObraDeArte, 
+    client: SparqlClient = Depends(get_sparql_client)
+):
+    """Create a new artwork in the knowledge graph."""
     try:
         query = ArtworkQueries.add_obra(obra)
         response = await client.update(query)
         return response
     except Exception as e:
-        return {"error": f"Error adding artwork. {str(e)}"}
+        raise HTTPException(status_code=500, detail=f"Error adding artwork: {str(e)}")
