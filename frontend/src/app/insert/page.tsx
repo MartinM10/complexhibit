@@ -11,17 +11,20 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, PlusCircle, Loader2, AlertCircle, CheckCircle, Database } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { SearchableSelect } from "@/components/SearchableSelect";
 
 type EntityType = "exhibition" | "artwork" | "actant" | "institution";
 
 interface FormField {
   name: string;
   label: string;
-  type: "text" | "date" | "textarea" | "select";
+  type: "text" | "date" | "textarea" | "select" | "searchable";
   required?: boolean;
   options?: string[];
   placeholder?: string;
-  fetchOptions?: string; // API endpoint to fetch options
+  fetchOptions?: string;
+  searchEntityType?: "artwork" | "actant" | "institution" | "exhibition";
+  multiple?: boolean;
 }
 
 // Field names match backend models in domain.py
@@ -33,6 +36,8 @@ const entityFields: Record<EntityType, FormField[]> = {
     { name: "sede", label: "Venue", type: "text", placeholder: "e.g., Museum of Modern Art" },
     { name: "lugar_celebracion", label: "Location", type: "text", placeholder: "e.g., New York, USA" },
     { name: "tipo_exposicion", label: "Exhibition Type", type: "select", options: ["Permanent", "Temporary", "Travelling"] },
+    { name: "exposicion_exhibe_artista", label: "Exhibitors (Artists)", type: "searchable", searchEntityType: "actant", multiple: true, placeholder: "Search for exhibiting artists..." },
+    { name: "exposicion_exhibe_obra_de_arte", label: "Artworks Shown", type: "searchable", searchEntityType: "artwork", multiple: true, placeholder: "Search for artworks..." },
   ],
   artwork: [
     { name: "name", label: "Artwork Title", type: "text", required: true, placeholder: "e.g., Starry Night" },
@@ -61,7 +66,7 @@ const entityFields: Record<EntityType, FormField[]> = {
   ],
 };
 
-// Map entity types to their backend endpoints (FIXED: direct paths without resource prefix)
+// Map entity types to their backend endpoints
 const entityEndpoints: Record<EntityType, string> = {
   exhibition: "/create_exhibition",
   artwork: "/create_artwork",
@@ -74,6 +79,7 @@ export default function InsertDataPage() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [entityType, setEntityType] = useState<EntityType>("actant");
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const [searchableData, setSearchableData] = useState<Record<string, Array<{ uri: string; label: string }>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -99,11 +105,9 @@ export default function InsertDataPage() {
         try {
           const response = await fetch(`${apiUrl}${field.fetchOptions}`);
           if (response.ok) {
-            const data = await response.json();
-            // Handle different response formats
-            const options = Array.isArray(data) 
-              ? data.map((item: any) => item.value || item.label || item)
-              : data.options || [];
+            const result = await response.json();
+            // API returns { data: [...] } format
+            const options = result.data || result.options || (Array.isArray(result) ? result : []);
             setDynamicOptions((prev) => ({ ...prev, [field.fetchOptions!]: options }));
           }
         } catch (err) {
@@ -113,22 +117,27 @@ export default function InsertDataPage() {
         }
       }
     });
-  }, [entityType]);
+  }, [entityType, dynamicOptions]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleSearchableChange = (fieldName: string, selected: Array<{ uri: string; label: string }>) => {
+    setSearchableData({ ...searchableData, [fieldName]: selected });
+  };
+
   const handleEntityTypeChange = (type: EntityType) => {
     setEntityType(type);
     setFormData({});
+    setSearchableData({});
     setSuccess(false);
     setError("");
     setCreatedUri("");
   };
 
   // Transform form data to match backend model structure
-  const transformFormData = (type: EntityType, data: Record<string, string>) => {
+  const transformFormData = (type: EntityType, data: Record<string, string>, searchable: Record<string, Array<{ uri: string; label: string }>>) => {
     const result: Record<string, any> = { ...data };
 
     // Handle special transformations based on entity type
@@ -137,8 +146,23 @@ export default function InsertDataPage() {
       delete result.author_name;
     }
 
-    if (type === "exhibition" && data.tipo_exposicion) {
-      result.tipo_exposicion = [data.tipo_exposicion];
+    if (type === "exhibition") {
+      if (data.tipo_exposicion) {
+        result.tipo_exposicion = [data.tipo_exposicion];
+      }
+      // Add searchable field data (exhibitors and artworks)
+      if (searchable.exposicion_exhibe_artista?.length) {
+        result.exposicion_exhibe_artista = searchable.exposicion_exhibe_artista.map(item => ({
+          uri: item.uri,
+          name: item.label
+        }));
+      }
+      if (searchable.exposicion_exhibe_obra_de_arte?.length) {
+        result.exposicion_exhibe_obra_de_arte = searchable.exposicion_exhibe_obra_de_arte.map(item => ({
+          uri: item.uri,
+          name: item.label
+        }));
+      }
     }
 
     if (type === "institution" && data.tipo_institucion) {
@@ -146,7 +170,6 @@ export default function InsertDataPage() {
     }
 
     if (type === "actant" && data.activity) {
-      // Keep as single value for now, backend handles it
       result.activity = data.activity;
     }
 
@@ -166,7 +189,7 @@ export default function InsertDataPage() {
       const endpoint = entityEndpoints[entityType];
       
       // Transform data to match backend expectations
-      const payload = transformFormData(entityType, formData);
+      const payload = transformFormData(entityType, formData, searchableData);
       
       console.log("Submitting to:", `${apiUrl}${endpoint}`);
       console.log("Payload:", payload);
@@ -191,6 +214,7 @@ export default function InsertDataPage() {
       setSuccess(true);
       setCreatedUri(result.uri || result.label || "");
       setFormData({});
+      setSearchableData({});
     } catch (err: any) {
       console.error("Error:", err);
       setError(err.message || "An error occurred");
@@ -282,54 +306,68 @@ export default function InsertDataPage() {
 
             {fields.map((field) => (
               <div key={field.name}>
-                <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
-                  {field.label} {field.required && <span className="text-red-500">*</span>}
-                </label>
-                
-                {field.type === "textarea" ? (
-                  <textarea
-                    id={field.name}
-                    name={field.name}
-                    value={formData[field.name] || ""}
-                    onChange={handleChange}
-                    required={field.required}
+                {field.type === "searchable" ? (
+                  <SearchableSelect
+                    label={field.label}
+                    entityType={field.searchEntityType!}
+                    selected={searchableData[field.name] || []}
+                    onChange={(selected) => handleSearchableChange(field.name, selected)}
                     placeholder={field.placeholder}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    multiple={field.multiple}
+                    required={field.required}
                   />
-                ) : field.type === "select" ? (
-                  <div className="relative">
-                    <select
-                      id={field.name}
-                      name={field.name}
-                      value={formData[field.name] || ""}
-                      onChange={handleChange}
-                      required={field.required}
-                      disabled={loadingOptions[field.name]}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-gray-100"
-                    >
-                      <option value="">
-                        {loadingOptions[field.name] ? "Loading..." : "Select..."}
-                      </option>
-                      {getFieldOptions(field).map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                    {loadingOptions[field.name] && (
-                      <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
-                    )}
-                  </div>
                 ) : (
-                  <input
-                    type={field.type}
-                    id={field.name}
-                    name={field.name}
-                    value={formData[field.name] || ""}
-                    onChange={handleChange}
-                    required={field.required}
-                    placeholder={field.placeholder}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
+                  <>
+                    <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
+                      {field.label} {field.required && <span className="text-red-500">*</span>}
+                    </label>
+                    
+                    {field.type === "textarea" ? (
+                      <textarea
+                        id={field.name}
+                        name={field.name}
+                        value={formData[field.name] || ""}
+                        onChange={handleChange}
+                        required={field.required}
+                        placeholder={field.placeholder}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      />
+                    ) : field.type === "select" ? (
+                      <div className="relative">
+                        <select
+                          id={field.name}
+                          name={field.name}
+                          value={formData[field.name] || ""}
+                          onChange={handleChange}
+                          required={field.required}
+                          disabled={loadingOptions[field.name]}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 disabled:bg-gray-100"
+                        >
+                          <option value="">
+                            {loadingOptions[field.name] ? "Loading..." : "Select..."}
+                          </option>
+                          {getFieldOptions(field).map((opt) => (
+                            <option key={opt} value={opt}>{opt}</option>
+                          ))}
+                        </select>
+                        {loadingOptions[field.name] && (
+                          <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
+                        )}
+                      </div>
+                    ) : (
+                      <input
+                        type={field.type}
+                        id={field.name}
+                        name={field.name}
+                        value={formData[field.name] || ""}
+                        onChange={handleChange}
+                        required={field.required}
+                        placeholder={field.placeholder}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      />
+                    )}
+                  </>
                 )}
               </div>
             ))}
