@@ -16,7 +16,7 @@ from app.schemas.auth import (
     UserCreate, UserLogin, UserResponse, UserUpdate,
     Token, MessageResponse
 )
-from app.services.email import send_admin_notification, send_approval_notification
+from app.services.email import send_admin_notification, send_approval_notification, send_registration_confirmation
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 security = HTTPBearer(auto_error=False)
@@ -137,7 +137,10 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
     
-    # Notify admin
+    # Send confirmation email to user
+    send_registration_confirmation(user.email, user.full_name or user.username)
+    
+    # Notify admin about new registration
     send_admin_notification(user.email, user.full_name or user.username)
     
     return MessageResponse(
