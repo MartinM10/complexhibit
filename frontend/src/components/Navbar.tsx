@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Home, Search, Code, FileText, Users, LogIn, LogOut, Shield, User } from "lucide-react";
+import { Menu, X, Home, Search, Code, FileText, Users, LogIn, LogOut, Shield, User, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -51,6 +51,12 @@ export default function Navbar() {
               {item.name}
             </Link>
           ))}
+          {isAuthenticated && (
+            <Link href="/insert" className="text-sm font-semibold leading-6 text-emerald-600 hover:text-emerald-800 flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              Insert Data
+            </Link>
+          )}
           {isAdmin && (
             <Link href="/admin/users" className="text-sm font-semibold leading-6 text-purple-600 hover:text-purple-800 flex items-center gap-2">
               <Shield className="h-4 w-4" />
@@ -145,6 +151,18 @@ export default function Navbar() {
                     </div>
                   </Link>
                 ))}
+                {isAuthenticated && (
+                  <Link
+                    href="/insert"
+                    className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-emerald-600 hover:bg-emerald-50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <PlusCircle className="h-5 w-5" />
+                      Insert Data
+                    </div>
+                  </Link>
+                )}
                 {isAdmin && (
                   <Link
                     href="/admin/users"
