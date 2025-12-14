@@ -12,6 +12,7 @@ services:
       # Only override values that are different in Docker context
       - VIRTUOSO_URL=http://virtuoso:8890/sparql
       - DATABASE_URL=postgresql://${POSTGRES_USER:-complexhibit}:${POSTGRES_PASSWORD:-complexhibit}@postgres:5432/${POSTGRES_DB:-complexhibit_auth}
+      - DEPLOY_PATH=/api/v1
     volumes:
       - ./backend/app:/app/app
     depends_on:
