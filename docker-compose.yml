@@ -9,13 +9,8 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - URI_ONTOLOGIA=${URI_ONTOLOGIA}
+      # Only override values that are different in Docker context
       - VIRTUOSO_URL=http://virtuoso:8890/sparql
-      - DEFAULT_GRAPH_URL=https://w3id.org/OntoExhibit/Data
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - USER_SERVICE_URL=${USER_SERVICE_URL}
-      - DEPLOY_PATH=/api/v1
-      # Auth settings (read from backend/.env via env_file above)
       - DATABASE_URL=postgresql://${POSTGRES_USER:-complexhibit}:${POSTGRES_PASSWORD:-complexhibit}@postgres:5432/${POSTGRES_DB:-complexhibit_auth}
     volumes:
       - ./backend/app:/app/app
