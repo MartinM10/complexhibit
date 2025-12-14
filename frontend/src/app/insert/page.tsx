@@ -36,6 +36,9 @@ const entityFields: Record<EntityType, FormField[]> = {
     { name: "sede", label: "Venue", type: "text", placeholder: "e.g., Museum of Modern Art" },
     { name: "lugar_celebracion", label: "Location", type: "text", placeholder: "e.g., New York, USA" },
     { name: "tipo_exposicion", label: "Exhibition Type", type: "select", options: ["Permanent", "Temporary", "Travelling"] },
+    { name: "comisario", label: "Curators", type: "searchable", searchEntityType: "actant", multiple: true, placeholder: "Search for curators..." },
+    { name: "organiza", label: "Organizers", type: "searchable", searchEntityType: "actant", multiple: true, placeholder: "Search for organizers..." },
+    { name: "exposicion_patrocinada_por", label: "Funders/Sponsors", type: "searchable", searchEntityType: "actant", multiple: true, placeholder: "Search for funders..." },
     { name: "exposicion_exhibe_artista", label: "Exhibitors (Artists)", type: "searchable", searchEntityType: "actant", multiple: true, placeholder: "Search for exhibiting artists..." },
     { name: "exposicion_exhibe_obra_de_arte", label: "Artworks Shown", type: "searchable", searchEntityType: "artwork", multiple: true, placeholder: "Search for artworks..." },
   ],
@@ -150,18 +153,21 @@ export default function InsertDataPage() {
       if (data.tipo_exposicion) {
         result.tipo_exposicion = [data.tipo_exposicion];
       }
-      // Add searchable field data (exhibitors and artworks)
-      if (searchable.exposicion_exhibe_artista?.length) {
-        result.exposicion_exhibe_artista = searchable.exposicion_exhibe_artista.map(item => ({
-          uri: item.uri,
-          name: item.label
-        }));
-      }
-      if (searchable.exposicion_exhibe_obra_de_arte?.length) {
-        result.exposicion_exhibe_obra_de_arte = searchable.exposicion_exhibe_obra_de_arte.map(item => ({
-          uri: item.uri,
-          name: item.label
-        }));
+      // Add searchable field data for Exhibition Making roles
+      const searchableFields = [
+        "comisario",
+        "organiza", 
+        "exposicion_patrocinada_por",
+        "exposicion_exhibe_artista",
+        "exposicion_exhibe_obra_de_arte"
+      ];
+      for (const fieldName of searchableFields) {
+        if (searchable[fieldName]?.length) {
+          result[fieldName] = searchable[fieldName].map(item => ({
+            uri: item.uri,
+            name: item.label
+          }));
+        }
       }
     }
 
