@@ -343,7 +343,7 @@ class PersonQueries:
 
         if persona.name:
             POST_PERSONA += f'\t\t{sujeto}> <{RDFS.label}> "{persona.name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
-            POST_PERSONA += f'\t\t{sujeto}> {uri_ontologia}name> "{persona.name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+            POST_PERSONA += f'\t\t{sujeto}> {uri_ontologia}person_name> "{persona.name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
 
         if persona.country or persona.birth_date:
             POST_PERSONA += f"\t\t{sujeto}> {uri_ontologia}hasBirth> {sujeto}/birth> .\n"
@@ -423,9 +423,9 @@ class PersonQueries:
         if persona.activity:
             if isinstance(persona.activity, list):
                 for act in persona.activity:
-                    POST_PERSONA += f'\t\t{sujeto}> <https://w3id.org/OntoExhibit#activity> "{act}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+                    POST_PERSONA += f'\t\t{sujeto}> <https://w3id.org/OntoExhibit#activity_type> "{act}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
             else:
-                POST_PERSONA += f'\t\t{sujeto}> <https://w3id.org/OntoExhibit#activity> "{persona.activity}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+                POST_PERSONA += f'\t\t{sujeto}> <https://w3id.org/OntoExhibit#activity_type> "{persona.activity}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
 
         if persona.gender:
             POST_PERSONA += f'\t\t{sujeto}> <https://w3id.org/OntoExhibit#gender> "{persona.gender}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
