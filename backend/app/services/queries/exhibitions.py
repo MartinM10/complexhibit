@@ -289,7 +289,7 @@ class ExhibitionQueries:
                (GROUP_CONCAT(DISTINCT CONCAT(?funder, ":::", STR(?funder_person)); separator="|") as ?funders)
                (GROUP_CONCAT(DISTINCT CONCAT(?lender, ":::", STR(?actor_lender)); separator="|") as ?lenders)
                (GROUP_CONCAT(DISTINCT CONCAT(?exhibitor_name, ":::", STR(?exhibitor_actor)); separator="|") as ?exhibitors)
-               (GROUP_CONCAT(DISTINCT CONCAT(?artwork_label, ":::", STR(?artwork)); separator="|") as ?artworks)
+
                (SAMPLE(?lat) as ?lat) (SAMPLE(?long) as ?long) (SAMPLE(?access) as ?access) 
                (SAMPLE(?venue_label) as ?venue_label) (SAMPLE(?venue) as ?venue_uri)
                (GROUP_CONCAT(DISTINCT ?theme_label; separator="|") as ?theme_label) 
@@ -344,11 +344,7 @@ class ExhibitionQueries:
                 ?uri <https://w3id.org/OntoExhibit#type> ?type_label .
             }}
 
-            # Artworks displayed at the exhibition
-            OPTIONAL {{
-                ?uri <https://w3id.org/OntoExhibit#displays> ?artwork .
-                ?artwork rdfs:label ?artwork_label .
-            }}
+
 
             # Link to ExhibitionMaking
             OPTIONAL {{
@@ -390,4 +386,14 @@ class ExhibitionQueries:
                 }}
             }}
         }}  GROUP BY ?uri 
+    """
+
+    GET_EXHIBITION_ARTWORKS = f"""
+        {PREFIXES}
+        SELECT ?uri (GROUP_CONCAT(DISTINCT CONCAT(?artwork_label, ":::", STR(?artwork)); separator="|") as ?artworks)
+        WHERE {{
+            BIND(<https://w3id.org/OntoExhibit#exhibition/%s> AS ?uri)
+            ?uri <https://w3id.org/OntoExhibit#displays> ?artwork .
+            OPTIONAL {{ ?artwork rdfs:label ?artwork_label }}
+        }} GROUP BY ?uri
     """

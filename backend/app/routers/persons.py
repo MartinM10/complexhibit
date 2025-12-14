@@ -116,7 +116,7 @@ async def get_person(id: str, client: SparqlClient = Depends(get_sparql_client))
         response = await client.query(query)
         flat_data = parse_sparql_response(response)
         grouped_data = group_by_uri(flat_data, list_fields=["label_place", "label_date"])
-        return {"data": grouped_data}
+        return {"data": grouped_data, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -145,8 +145,9 @@ async def get_actor_roles(id: str, client: SparqlClient = Depends(get_sparql_cli
             if role_type not in roles_by_type:
                 roles_by_type[role_type] = []
             roles_by_type[role_type].append({
-                "uri": item.get("exhibition_uri"),
-                "label": item.get("exhibition_label")
+                "uri": item.get("item_uri"),
+                "label": item.get("item_label"),
+                "type": item.get("item_type", "exhibition")
             })
         return {"data": roles_by_type}
     except Exception as e:

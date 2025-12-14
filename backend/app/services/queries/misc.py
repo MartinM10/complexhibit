@@ -24,9 +24,25 @@ class MiscQueries:
 
     GET_OBJECT_ANY_TYPE = f"""
         {PREFIXES}
-        SELECT *
+        SELECT DISTINCT ?p ?o
         WHERE {{
-            <https://w3id.org/OntoExhibit#%s/%s> ?p ?o .
+            {{
+                # Direct properties
+                <https://w3id.org/OntoExhibit#%s/%s> ?p ?o .
+            }}
+            UNION
+            {{
+                # Synthesize label from person_name if available and direct label missing (optional)
+                BIND(rdfs:label AS ?p)
+                <https://w3id.org/OntoExhibit#%s/%s> <https://w3id.org/OntoExhibit#person_name> ?o .
+            }}
+            UNION
+            {{
+                # Synthesize label from hasTitle -> label if available
+                BIND(rdfs:label AS ?p)
+                <https://w3id.org/OntoExhibit#%s/%s> <https://w3id.org/OntoExhibit#hasTitle> ?title_entity .
+                ?title_entity rdfs:label ?o .
+            }}
         }}
     """
 

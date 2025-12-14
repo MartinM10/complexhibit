@@ -121,7 +121,7 @@ class ArtworkQueries:
         
         return f"""
             {PREFIXES}
-            SELECT ?uri (SAMPLE(?inner_label) as ?label) 
+            SELECT ?uri (SAMPLE(COALESCE(?inner_title_label, ?inner_label, "")) as ?label) 
                    (GROUP_CONCAT(DISTINCT ?inner_type; separator="|") as ?type)
                    (SAMPLE(?inner_apelation) as ?apelation)
                    (SAMPLE(?inner_label_place) as ?label_place)
@@ -135,7 +135,11 @@ class ArtworkQueries:
             {{
                 VALUES ?uri {{ {uris_str} }}
                 
-                ?uri rdfs:label ?inner_label .
+                OPTIONAL {{ ?uri rdfs:label ?inner_label . }}
+                OPTIONAL {{ 
+                    ?uri <https://w3id.org/OntoExhibit#hasTitle> ?title_entity .
+                    ?title_entity rdfs:label ?inner_title_label .
+                }}
 
                 OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#type> ?inner_type . }}
                 OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#apelation> ?inner_apelation }}
@@ -207,7 +211,7 @@ class ArtworkQueries:
     GET_ARTWORK_BY_ID = f"""
         {PREFIXES}
         SELECT ?uri 
-               (SAMPLE(?inner_label) as ?label)
+               (SAMPLE(COALESCE(?inner_title_label, ?inner_label, "")) as ?label)
                (GROUP_CONCAT(DISTINCT ?inner_type; separator="|") as ?type)
                (SAMPLE(?inner_apelation) as ?apelation)
                (SAMPLE(?inner_label_starting_date) as ?label_starting_date)
@@ -219,7 +223,13 @@ class ArtworkQueries:
         WHERE 
         {{
             ?uri rdf:type <https://w3id.org/OntoExhibit#Work_Manifestation> .
-            ?uri rdfs:label ?inner_label .
+            
+            OPTIONAL {{ ?uri rdfs:label ?inner_label . }}
+            OPTIONAL {{ 
+                ?uri <https://w3id.org/OntoExhibit#hasTitle> ?title_entity .
+                ?title_entity rdfs:label ?inner_title_label .
+            }}
+            
             FILTER (regex(str(?uri), "%s", "i"))
             
             OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#type> ?inner_type . }}

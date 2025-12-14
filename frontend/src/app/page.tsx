@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, BookOpen, Building2, Calendar, Users, Image as ImageIcon } from "lucide-react";
+import HashRedirect from "@/components/HashRedirect";
 
 const categories = [
   {
@@ -35,6 +36,7 @@ const categories = [
 export default function Home() {
   return (
     <div className="bg-white">
+      <HashRedirect />
       {/* Hero section */}
       <div className="relative isolate px-6 pt-14 lg:px-8">
         <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">

@@ -124,7 +124,7 @@ class PersonQueries:
         
         return f"""
             {PREFIXES}
-            SELECT ?uri (SAMPLE(?inner_label) as ?label) 
+            SELECT ?uri (SAMPLE(COALESCE(?inner_person_name, ?inner_label, "")) as ?label) 
                    (SAMPLE(?inner_birth_place_label) as ?birth_place_label)
                    (SAMPLE(?inner_birth_date_label) as ?birth_date_label)
                    (SAMPLE(?inner_death_date_label) as ?death_date_label)
@@ -134,7 +134,8 @@ class PersonQueries:
             {{
                 VALUES ?uri {{ {uris_str} }}
                 
-                ?uri rdfs:label ?inner_label .
+                OPTIONAL {{ ?uri rdfs:label ?inner_label . }}
+                OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#person_name> ?inner_person_name . }}
                 
                 OPTIONAL {{
                     ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth .
@@ -165,7 +166,7 @@ class PersonQueries:
     GET_PERSONS_AND_GROUPS = f"""
         {PREFIXES}
         SELECT ?uri 
-               (SAMPLE(?inner_label) as ?label)
+               (SAMPLE(COALESCE(?inner_person_name, ?inner_label, "")) as ?label)
                (SAMPLE(?inner_label_place) as ?label_place)
                (SAMPLE(?inner_place_uri) as ?place_uri)
                (SAMPLE(?inner_label_date) as ?label_date)
@@ -176,18 +177,19 @@ class PersonQueries:
         {{
             {{
                 ?uri rdf:type <https://w3id.org/OntoExhibit#Human_Actant> .
-                ?uri rdfs:label ?inner_label
             }}
             UNION
             {{
                 ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E21_Person> .
-                ?uri rdfs:label ?inner_label
             }}
             UNION
             {{
                 ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> .
-                ?uri rdfs:label ?inner_label
             }}
+            
+            OPTIONAL {{ ?uri rdfs:label ?inner_label }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#person_name> ?inner_person_name }}
+
             OPTIONAL 
             {{
                 ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth .
@@ -216,52 +218,91 @@ class PersonQueries:
 
     @staticmethod
     def get_actor_roles(actor_id: str) -> str:
-        """Get all exhibitions where the actor participated in any role."""
+        """Get all exhibitions and artworks where the actor participated in any role."""
         return f"""
             {PREFIXES}
-            SELECT DISTINCT ?exhibition_uri ?exhibition_label ?role_type
+            SELECT DISTINCT ?item_uri ?item_label ?role_type ?item_type
             WHERE {{
                 BIND(<https://w3id.org/OntoExhibit#human_actant/{actor_id}> AS ?actor)
                 
-                # Actor has a role
-                ?actor <https://w3id.org/OntoExhibit#hasRole> ?role .
+                # Link Actor to Role (check both directions)
+                {{ ?actor <https://w3id.org/OntoExhibit#hasRole> ?role }}
+                UNION
+                {{ ?role <https://w3id.org/OntoExhibit#isRoleOf> ?actor }}
                 
-                # The role is connected to exhibition making via various properties
+                # --- EXHIBITION ROLES ---
                 {{
-                    # Exhibiting actant
-                    ?role <https://w3id.org/OntoExhibit#isExhibitingActantIn> ?making .
-                    BIND("Exhibitor" AS ?role_type)
-                }}
-                UNION
-                {{
-                    # Curator: role is curatedBy of making
-                    ?making <https://w3id.org/OntoExhibit#curatedBy> ?role .
-                    BIND("Curator" AS ?role_type)
-                }}
-                UNION
-                {{
-                    # Organizer: role is organizedBy of making
-                    ?making <https://w3id.org/OntoExhibit#organizedBy> ?role .
-                    BIND("Organizer" AS ?role_type)
-                }}
-                UNION
-                {{
-                    # Funder: role is fundedBy of making
-                    ?making <https://w3id.org/OntoExhibit#fundedBy> ?role .
-                    BIND("Funder" AS ?role_type)
-                }}
-                UNION
-                {{
-                    # Lender: role is lentBy of making
-                    ?making <https://w3id.org/OntoExhibit#lentBy> ?role .
-                    BIND("Lender" AS ?role_type)
+                    {{
+                        # Exhibitor
+                        {{ ?making <https://w3id.org/OntoExhibit#hasExhibitingActant> ?role }}
+                        UNION
+                        {{ ?role <https://w3id.org/OntoExhibit#isExhibitingActantIn> ?making }}
+                        BIND("Exhibitor" AS ?role_type)
+                    }}
+                    UNION
+                    {{
+                        # Curator
+                        {{ ?making <https://w3id.org/OntoExhibit#hasCurator> ?role }}
+                        UNION
+                        {{ ?role <https://w3id.org/OntoExhibit#isCuratorOf> ?making }}
+                        BIND("Curator" AS ?role_type)
+                    }}
+                    UNION
+                    {{
+                        # Organizer
+                        {{ ?making <https://w3id.org/OntoExhibit#hasOrganizer> ?role }}
+                        UNION
+                        {{ ?role <https://w3id.org/OntoExhibit#isOrganizerOf> ?making }}
+                        BIND("Organizer" AS ?role_type)
+                    }}
+                    UNION
+                    {{
+                        # Funder
+                        {{ ?making <https://w3id.org/OntoExhibit#hasFunder> ?role }}
+                        UNION
+                        {{ ?role <https://w3id.org/OntoExhibit#isFunderOf> ?making }}
+                        BIND("Funder" AS ?role_type)
+                    }}
+                    UNION
+                    {{
+                        # Lender
+                        {{ ?making <https://w3id.org/OntoExhibit#hasLender> ?role }}
+                        UNION
+                        {{ ?role <https://w3id.org/OntoExhibit#isLenderOf> ?making }}
+                        BIND("Lender" AS ?role_type)
+                    }}
+                    
+                    # Get the exhibition from making
+                    ?making <https://w3id.org/OntoExhibit#madeExhibition> ?item_uri .
+                    BIND("exhibition" AS ?item_type)
                 }}
                 
-                # Get the exhibition from making
-                ?making <https://w3id.org/OntoExhibit#madeExhibition> ?exhibition_uri .
-                ?exhibition_uri rdfs:label ?exhibition_label .
+                # --- ARTWORK ROLES ---
+                UNION
+                {{
+                    # Author
+                    {{
+                        {{ ?prod <https://w3id.org/OntoExhibit#hasProductionAuthor> ?role }}
+                        UNION
+                        {{ ?role <https://w3id.org/OntoExhibit#isProductionAuthorOf> ?prod }}
+                        
+                        ?item_uri <https://w3id.org/OntoExhibit#hasProduction> ?prod .
+                        BIND("Author" AS ?role_type)
+                    }}
+                    UNION
+                    {{
+                        # Owner
+                        {{ ?item_uri <https://w3id.org/OntoExhibit#hasOwner> ?role }}
+                        UNION
+                        {{ ?role <https://w3id.org/OntoExhibit#isOwnerOf> ?item_uri }}
+                        BIND("Owner" AS ?role_type)
+                    }}
+                    BIND("artwork" AS ?item_type)
+                }}
+
+                ?item_uri rdfs:label ?item_label .
             }}
-            ORDER BY ?exhibition_label
+            ORDER BY ?item_label
         """
 
     COUNT_ACTANTS = f"""

@@ -69,6 +69,30 @@ async def all_classes(client: SparqlClient = Depends(get_sparql_client)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/sparql")
+async def execute_sparql(
+    request: dict,  # Accepting raw dict to handle potential various formats or just use a model
+    client: SparqlClient = Depends(get_sparql_client)
+):
+    query = request.get("query")
+    if not query:
+        raise HTTPException(status_code=400, detail="Query is required")
+    
+    try:
+        response = await client.query(query)
+        data = parse_sparql_response(response)
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/report")
+async def report_incident(
+    report: dict
+):
+    # For now, just print to console or log. In a real app, save to DB or send email.
+    print(f"INCIDENT REPORT: {report}")
+    return {"status": "received", "message": "Report submitted successfully"}
+
 @router.get("/get_object_any_type/{type}/{id:path}")
 async def get_object_any_type(
     type: str, id: str, client: SparqlClient = Depends(get_sparql_client)
@@ -76,7 +100,7 @@ async def get_object_any_type(
     type = type.lower()
     if type in ["exposicion", "exhibition"]:
         type = "exhibition"
-    elif type in ["persona", "person", "human_actant", "actant"]:
+    elif type in ["persona", "person", "human_actant", "actant", "actor"]:
         type = "human_actant"
     elif type in ["institucion", "institution"]:
         type = "institution"
@@ -89,7 +113,20 @@ async def get_object_any_type(
     try:
         response = await client.query(query)
         flat_data = parse_sparql_response(response)
-        grouped_data = group_by_uri(flat_data)  # Group by URI if needed
-        return {"data": grouped_data}
+        
+        # Pivot data: convert list of {p, o} to single dict {p: o}
+        # This matches what frontend expects (properties object)
+        properties = {}
+        for item in flat_data:
+            p = item.get("p")
+            o = item.get("o")
+            if p and o:
+                # If multiple values exist for same property, you might want a list, 
+                # but frontend seems to take first or simple value. 
+                # We'll just overwrite or keep first. Let's keep first for simplicity or overwrite?
+                # Frontend loop iterates keys, so we need keys to be predicates.
+                properties[p] = o
+                
+        return {"data": [properties]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

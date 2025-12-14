@@ -84,3 +84,34 @@ export async function getActorDetails(id: string) {
 export async function getArtworkDetails(id: string) {
   return fetchFromApi(`/get_artwork/${id}`);
 }
+
+export async function executeSparql(query: string) {
+  const url = new URL(`${API_URL}/sparql`);
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ query })
+  });
+  if (!response.ok) {
+     const errorData = await response.json().catch(() => ({}));
+     throw new Error(errorData.detail || `API Error: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+export async function submitReport(report: any) {
+  const url = new URL(`${API_URL}/report`);
+  const response = await fetch(url.toString(), {
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(report)
+  });
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.statusText}`);
+  }
+  return response.json();
+}

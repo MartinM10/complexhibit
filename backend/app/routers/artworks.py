@@ -117,7 +117,7 @@ async def get_artwork(id: str, client: SparqlClient = Depends(get_sparql_client)
     try:
         response = await client.query(query)
         data = parse_sparql_response(response)
-        return {"data": data}
+        return {"data": data, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

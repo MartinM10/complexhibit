@@ -117,12 +117,24 @@ async def all_exhibitions(
 
 @router.get("/get_exhibition/{id:path}")
 async def get_exhibition(id: str, client: SparqlClient = Depends(get_sparql_client)):
-    query = ExhibitionQueries.GET_EXHIBITION_BY_ID % id
+    query_main = ExhibitionQueries.GET_EXHIBITION_BY_ID % id
+    query_artworks = ExhibitionQueries.GET_EXHIBITION_ARTWORKS % id
     try:
-        response = await client.query(query)
-        data = parse_sparql_response(response)
-        # Usually get one, but data is a list
-        return {"data": data}
+        response_main = await client.query(query_main)
+        data_main = parse_sparql_response(response_main)
+        
+        # Optimize by checking if we even found the exhibition before fetching artworks
+        if data_main:
+             response_artworks = await client.query(query_artworks)
+             data_artworks = parse_sparql_response(response_artworks)
+             if data_artworks:
+                  data_main[0]["artworks"] = data_artworks[0].get("artworks", "")
+             else:
+                  data_main[0]["artworks"] = ""
+        
+        combined_query = query_main + "\n\n# SEPARATED ARTWORKS QUERY FOR OPTIMIZATION \n\n" + query_artworks
+        
+        return {"data": data_main, "sparql": combined_query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
