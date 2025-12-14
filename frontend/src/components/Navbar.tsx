@@ -1,9 +1,14 @@
 "use client";
 
+/**
+ * Navigation bar with authentication state.
+ */
+
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Home, Search, Code, FileText, Users, LogIn } from "lucide-react";
+import { Menu, X, Home, Search, Code, FileText, Users, LogIn, LogOut, Shield, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
@@ -15,6 +20,7 @@ const navigation = [
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, isAdmin, isLoading, logout } = useAuth();
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -24,6 +30,8 @@ export default function Navbar() {
             Exhibitium
           </Link>
         </div>
+
+        {/* Mobile menu button */}
         <div className="flex lg:hidden">
           <button
             type="button"
@@ -34,6 +42,8 @@ export default function Navbar() {
             <Menu className="h-6 w-6" aria-hidden="true" />
           </button>
         </div>
+
+        {/* Desktop navigation */}
         <div className="hidden lg:flex lg:gap-x-12">
           {navigation.map((item) => (
             <Link key={item.name} href={item.href} className="text-sm font-semibold leading-6 text-gray-900 hover:text-indigo-600 flex items-center gap-2">
@@ -41,11 +51,51 @@ export default function Navbar() {
               {item.name}
             </Link>
           ))}
+          {isAdmin && (
+            <Link href="/admin/users" className="text-sm font-semibold leading-6 text-purple-600 hover:text-purple-800 flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Admin
+            </Link>
+          )}
         </div>
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <Link href="/login" className="text-sm font-semibold leading-6 text-gray-900 flex items-center gap-2">
-            Log in <span aria-hidden="true">&rarr;</span>
-          </Link>
+
+        {/* Desktop auth buttons */}
+        <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-4">
+          {isLoading ? (
+            <div className="h-5 w-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          ) : isAuthenticated ? (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-medium">
+                  {user?.username?.[0]?.toUpperCase() || <User className="h-4 w-4" />}
+                </div>
+                <span className="font-medium">{user?.full_name || user?.username}</span>
+                {isAdmin && (
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Admin</span>
+                )}
+              </div>
+              <button
+                onClick={logout}
+                className="text-sm font-semibold leading-6 text-gray-600 hover:text-red-600 flex items-center gap-1"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <Link href="/auth/register" className="text-sm font-semibold leading-6 text-gray-600 hover:text-indigo-600">
+                Register
+              </Link>
+              <Link 
+                href="/auth/login" 
+                className="text-sm font-semibold leading-6 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-4 py-2 rounded-lg flex items-center gap-2"
+              >
+                <LogIn className="h-4 w-4" />
+                Log in
+              </Link>
+            </div>
+          )}
         </div>
       </nav>
       
@@ -67,6 +117,20 @@ export default function Navbar() {
           </div>
           <div className="mt-6 flow-root">
             <div className="-my-6 divide-y divide-gray-500/10">
+              {/* User info for mobile */}
+              {isAuthenticated && (
+                <div className="py-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 flex items-center justify-center text-white font-medium">
+                    {user?.username?.[0]?.toUpperCase() || '?'}
+                  </div>
+                  <div>
+                    <div className="font-medium text-gray-900">{user?.full_name || user?.username}</div>
+                    <div className="text-sm text-gray-500">{user?.email}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation links */}
               <div className="space-y-2 py-6">
                 {navigation.map((item) => (
                   <Link
@@ -76,20 +140,55 @@ export default function Navbar() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <div className="flex items-center gap-2">
-                        <item.icon className="h-5 w-5 text-gray-400" />
-                        {item.name}
+                      <item.icon className="h-5 w-5 text-gray-400" />
+                      {item.name}
                     </div>
                   </Link>
                 ))}
+                {isAdmin && (
+                  <Link
+                    href="/admin/users"
+                    className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-purple-600 hover:bg-purple-50"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-5 w-5" />
+                      Admin Panel
+                    </div>
+                  </Link>
+                )}
               </div>
+
+              {/* Auth buttons for mobile */}
               <div className="py-6">
-                <Link
-                  href="/login"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Log in
-                </Link>
+                {isAuthenticated ? (
+                  <button
+                    onClick={() => { logout(); setMobileMenuOpen(false); }}
+                    className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-red-600 hover:bg-red-50 w-full text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <LogOut className="h-5 w-5" />
+                      Log out
+                    </div>
+                  </button>
+                ) : (
+                  <>
+                    <Link
+                      href="/auth/login"
+                      className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      href="/auth/register"
+                      className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-indigo-600 hover:bg-indigo-50"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Create account
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
