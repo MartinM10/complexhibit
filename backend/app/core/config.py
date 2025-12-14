@@ -49,6 +49,9 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = "noreply@complexhibit.org"
+    
+    # Frontend URL (for email links)
+    FRONTEND_URL: str = "http://localhost:3000"
 
     class Config:
         env_file = ".env"

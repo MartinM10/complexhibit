@@ -12,8 +12,8 @@ from typing import Optional
 from app.core.config import settings
 
 
-# Frontend base URL for email links
-FRONTEND_URL = "http://localhost:3000"
+# Frontend base URL for email links (from environment)
+FRONTEND_URL = settings.FRONTEND_URL
 
 
 def send_email(
