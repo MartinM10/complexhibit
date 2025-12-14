@@ -13,10 +13,23 @@ services:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - USER_SERVICE_URL=${USER_SERVICE_URL}
       - DEPLOY_PATH=/api/v1
+      # Auth settings
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-complexhibit}:${POSTGRES_PASSWORD:-complexhibit}@postgres:5432/${POSTGRES_DB:-complexhibit_auth}
+      - JWT_SECRET=${JWT_SECRET:-change_this_in_production}
+      - JWT_ALGORITHM=HS256
+      - JWT_EXPIRE_MINUTES=60
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-martinjs@uma.es}
+      # SMTP settings
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-noreply@complexhibit.org}
     volumes:
       - ./backend/app:/app/app
     depends_on:
       - virtuoso
+      - postgres
     restart: unless-stopped
     networks:
       - complexhibit-network
@@ -66,8 +79,30 @@ services:
       retries: 5
       start_period: 60s
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: complexhibit-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-complexhibit}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-complexhibit}
+      - POSTGRES_DB=${POSTGRES_DB:-complexhibit_auth}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - complexhibit-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-complexhibit}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   virtuoso-data:
+    driver: local
+  postgres-data:
     driver: local
 
 networks:

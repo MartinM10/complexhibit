@@ -1,20 +1,44 @@
+"""
+Complexhibit API - FastAPI Application
+
+Provides REST API endpoints for the OntoExhibit knowledge graph.
+"""
+
+from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.database import create_tables
 from app.dependencies import get_current_user
-from app.routers import artworks, exhibitions, institutions, misc, persons
+from app.routers import artworks, exhibitions, institutions, misc, persons, auth
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan events."""
+    # Startup: create database tables
+    try:
+        create_tables()
+        print("Database tables created successfully")
+    except Exception as e:
+        print(f"Database initialization error (may be expected if DB not ready): {e}")
+    yield
+    # Shutdown: nothing to do
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="Bienvenido a la API de Complexhibit, tu puerta de entrada a una experiencia excepcional en el mundo "
-    "del arte y la cultura. Nuestra API te ofrece acceso a una rica colección de datos y recursos "
-    "relacionados con exposiciones, obras maestras y eventos culturales de todo el mundo. Descubre y "
-    "comparte información valiosa sobre exposiciones, artistas y mucho más, todo respaldado por una "
-    "ontología y principios de la web semántica para una experiencia enriquecida y conectada.",
+    description=(
+        "Bienvenido a la API de Complexhibit, tu puerta de entrada a una experiencia excepcional "
+        "en el mundo del arte y la cultura. Nuestra API te ofrece acceso a una rica colección de "
+        "datos y recursos relacionados con exposiciones, obras maestras y eventos culturales de "
+        "todo el mundo."
+    ),
     version=settings.VERSION,
     openapi_url=f"{settings.DEPLOY_PATH}/openapi.json",
     docs_url=f"{settings.DEPLOY_PATH}/docs",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -26,6 +50,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router, prefix=settings.DEPLOY_PATH)
 app.include_router(persons.router)
 app.include_router(institutions.router)
 app.include_router(exhibitions.router)
@@ -35,23 +60,17 @@ app.include_router(misc.router)
 
 @app.get(f"{settings.DEPLOY_PATH}/", tags=["root"])
 async def root():
-    return {"message": "Hello World"}
+    """Health check endpoint."""
+    return {"message": "Complexhibit API is running", "version": settings.VERSION}
 
 
 @app.get(f"{settings.DEPLOY_PATH}/users/me", response_model=dict, tags=["users"])
 async def read_users_me(current_user: dict = Depends(get_current_user)):
-    # This endpoint was in the original main.py, keeping it for compatibility
-    # It seems to call another service, but we'll just return the user info for now or mock it
-    # Original code:
-    # headers = {"HTTP_AUTHORIZATION": f"Bearer Token {current_user}"}
-    # url = f"{USER_SERVICE_URL}/{current_user}"
-    # response = requests.get(url, headers=headers)
-    # return response.json()
-
-    # Since we don't have the external service URL working in this env, we'll return a placeholder
+    """Get current user info (legacy endpoint)."""
     return {"user": current_user, "message": "User info retrieval mocked"}
 
 
 @app.get(f"{settings.DEPLOY_PATH}/secure-endpoint", tags=["users"])
 async def secure_endpoint(current_user: dict = Depends(get_current_user)):
+    """Test secure endpoint (legacy)."""
     return {"detail": "This is a secure endpoint", "user_id": current_user}
