@@ -316,7 +316,7 @@ class PersonQueries:
     """
 
     @staticmethod
-    def add_persona(persona: Persona) -> str:
+    def add_persona(persona: Persona) -> tuple:
         POST_PERSONA = f"INSERT DATA\n\t{{\n\t\tGRAPH <{settings.DEFAULT_GRAPH_URL}> {{\n"
 
         if persona.type:
@@ -394,6 +394,7 @@ class PersonQueries:
                     )
 
         if persona.death_date:
+            POST_PERSONA += f"\t\t{sujeto}> {uri_ontologia}hasDeath> {sujeto}/death> .\n"
             POST_PERSONA += f"\t\t{sujeto}/death> {uri_ontologia}isDeathOf> {sujeto}> .\n"
 
             fecha = validar_fecha(persona.death_date)
@@ -431,4 +432,5 @@ class PersonQueries:
             POST_PERSONA += f'\t\t{sujeto}> <https://w3id.org/OntoExhibit#gender> "{persona.gender}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
 
         POST_PERSONA += "\t}\n}"
-        return POST_PERSONA
+        uri = f"https://w3id.org/OntoExhibit#{quote('human_actant').lower()}/{hash_sha256(data_to_hash)}"
+        return POST_PERSONA, uri

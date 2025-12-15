@@ -16,8 +16,11 @@ import type { LinkedEntity } from "@/lib/types";
 interface ArtworkData {
   label?: string;
   label_starting_date?: string;
+  label_ending_date?: string;
   type?: string;
   topic?: string;
+  apelation?: string;
+  production_place?: string;
   author?: string;
   author_uri?: string;
   authors?: string;
@@ -85,11 +88,27 @@ export function ArtworkDetails({ artworkData }: ArtworkDetailsProps) {
       <SectionWrapper>
         <div className="grid gap-4">
           <div className="space-y-4">
+            {/* Alternative Name */}
+            {artwork?.apelation && (
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-gray-500 uppercase">Alternative Name</span>
+                <span className="text-gray-900 text-lg font-medium">{artwork.apelation}</span>
+              </div>
+            )}
+            
             {/* Creation Date */}
             {artwork?.label_starting_date && (
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-gray-500 uppercase">Creation Date</span>
                 <span className="text-gray-900 text-lg font-medium">{artwork.label_starting_date}</span>
+              </div>
+            )}
+            
+            {/* Production Place */}
+            {artwork?.production_place && (
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-gray-500 uppercase">Place of Creation</span>
+                <span className="text-gray-900 text-lg font-medium">{artwork.production_place}</span>
               </div>
             )}
             

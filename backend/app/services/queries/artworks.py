@@ -182,23 +182,116 @@ class ArtworkQueries:
     @staticmethod
     def add_obra(obra: ObraDeArte) -> str:
         if obra.type:
-            data_to_hash = f"{obra.name} - {obra.type}"
+            if isinstance(obra.type, list):
+                type_str = obra.type[0]
+            else:
+                type_str = obra.type
+            data_to_hash = f"{obra.name} - {type_str}"
         else:
             data_to_hash = f"{obra.name} - work manifestation"
 
         sujeto = f'{uri_ontologia}{quote("work_manifestation")}/{hash_sha256(data_to_hash)}'
+        sujeto_uri = f"<https://w3id.org/OntoExhibit#{quote('work_manifestation')}/{hash_sha256(data_to_hash)}>"
 
-        triples = add_any_type(obra, "WorkManifestation")
+        triples = []
         
+        # RDF type
+        triples.append(f"{sujeto}> <{RDF.type}> <https://w3id.org/OntoExhibit#Work_Manifestation> .")
+        
+        # Name/label
         triples.append(f'{sujeto}> <{RDFS.label}> "{obra.name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .')
 
+        # Title entity
         uri_title = f"{uri_ontologia}title/{hash_sha256(obra.name)}"
         triples.append(f"{uri_title}> <{RDF.type}> {uri_ontologia}Title> .")
         triples.append(f'{uri_title}> <{RDFS.label}> "{obra.name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .')
         triples.append(f"{sujeto}> {uri_ontologia}hasTitle> {uri_title}> .")
         triples.append(f"{uri_title}> {uri_ontologia}isTitleOf> {sujeto}> .")
 
-        # ... (Production logic omitted for brevity as it was commented out in original snippet shown)
+        # Apelation (alternative name)
+        if obra.apelation:
+            triples.append(f'{sujeto}> <https://w3id.org/OntoExhibit#apelation> "{obra.apelation}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+
+        # Type
+        if obra.type:
+            types = obra.type if isinstance(obra.type, list) else [obra.type]
+            for t in types:
+                triples.append(f'{sujeto}> <https://w3id.org/OntoExhibit#type> "{t}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+
+        # Production (for author, dates, and place)
+        if obra.author or obra.production_start_date or obra.production_end_date or obra.production_place:
+            prod_hash = hash_sha256(f"{obra.name}_production")
+            uri_prod = f"{uri_ontologia}production/{prod_hash}"
+            
+            triples.append(f"{uri_prod}> <{RDF.type}> {uri_ontologia}Production> .")
+            triples.append(f"{sujeto}> {uri_ontologia}hasProduction> {uri_prod}> .")
+            triples.append(f"{uri_prod}> {uri_ontologia}isProductionOf> {sujeto}> .")
+
+            # Author
+            if obra.author:
+                author_name = obra.author.get("name", "") if isinstance(obra.author, dict) else str(obra.author)
+                if author_name:
+                    # Create author role
+                    author_role_hash = hash_sha256(f"{author_name}_author_role")
+                    uri_author_role = f"{uri_ontologia}author_role/{author_role_hash}"
+                    
+                    # Create or reference human actant
+                    author_actant_hash = hash_sha256(f"{author_name} - person")
+                    uri_author_actant = f"{uri_ontologia}human_actant/{author_actant_hash}"
+                    
+                    triples.append(f"{uri_author_role}> <{RDF.type}> {uri_ontologia}Author_Role> .")
+                    triples.append(f"{uri_prod}> {uri_ontologia}hasProductionAuthor> {uri_author_role}> .")
+                    triples.append(f"{uri_author_role}> {uri_ontologia}isProductionAuthorOf> {uri_prod}> .")
+                    
+                    # Link role to actant
+                    triples.append(f"{uri_author_role}> {uri_ontologia}isRoleOf> {uri_author_actant}> .")
+                    triples.append(f"{uri_author_actant}> {uri_ontologia}hasRole> {uri_author_role}> .")
+                    
+                    # Create actant entity
+                    triples.append(f"{uri_author_actant}> <{RDF.type}> {uri_ontologia}Human_Actant> .")
+                    triples.append(f'{uri_author_actant}> <{RDFS.label}> "{author_name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+
+            # Production dates (time span)
+            if obra.production_start_date or obra.production_end_date:
+                timespan_hash = hash_sha256(f"{obra.name}_timespan")
+                uri_timespan = f"{uri_ontologia}time_range/{timespan_hash}"
+                
+                triples.append(f"{uri_timespan}> <{RDF.type}> {uri_ontologia}Time_Range> .")
+                triples.append(f"{uri_prod}> {uri_ontologia}hasTimeSpan> {uri_timespan}> .")
+                triples.append(f"{uri_timespan}> {uri_ontologia}isTimeSpanOf> {uri_prod}> .")
+
+                if obra.production_start_date:
+                    fecha = validar_fecha(obra.production_start_date)
+                    if fecha:
+                        fecha_str = fecha.strftime("%Y-%m-%d")
+                        date_hash = hash_sha256(fecha_str)
+                        uri_start_date = f"<https://w3id.org/OntoExhibit#exactdate/{date_hash}>"
+                        
+                        triples.append(f"{uri_start_date} <{RDF.type}> <https://w3id.org/OntoExhibit#ExactDate> .")
+                        triples.append(f'{uri_start_date} <{RDFS.label}> "{fecha_str}"^^<http://www.w3.org/2001/XMLSchema#date> .')
+                        triples.append(f"{uri_timespan}> {uri_ontologia}hasStartingDate> {uri_start_date} .")
+                        triples.append(f"{uri_start_date} {uri_ontologia}isStartingDateOf> {uri_timespan}> .")
+
+                if obra.production_end_date:
+                    fecha = validar_fecha(obra.production_end_date)
+                    if fecha:
+                        fecha_str = fecha.strftime("%Y-%m-%d")
+                        date_hash = hash_sha256(fecha_str)
+                        uri_end_date = f"<https://w3id.org/OntoExhibit#exactdate/{date_hash}>"
+                        
+                        triples.append(f"{uri_end_date} <{RDF.type}> <https://w3id.org/OntoExhibit#ExactDate> .")
+                        triples.append(f'{uri_end_date} <{RDFS.label}> "{fecha_str}"^^<http://www.w3.org/2001/XMLSchema#date> .')
+                        triples.append(f"{uri_timespan}> {uri_ontologia}hasEndingDate> {uri_end_date} .")
+                        triples.append(f"{uri_end_date} {uri_ontologia}isEndingDateOf> {uri_timespan}> .")
+
+            # Production place
+            if obra.production_place:
+                place_hash = hash_sha256(obra.production_place)
+                uri_place = f"{uri_ontologia}territorialEntity/{place_hash}"
+                
+                triples.append(f"{uri_place}> <{RDF.type}> {uri_ontologia}TerritorialEntity> .")
+                triples.append(f'{uri_place}> <{RDFS.label}> "{obra.production_place.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+                triples.append(f"{uri_prod}> <https://w3id.org/OntoExhibit#takesPlaceAt> {uri_place}> .")
         
         # Build final query
         query = f"INSERT DATA\n{{\n\tGRAPH <{settings.DEFAULT_GRAPH_URL}> {{\n"
@@ -206,7 +299,7 @@ class ArtworkQueries:
             query += f"\t\t{triple}\n"
         query += "\t}\n}"
         
-        return query
+        return query, f"https://w3id.org/OntoExhibit#{quote('work_manifestation')}/{hash_sha256(data_to_hash)}"
 
     GET_ARTWORK_BY_ID = f"""
         {PREFIXES}
@@ -216,6 +309,7 @@ class ArtworkQueries:
                (SAMPLE(?inner_apelation) as ?apelation)
                (SAMPLE(?inner_label_starting_date) as ?label_starting_date)
                (SAMPLE(?inner_label_ending_date) as ?label_ending_date)
+               (SAMPLE(?inner_production_place) as ?production_place)
                (GROUP_CONCAT(DISTINCT CONCAT(?inner_author, ":::", STR(?uri_author)); separator="|") as ?authors)
                (GROUP_CONCAT(DISTINCT CONCAT(?inner_owner, ":::", STR(?uri_owner)); separator="|") as ?owners)
                (GROUP_CONCAT(DISTINCT ?inner_topic; separator="|") as ?topic)
@@ -257,6 +351,10 @@ class ArtworkQueries:
                     ?tr <https://w3id.org/OntoExhibit#hasEndingDate> ?end_date .
                     ?end_date rdfs:label ?inner_label_ending_date .
                 }}
+                OPTIONAL {{
+                    ?prod <https://w3id.org/OntoExhibit#takesPlaceAt> ?place_uri .
+                    ?place_uri rdfs:label ?inner_production_place .
+                }}
             }}
             OPTIONAL {{
                 ?uri <https://w3id.org/OntoExhibit#isDisplayedAt> ?uri_exhibition .
@@ -269,4 +367,5 @@ class ArtworkQueries:
         }} 
         GROUP BY ?uri
     """
+
 

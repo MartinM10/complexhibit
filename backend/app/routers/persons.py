@@ -113,9 +113,9 @@ async def create_person(
 ):
     """Create a new person in the knowledge graph."""
     try:
-        query = PersonQueries.add_persona(persona)
+        query, uri = PersonQueries.add_persona(persona)
         response = await client.update(query)
-        return response
+        return {"uri": uri, "label": persona.name}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error adding person: {str(e)}")
 

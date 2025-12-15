@@ -15,13 +15,23 @@ def hash_sha256(data: str) -> Optional[str]:
 
 
 def validar_fecha(value: str) -> Optional[datetime.date]:
+    """Parse date string in multiple formats: YYYY-MM-DD, DD/MM/YYYY, or just YYYY."""
     valid_date = None
-    format_date_input = "%d/%m/%Y"
-    try:
-        if value:
-            valid_date = datetime.datetime.strptime(value, format_date_input).date()
-    except ValueError:
-        print(f"Error transforming date {value}")
+    formats = [
+        "%Y-%m-%d",    # ISO format (from HTML date inputs)
+        "%d/%m/%Y",    # European format
+        "%Y",          # Just year
+    ]
+    if value:
+        value = value.strip()
+        for fmt in formats:
+            try:
+                valid_date = datetime.datetime.strptime(value, fmt).date()
+                break
+            except ValueError:
+                continue
+        if not valid_date:
+            print(f"Error transforming date {value}")
     return valid_date
 
 
