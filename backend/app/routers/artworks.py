@@ -114,8 +114,8 @@ async def create_artwork(
 ):
     """Create a new artwork in the knowledge graph."""
     try:
-        query = ArtworkQueries.add_obra(obra)
+        query, uri = ArtworkQueries.add_obra(obra)
         response = await client.update(query)
-        return response
+        return {"uri": uri, "label": obra.name}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error adding artwork: {str(e)}")
