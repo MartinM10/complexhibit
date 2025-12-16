@@ -45,7 +45,7 @@ export default function Home() {
               Explore the World of Exhibitions
             </h1>
             <p className="mt-6 text-lg leading-8 text-gray-600">
-              Exhibitium is your gateway to a semantic web of cultural heritage. 
+              Complexhibit is your gateway to a semantic web of cultural heritage. 
               Discover connections between exhibitions, artworks, institutions, and people.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">

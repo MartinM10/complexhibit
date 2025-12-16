@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Exhibitium",
+  title: "Complexhibit",
   description: "Ontology-based exhibition explorer",
 };
 

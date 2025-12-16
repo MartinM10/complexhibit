@@ -27,7 +27,7 @@ export default function SparqlPage() {
     <div className="max-w-7xl mx-auto p-6 lg:px-8">
       <h1 className="text-3xl font-bold mb-6 text-gray-900">SPARQL Query Endpoint</h1>
       <p className="mb-4 text-sm text-gray-500">
-        Execute SPARQL queries against the Exhibitium Knowledge Graph.
+        Execute SPARQL queries against the Complexhibit Knowledge Graph.
       </p>
       <div className="mb-4">
         <textarea
