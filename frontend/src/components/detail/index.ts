@@ -36,5 +36,6 @@ export {
 
 // Institution components
 export { 
-  InstitutionSidebar 
+  InstitutionSidebar,
+  InstitutionDetails
 } from './InstitutionDetail';

@@ -46,7 +46,7 @@ export async function getTypesFromId(type: string, id: string) {
 
 export async function getRolesPlayed(type: string, id: string) {
   // Fetch roles/exhibitions where this actor participated
-  if (type === 'actor' || type === 'human_actant' || type === 'person') {
+  if (type === 'actor' || type === 'human_actant' || type === 'person' || type === 'actant') {
     return fetchFromApi(`/get_actor_roles/${id}`);
   }
   return Promise.resolve({ data: {} });
@@ -83,6 +83,22 @@ export async function getActorDetails(id: string) {
 
 export async function getArtworkDetails(id: string) {
   return fetchFromApi(`/get_artwork/${id}`);
+}
+
+export async function getInstitutionExhibitions(id: string) {
+  return fetchFromApi(`/get_institution_exhibitions/${id}`);
+}
+
+export async function getInstitutionDetails(id: string) {
+  return fetchFromApi(`/get_institution/${id}`);
+}
+
+export async function getInstitutionLenderExhibitions(id: string) {
+  return fetchFromApi(`/get_institution_lender_exhibitions/${id}`);
+}
+
+export async function getInstitutionOwnedArtworks(id: string) {
+  return fetchFromApi(`/get_institution_owned_artworks/${id}`);
 }
 
 export async function executeSparql(query: string) {

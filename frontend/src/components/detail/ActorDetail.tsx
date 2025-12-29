@@ -3,7 +3,7 @@
  */
 
 import { cleanLabel, unCamel } from "@/lib/utils";
-import { SidebarCard, SectionHeader, SectionWrapper, DefinitionList } from "./DetailUtils";
+import { SidebarCard, SectionHeader, SectionWrapper, DefinitionList, EntityList } from "./DetailUtils";
 import EntityLink from "@/components/EntityLink";
 
 interface RoleItem {
@@ -19,23 +19,28 @@ interface ActorRolesSidebarProps {
 export function ActorRolesSidebar({ roleData }: ActorRolesSidebarProps) {
   if (!roleData || Object.keys(roleData).length === 0) return null;
   
+  // Map common roles to specific colors to match Exhibition style
+  const getColorClass = (role: string) => {
+    const r = role.toLowerCase();
+    if (r.includes('curator') || r.includes('organizer')) return "text-indigo-600 hover:text-indigo-800";
+    if (r.includes('funder')) return "text-green-600 hover:text-green-800";
+    if (r.includes('lender') || r.includes('participant')) return "text-purple-600 hover:text-purple-800";
+    if (r.includes('exhibitor') || r.includes('author') || r.includes('artist')) return "text-pink-600 hover:text-pink-800";
+    return "text-gray-600 hover:text-gray-800";
+  };
+
   return (
     <SidebarCard title="Roles Played">
-      <div className="space-y-4">
+      <DefinitionList>
         {Object.entries(roleData).map(([role, items]: [string, any]) => (
-          <div key={role}>
-            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">{unCamel(role)}</h4>
-            <ul className="space-y-1">
-              {Array.isArray(items) && items.map((item: any, idx: number) => (
-                <li key={idx} className="text-sm text-gray-700 flex items-start gap-2">
-                  <span className="text-indigo-400 mt-1">•</span>
-                  <EntityLink uri={item.uri} label={item.label || item.uri} />
-                </li>
-              ))}
-            </ul>
-          </div>
+          <EntityList 
+            key={role} 
+            label={unCamel(role)} 
+            entities={items} 
+            colorClass={getColorClass(role)} 
+          />
         ))}
-      </div>
+      </DefinitionList>
     </SidebarCard>
   );
 }

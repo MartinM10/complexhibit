@@ -138,10 +138,11 @@ export interface InstitutionListItem extends Entity {
 
 export interface FilterConfig {
   key: string;
-  type: 'text' | 'number' | 'select';
+  type: 'text' | 'number' | 'select' | 'async_select' | 'date';
   placeholder: string;
   optionsKey?: string;
   width?: string;
+  entityType?: string;
 }
 
 export interface FilterOptions {
