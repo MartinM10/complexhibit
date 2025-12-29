@@ -20,7 +20,7 @@ export function getEntityLink(uri: string): { type: string; id: string } | null 
   
   // Map ontology types to frontend routes
   const typeMap: Record<string, string> = {
-    'human_actant': 'actor',
+    'human_actant': 'actant',
     'exhibition': 'exhibition',
     'work_manifestation': 'artwork',
     'institution': 'institution',
@@ -35,8 +35,8 @@ export function getEntityLink(uri: string): { type: string; id: string } | null 
     'educational_institution': 'institution',
     'interpretation_center': 'institution',
     'cultural_center': 'institution',
-    'group': 'actor',
-    'person': 'actor',
+    'group': 'actant',
+    'person': 'actant',
     'territorialentity': 'site',
     'territorial_entity': 'site',
   };
