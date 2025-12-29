@@ -68,8 +68,6 @@ See [frontend/README.md](frontend/README.md) for detailed frontend development i
 
 ## License
 
-**Software (Backend & Frontend)**: Proprietary - © 2025 iArtHis Lab. All Rights Reserved.
+This software is proprietary and owned by **iArtHis Lab**. © 2025 iArtHis Lab. All Rights Reserved.
 
-**Ontology (OntoExhibit/EDAAnOWL)**: Creative Commons (see ontology files for specific license).
-
-This platform is proprietary software developed by iArtHis Lab. For licensing inquiries, please contact the lab.
+For licensing inquiries, please contact iArtHis Lab.
