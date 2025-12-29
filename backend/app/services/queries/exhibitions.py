@@ -5,6 +5,7 @@ from rdflib import RDF, RDFS
 from app.core.config import settings
 from app.models.domain import Exposicion
 from app.services.queries.base import PREFIXES, URI_ONTOLOGIA, uri_ontologia
+from app.services.queries.utils import escape_sparql_string
 from app.utils.helpers import hash_sha256, validar_fecha
 
 
@@ -20,10 +21,11 @@ class ExhibitionQueries:
     @staticmethod
     def get_exposiciones_ids(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None, 
                              start_date: str = None, end_date: str = None, curator_name: str = None, place: str = None,
-                             organizer: str = None, sponsor: str = None, theme: str = None, exhibition_type: str = None) -> str:
+                             organizer: str = None, sponsor: str = None, theme: str = None, exhibition_type: str = None,
+                             participating_actant: str = None, displayed_artwork: str = None,
+                             curator: str = None, organizer_uri: str = None, sponsor_uri: str = None) -> str:
         
         filters = []
-        # Dynamic joins for filtering only
         inner_joins = []
 
         # Always bind label for sorting
@@ -46,9 +48,42 @@ class ExhibitionQueries:
                 }
             """)
         
+        if participating_actant:
+             inner_joins.append(f"""
+                ?uri <https://w3id.org/OntoExhibit#hasExhibitionMaking> ?making_pa .
+                ?making_pa ?role_prop_pa ?role_pa .
+                <{participating_actant}> <https://w3id.org/OntoExhibit#hasRole> ?role_pa .
+             """)
+
+        if curator:
+             inner_joins.append(f"""
+                ?uri <https://w3id.org/OntoExhibit#hasExhibitionMaking> ?making_c .
+                ?making_c <https://w3id.org/OntoExhibit#hasCurator> ?curator_role_c .
+                <{curator}> <https://w3id.org/OntoExhibit#hasRole> ?curator_role_c .
+             """)
+
+        if organizer_uri:
+             inner_joins.append(f"""
+                ?uri <https://w3id.org/OntoExhibit#hasExhibitionMaking> ?making_o .
+                ?making_o <https://w3id.org/OntoExhibit#hasOrganizer> ?organizer_role_o .
+                <{organizer_uri}> <https://w3id.org/OntoExhibit#hasRole> ?organizer_role_o .
+             """)
+             
+        if sponsor_uri:
+             inner_joins.append(f"""
+                ?uri <https://w3id.org/OntoExhibit#hasExhibitionMaking> ?making_s .
+                ?making_s <https://w3id.org/OntoExhibit#hasFunder> ?sponsor_role_s .
+                <{sponsor_uri}> <https://w3id.org/OntoExhibit#hasRole> ?sponsor_role_s .
+             """)
+
+        if displayed_artwork:
+             inner_joins.append(f"""
+                ?uri <https://w3id.org/OntoExhibit#displays> <{displayed_artwork}> .
+             """)
+
         joined_dates = False
         if start_date:
-            filters.append(f'regex(?inner_label_starting_date, "{start_date}", "i")')
+            filters.append(f'regex(str(?inner_label_starting_date), "{start_date}", "i")')
             if not joined_dates:
                 inner_joins.append("""
                     OPTIONAL { ?uri <https://w3id.org/OntoExhibit#hasOpening> ?opening_sd . ?opening_sd <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_opening_sd . ?time_opening_sd rdfs:label ?inner_label_starting_date }
@@ -56,7 +91,7 @@ class ExhibitionQueries:
                 joined_dates = True
 
         if end_date:
-            filters.append(f'regex(?inner_label_ending_date, "{end_date}", "i")')
+            filters.append(f'regex(str(?inner_label_ending_date), "{end_date}", "i")')
             inner_joins.append("""
                     OPTIONAL { ?uri <https://w3id.org/OntoExhibit#hasClosing> ?closing_ed . ?closing_ed <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_closing_ed . ?time_closing_ed rdfs:label ?inner_label_ending_date }
             """)
@@ -110,12 +145,9 @@ class ExhibitionQueries:
         
         pagination_filter = ""
         if last_label and last_uri:
-            safe_label = last_label.replace('"', '\\"')
+            # Use URI-only comparison which is safe from special character issues
             pagination_filter = f"""
-                FILTER (
-                    lcase(?inner_label) > lcase("{safe_label}") || 
-                    (lcase(?inner_label) = lcase("{safe_label}") && ?uri > <{last_uri}>)
-                )
+                FILTER (?uri > <{last_uri}>)
             """
 
         inner_joins_str = "\n".join(inner_joins)
@@ -129,9 +161,10 @@ class ExhibitionQueries:
                 {filter_clause}
                 {pagination_filter}
             }}
-            ORDER BY lcase(?inner_label) ?uri
+            ORDER BY ?uri
             LIMIT {limit}
         """
+
 
     @staticmethod
     def get_exposiciones_details(uris: list[str]) -> str:
@@ -139,7 +172,6 @@ class ExhibitionQueries:
             return ""
         
         # Escape URIs properly and join them for the VALUES clause or FILTER IN
-        # VALUES is often faster for a fixed list
         uris_str = " ".join([f"<{u}>" for u in uris])
         
         # We need to Select everything and Aggregate
@@ -154,6 +186,8 @@ class ExhibitionQueries:
                    (GROUP_CONCAT(DISTINCT CONCAT(?inner_funder, ":::", STR(?actor_f)); separator="|") as ?funders) 
                    (GROUP_CONCAT(DISTINCT ?inner_theme_label; separator="|") as ?theme_label) 
                    (GROUP_CONCAT(DISTINCT ?inner_type_label; separator="|") as ?type_label)
+                   (GROUP_CONCAT(DISTINCT CONCAT(?inner_pa_name, ":::", STR(?actor_pa)); separator="|") as ?participating_actants)
+                   (GROUP_CONCAT(DISTINCT CONCAT(?inner_art_label, ":::", STR(?artwork)); separator="|") as ?exhibited_artworks)
             WHERE 
             {{
                 VALUES ?uri {{ {uris_str} }}
@@ -208,6 +242,19 @@ class ExhibitionQueries:
                         ?actor_f <https://w3id.org/OntoExhibit#hasRole> ?funder_uri .
                         ?actor_f rdfs:label ?inner_funder
                     }}
+                    # Generic Participating Actant (any role)
+                    OPTIONAL {{
+                        ?making ?p_pa ?role_pa .
+                        ?actor_pa <https://w3id.org/OntoExhibit#hasRole> ?role_pa .
+                        ?actor_pa rdfs:label ?inner_pa_name .
+                        # Filter to only Role subclasses if needed, but safe here
+                    }}
+                }}
+                
+                # Exhibited Artworks
+                OPTIONAL {{
+                     ?uri <https://w3id.org/OntoExhibit#displays> ?artwork .
+                     ?artwork rdfs:label ?inner_art_label
                 }}
             }} 
             GROUP BY ?uri
@@ -344,8 +391,6 @@ class ExhibitionQueries:
                 ?uri <https://w3id.org/OntoExhibit#type> ?type_label .
             }}
 
-
-
             # Link to ExhibitionMaking
             OPTIONAL {{
                 ?uri <https://w3id.org/OntoExhibit#hasExhibitionMaking> ?making .
@@ -353,35 +398,35 @@ class ExhibitionQueries:
                 # Curator logic
                 OPTIONAL {{
                     ?making <https://w3id.org/OntoExhibit#hasCurator> ?curator .
-                    ?curator <https://w3id.org/OntoExhibit#isRoleOf> ?curator_person .
+                    ?curator_person <https://w3id.org/OntoExhibit#hasRole> ?curator .
                     ?curator_person rdfs:label ?curator_name
                 }}
 
                 # Organizer logic
                 OPTIONAL {{
                     ?making <https://w3id.org/OntoExhibit#hasOrganizer> ?org_uri .
-                    ?org_uri <https://w3id.org/OntoExhibit#isRoleOf> ?actor_org .
+                    ?actor_org <https://w3id.org/OntoExhibit#hasRole> ?org_uri .
                     ?actor_org rdfs:label ?organizer
                 }}
 
                 # Lender logic
                 OPTIONAL {{
                     ?making <https://w3id.org/OntoExhibit#hasLender> ?lender_role .
-                    ?lender_role <https://w3id.org/OntoExhibit#isRoleOf> ?actor_lender .
+                    ?actor_lender <https://w3id.org/OntoExhibit#hasRole> ?lender_role .
                     ?actor_lender rdfs:label ?lender
                 }}
 
                 # Funder logic (was Sponsor)
                 OPTIONAL {{
                     ?making <https://w3id.org/OntoExhibit#hasFunder> ?funder_role .
-                    ?funder_role <https://w3id.org/OntoExhibit#isRoleOf> ?funder_person .
+                    ?funder_person <https://w3id.org/OntoExhibit#hasRole> ?funder_role .
                     ?funder_person rdfs:label ?funder
                 }}
 
                 # Exhibiting Actants (artists exhibiting at the exhibition)
                 OPTIONAL {{
                     ?making <https://w3id.org/OntoExhibit#hasExhibitingActant> ?exhibitor_role .
-                    ?exhibitor_role <https://w3id.org/OntoExhibit#isRoleOf> ?exhibitor_actor .
+                    ?exhibitor_actor <https://w3id.org/OntoExhibit#hasRole> ?exhibitor_role .
                     ?exhibitor_actor rdfs:label ?exhibitor_name
                 }}
             }}

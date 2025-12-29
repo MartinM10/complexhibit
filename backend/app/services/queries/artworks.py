@@ -5,7 +5,7 @@ from rdflib import RDF, RDFS
 from app.core.config import settings
 from app.models.domain import ObraDeArte
 from app.services.queries.base import PREFIXES, URI_ONTOLOGIA, uri_ontologia
-from app.services.queries.utils import add_any_type
+from app.services.queries.utils import add_any_type, escape_sparql_string
 from app.utils.helpers import hash_sha256, validar_fecha
 
 
@@ -21,7 +21,8 @@ class ArtworkQueries:
     @staticmethod
     def get_obras_ids(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None, 
                       author_name: str = None, type_filter: str = None, start_date: str = None, owner: str = None,
-                      topic: str = None, exhibition: str = None) -> str:
+                      topic: str = None, exhibition: str = None,
+                      author_uri: str = None, owner_uri: str = None, exhibition_uri: str = None) -> str:
         
         filters = []
         inner_joins = []
@@ -54,11 +55,11 @@ class ArtworkQueries:
                  inner_joins.append("OPTIONAL { ?uri <https://w3id.org/OntoExhibit#type> ?inner_type . }")
 
         if start_date:
-             filters.append(f'regex(?inner_label_starting_date, "{start_date}", "i")')
+             filters.append(f'regex(str(?inner_label_starting_date), "{start_date}", "i")')
              inner_joins.append("""
                 OPTIONAL {
                     ?uri <https://w3id.org/OntoExhibit#hasProduction> ?prod_sd .
-                    OPTIONAL { ?prod_sd <https://w3id.org/OntoExhibit#hasTimeSpan> ?tr_sd . ?date_sd <https://w3id.org/OntoExhibit#isStartingDateOf> ?tr_sd . ?date_sd rdfs:label ?inner_label_starting_date . }
+                    OPTIONAL { ?prod_sd <https://w3id.org/OntoExhibit#hasTimeSpan> ?tr_sd . ?tr_sd <https://w3id.org/OntoExhibit#hasStartingDate> ?date_sd . ?date_sd rdfs:label ?inner_label_starting_date . }
                 }
              """)
 
@@ -84,16 +85,31 @@ class ArtworkQueries:
                 OPTIONAL { ?uri <https://w3id.org/OntoExhibit#isDisplayedAt> ?uri_exhibition_ex . ?uri_exhibition_ex rdfs:label ?inner_exhibition }
              """)
 
+        if author_uri:
+             inner_joins.append(f"""
+                ?uri <https://w3id.org/OntoExhibit#hasProduction> ?prod_au .
+                ?prod_au <https://w3id.org/OntoExhibit#hasProductionAuthor> ?author_role_au .
+                <{author_uri}> <https://w3id.org/OntoExhibit#hasRole> ?author_role_au .
+             """)
+
+        if owner_uri:
+             inner_joins.append(f"""
+                ?uri <https://w3id.org/OntoExhibit#hasOwner> ?owner_role_ow .
+                <{owner_uri}> <https://w3id.org/OntoExhibit#hasRole> ?owner_role_ow .
+             """)
+
+        if exhibition_uri:
+             inner_joins.append(f"""
+                ?uri <https://w3id.org/OntoExhibit#isDisplayedAt> <{exhibition_uri}> .
+             """)
+
         filter_clause = f"FILTER ({' && '.join(filters)})" if filters else ""
         
         pagination_filter = ""
         if last_label and last_uri:
-            safe_label = last_label.replace('"', '\\"')
+            # Use URI-only comparison which is safe from special character issues
             pagination_filter = f"""
-                FILTER (
-                    lcase(?inner_label) > lcase("{safe_label}") || 
-                    (lcase(?inner_label) = lcase("{safe_label}") && ?uri > <{last_uri}>)
-                )
+                FILTER (?uri > <{last_uri}>)
             """
 
         inner_joins_str = "\n".join(inner_joins)
@@ -108,7 +124,7 @@ class ArtworkQueries:
                 {filter_clause}
                 {pagination_filter}
             }} 
-            ORDER BY lcase(?inner_label) ?uri
+            ORDER BY ?uri
             LIMIT {limit}
         """
 
@@ -146,14 +162,14 @@ class ArtworkQueries:
 
                 OPTIONAL {{
                     ?uri <https://w3id.org/OntoExhibit#hasOwner> ?uri_owner .
-                    ?uri_owner <https://w3id.org/OntoExhibit#isRoleOf> ?uri_owner_role .
+                    ?uri_owner_role <https://w3id.org/OntoExhibit#hasRole> ?uri_owner .
                     ?uri_owner_role rdfs:label ?inner_owner
                 }}
                 OPTIONAL {{
                      ?uri <https://w3id.org/OntoExhibit#hasProduction> ?prod .
                      OPTIONAL {{
                         ?prod <https://w3id.org/OntoExhibit#hasProductionAuthor> ?author_role .
-                        ?author_role <https://w3id.org/OntoExhibit#isRoleOf> ?uri_author .
+                        ?uri_author <https://w3id.org/OntoExhibit#hasRole> ?author_role .
                         ?uri_author rdfs:label ?inner_author .
                      }}
                      OPTIONAL {{
@@ -331,14 +347,14 @@ class ArtworkQueries:
             
             OPTIONAL {{
                 ?uri <https://w3id.org/OntoExhibit#hasOwner> ?owner_role .
-                ?owner_role <https://w3id.org/OntoExhibit#isRoleOf> ?uri_owner .
+                ?uri_owner <https://w3id.org/OntoExhibit#hasRole> ?owner_role .
                 ?uri_owner rdfs:label ?inner_owner
             }}
             OPTIONAL {{
                 ?uri <https://w3id.org/OntoExhibit#hasProduction> ?prod .
                 OPTIONAL {{
                     ?prod <https://w3id.org/OntoExhibit#hasProductionAuthor> ?author_role .
-                    ?author_role <https://w3id.org/OntoExhibit#isRoleOf> ?uri_author .
+                    ?uri_author <https://w3id.org/OntoExhibit#hasRole> ?author_role .
                     ?uri_author rdfs:label ?inner_author
                 }}
                 OPTIONAL {{

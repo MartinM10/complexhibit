@@ -111,3 +111,39 @@ async def create_institution(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error adding institution: {str(e)}")
+
+
+@router.get("/get_institution_exhibitions/{id:path}")
+async def get_institution_exhibitions(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get exhibitions hosted by or organized by the institution."""
+    query = InstitutionQueries.GET_HOSTED_EXHIBITIONS % id
+    try:
+        response = await client.query(query)
+        data = parse_sparql_response(response)
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_institution_lender_exhibitions/{id:path}")
+async def get_institution_lender_exhibitions(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get exhibitions where the institution was a lender."""
+    query = InstitutionQueries.GET_LENDER_EXHIBITIONS % id
+    try:
+        response = await client.query(query)
+        data = parse_sparql_response(response)
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_institution_owned_artworks/{id:path}")
+async def get_institution_owned_artworks(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get artworks owned by the institution."""
+    query = InstitutionQueries.GET_OWNED_ARTWORKS % id
+    try:
+        response = await client.query(query)
+        data = parse_sparql_response(response)
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

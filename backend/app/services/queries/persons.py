@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.models.domain import Persona
 from app.services.queries.base import OBJECT_PROPERTIES, PREFIXES, URI_ONTOLOGIA, uri_ontologia
 from app.utils.helpers import convertir_fecha, hash_sha256, pascal_case_to_camel_case, validar_fecha
+from app.services.queries.utils import escape_sparql_string
 
 
 class PersonQueries:
@@ -48,7 +49,7 @@ class PersonQueries:
             """)
 
         if birth_date:
-            filters.append(f'regex(?inner_birth_date_label, "{birth_date}", "i")')
+            filters.append(f'regex(str(?inner_birth_date_label), "{birth_date}", "i")')
             inner_joins.append("""
                 OPTIONAL {
                     ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth_bd .
@@ -57,7 +58,7 @@ class PersonQueries:
             """)
             
         if death_date:
-            filters.append(f'regex(?inner_death_date_label, "{death_date}", "i")')
+            filters.append(f'regex(str(?inner_death_date_label), "{death_date}", "i")')
             inner_joins.append("""
                 OPTIONAL {
                     ?uri <https://w3id.org/OntoExhibit#died> ?death_dd .
@@ -78,12 +79,9 @@ class PersonQueries:
         
         pagination_filter = ""
         if last_label and last_uri:
-            safe_label = last_label.replace('"', '\\"')
+            # Use URI-only comparison which is safe from special character issues
             pagination_filter = f"""
-                FILTER (
-                    lcase(?label) > lcase("{safe_label}") || 
-                    (lcase(?label) = lcase("{safe_label}") && ?uri > <{last_uri}>)
-                )
+                FILTER (?uri > <{last_uri}>)
             """
 
         inner_joins_str = "\n".join(inner_joins)
@@ -111,7 +109,7 @@ class PersonQueries:
                 {filter_clause}
                 {pagination_filter}
             }}
-            ORDER BY lcase(?label) ?uri
+            ORDER BY ?uri
             LIMIT {limit}
         """
 

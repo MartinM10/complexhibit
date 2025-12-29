@@ -7,6 +7,25 @@ from app.services.queries.base import OBJECT_PROPERTIES, URI_ONTOLOGIA, uri_onto
 from app.utils.helpers import convertir_fecha, hash_sha256, pascal_case_to_camel_case
 
 
+def escape_sparql_string(value: str) -> str:
+    """
+    Escape special characters for SPARQL string literals.
+    
+    According to SPARQL spec, inside a string literal delimited by double quotes:
+    - Backslash (\) must be escaped as \\
+    - Double quote (") must be escaped as \"
+    - Newline, carriage return, tab should also be escaped
+    """
+    if not value:
+        return ""
+    # Order matters: escape backslashes first, then quotes
+    result = value.replace('\\', '\\\\')  # Escape backslashes
+    result = result.replace('"', '\\"')    # Escape double quotes
+    result = result.replace('\n', '\\n')   # Escape newlines
+    result = result.replace('\r', '\\r')   # Escape carriage returns
+    result = result.replace('\t', '\\t')   # Escape tabs
+    return result
+
 def generate_sentences(arg, sujeto) -> list:
     sentences = []
     # arg is a Pydantic model, so we can use .dict() or iterate over fields

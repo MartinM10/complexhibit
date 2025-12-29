@@ -56,7 +56,12 @@ async def all_exhibitions(
     organizer: Optional[str] = None,
     sponsor: Optional[str] = None,
     theme: Optional[str] = None,
-    type: Optional[str] = None,
+    exhibition_type: Optional[str] = None,
+    participating_actant: Optional[str] = None,
+    displayed_artwork: Optional[str] = None,
+    curator: Optional[str] = None,
+    organizer_uri: Optional[str] = None,
+    sponsor_uri: Optional[str] = None,
     client: SparqlClient = Depends(get_sparql_client)
 ):
     """
@@ -84,7 +89,12 @@ async def all_exhibitions(
         organizer=organizer,
         sponsor=sponsor,
         theme=theme,
-        exhibition_type=type
+        exhibition_type=exhibition_type,
+        participating_actant=participating_actant,
+        displayed_artwork=displayed_artwork,
+        curator=curator,
+        organizer_uri=organizer_uri,
+        sponsor_uri=sponsor_uri
     )
     
     # Use shared pagination utility

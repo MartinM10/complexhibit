@@ -1,7 +1,7 @@
 from app.core.config import settings
 from app.models.domain import Institucion
 from app.services.queries.base import PREFIXES
-from app.services.queries.utils import add_any_type
+from app.services.queries.utils import add_any_type, escape_sparql_string
 from app.utils.helpers import generate_hashed_id
 
 
@@ -30,12 +30,9 @@ class InstitutionQueries:
         
         pagination_filter = ""
         if last_label and last_uri:
-            safe_label = last_label.replace('"', '\\"')
+            # Use URI-only comparison which is safe from special character issues
             pagination_filter = f"""
-                FILTER (
-                    lcase(?label) > lcase("{safe_label}") || 
-                    (lcase(?label) = lcase("{safe_label}") && ?uri > <{last_uri}>)
-                )
+                FILTER (?uri > <{last_uri}>)
             """
 
         return f"""
@@ -61,7 +58,7 @@ class InstitutionQueries:
                 {filter_clause}
                 {pagination_filter}
             }} 
-            ORDER BY lcase(?label) ?uri
+            ORDER BY ?uri
             LIMIT {limit}
         """
 
@@ -96,7 +93,8 @@ class InstitutionQueries:
 
     GET_INSTITUTION = f"""
         {PREFIXES}
-        SELECT DISTINCT ?label ?uri ?apelation ?label_place ?place_uri
+        SELECT DISTINCT ?label ?uri ?apelation ?label_place ?place_uri 
+                        ?ownershipType ?email ?telephone ?uriHtml
         WHERE 
         {{
             {{
@@ -123,7 +121,89 @@ class InstitutionQueries:
                 ?place_uri rdfs:label ?label_place
             }}
             OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#apelation> ?apelation }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#ownershipType> ?ownershipType }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#email> ?email }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#telephone> ?telephone }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#uriHtml> ?uriHtml }}
         }}
+    """
+
+    GET_HOSTED_EXHIBITIONS = f"""
+        {PREFIXES}
+        SELECT DISTINCT ?uri (SAMPLE(?label) as ?label) (SAMPLE(?start_date) as ?start_date) (SAMPLE(?role) as ?role)
+        WHERE 
+        {{
+            ?inst_uri rdfs:label ?inst_label .
+            FILTER (regex(str(?inst_uri), "%s", "i"))
+            
+            {{
+                ?uri <https://w3id.org/OntoExhibit#hasVenue> ?inst_uri .
+                BIND("Venue" AS ?role)
+            }}
+            UNION
+            {{
+                ?uri <https://w3id.org/OntoExhibit#hasExhibitionMaking> ?making .
+                ?making <https://w3id.org/OntoExhibit#hasOrganizer> ?role_node .
+                ?role_node <https://w3id.org/OntoExhibit#isRoleOf> ?inst_uri .
+                BIND("Organizer" AS ?role)
+            }}
+            
+            ?uri rdf:type <https://w3id.org/OntoExhibit#Exhibition> .
+            
+            OPTIONAL {{ ?uri rdfs:label ?label }}
+            
+            OPTIONAL {{
+                ?uri <https://w3id.org/OntoExhibit#hasOpening> ?opening .
+                ?opening <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_opening .
+                ?time_opening rdfs:label ?start_date
+            }}
+        }} GROUP BY ?uri
+    """
+
+    # Query to find exhibitions where institution was a lender
+    GET_LENDER_EXHIBITIONS = f"""
+        {PREFIXES}
+        SELECT DISTINCT ?uri (SAMPLE(?label) as ?label) (SAMPLE(?start_date) as ?start_date)
+        WHERE 
+        {{
+            ?inst_uri rdfs:label ?inst_label .
+            FILTER (regex(str(?inst_uri), "%s", "i"))
+            
+            # Institution has a lender role
+            ?inst_uri <https://w3id.org/OntoExhibit#hasRole> ?lender_role .
+            ?lender_role <https://w3id.org/OntoExhibit#isLenderOf> ?making .
+            ?making <https://w3id.org/OntoExhibit#isExhibitionMakingOf> ?uri .
+            
+            ?uri rdf:type <https://w3id.org/OntoExhibit#Exhibition> .
+            
+            OPTIONAL {{ ?uri rdfs:label ?label }}
+            
+            OPTIONAL {{
+                ?uri <https://w3id.org/OntoExhibit#hasOpening> ?opening .
+                ?opening <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_opening .
+                ?time_opening rdfs:label ?start_date
+            }}
+        }} GROUP BY ?uri
+    """
+
+    # Query to find artworks owned by the institution
+    GET_OWNED_ARTWORKS = f"""
+        {PREFIXES}
+        SELECT DISTINCT ?uri (SAMPLE(?label) as ?label) (SAMPLE(?type) as ?type)
+        WHERE 
+        {{
+            ?inst_uri rdfs:label ?inst_label .
+            FILTER (regex(str(?inst_uri), "%s", "i"))
+            
+            # Institution has an owner role for the artwork
+            ?inst_uri <https://w3id.org/OntoExhibit#hasRole> ?owner_role .
+            ?uri <https://w3id.org/OntoExhibit#hasOwner> ?owner_role .
+            
+            ?uri rdf:type <https://w3id.org/OntoExhibit#Work_Manifestation> .
+            
+            OPTIONAL {{ ?uri rdfs:label ?label }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#type> ?type }}
+        }} GROUP BY ?uri
     """
 
     @staticmethod
