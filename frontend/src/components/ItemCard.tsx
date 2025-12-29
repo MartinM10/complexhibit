@@ -9,66 +9,96 @@ interface ItemCardProps {
   imageUrl?: string;
 }
 
-export default function ItemCard({ uri, label, description, type, imageUrl, subtitle, extra }: any) {
+export default function ItemCard({ uri, label, description, type, imageUrl, subtitle, extra, icon: Icon, color }: any) {
   // Extract ID from URI or use a safe fallback
   const id = uri.split("/").pop() || "";
   
   return (
     <Link 
       href={`/detail/${type}/${id}`}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all hover:-translate-y-1 hover:border-indigo-300"
+      className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:border-transparent hover:ring-2 hover:ring-indigo-400/50"
     >
+      {/* Gradient overlay on hover */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10" />
+      
       {imageUrl ? (
-        <div className="aspect-h-3 aspect-w-4 bg-gray-200 sm:aspect-none sm:h-48 relative">
+        <div className="aspect-h-3 aspect-w-4 bg-gradient-to-br from-gray-100 to-gray-200 sm:aspect-none sm:h-48 relative overflow-hidden">
            <img
             src={imageUrl}
             alt={label}
-            className="h-full w-full object-cover object-center sm:h-full sm:w-full transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover object-center sm:h-full sm:w-full transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
           />
-           <div className="absolute top-2 right-2 bg-black/60 text-white text-[10px] uppercase font-bold px-2 py-1 rounded-md backdrop-blur-sm">
+           <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+           <div className="absolute top-3 right-3 glass text-gray-800 text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg backdrop-blur-md shadow-lg border border-white/40">
              {type}
            </div>
         </div>
       ) : (
-        <div className="aspect-h-3 aspect-w-4 bg-gray-100 sm:aspect-none sm:h-48 relative overflow-hidden">
-             <img 
-                src={`https://placehold.co/600x400/f1f5f9/475569?text=${type.charAt(0).toUpperCase() + type.slice(1)}`}
-                alt="Placeholder"
-                className="h-full w-full object-cover opacity-80 hover:opacity-100 transition-opacity"
-             />
-             <div className="absolute top-2 right-2 bg-white/80 text-gray-800 text-[10px] uppercase font-bold px-2 py-1 rounded-md backdrop-blur-sm">
+        Icon ? (
+          <div className={`aspect-h-3 aspect-w-4 sm:aspect-none sm:h-48 relative overflow-hidden flex items-center justify-center ${color ? `${color} bg-opacity-10` : "bg-gradient-to-br from-gray-50 to-gray-100"} transition-all duration-500 group-hover:bg-opacity-20`}>
+             <Icon className={`h-20 w-20 ${color ? color.replace("bg-", "text-") : "text-gray-400"} transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 opacity-80`} />
+             {/* Decorative circles */}
+             <div className={`absolute top-0 left-0 w-32 h-32 ${color ? color : "bg-gray-300"} rounded-full opacity-5 -translate-x-16 -translate-y-16 group-hover:scale-150 transition-transform duration-700`} />
+             <div className={`absolute bottom-0 right-0 w-24 h-24 ${color ? color : "bg-gray-300"} rounded-full opacity-5 translate-x-12 translate-y-12 group-hover:scale-150 transition-transform duration-700`} />
+             <div className="absolute top-3 right-3 glass-dark text-white text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg backdrop-blur-md shadow-lg border border-white/20">
                {type}
              </div>
-        </div>
+          </div>
+        ) : (
+          <div className="aspect-h-3 aspect-w-4 bg-gradient-to-br from-gray-50 to-gray-100 sm:aspect-none sm:h-48 relative overflow-hidden">
+               <img 
+                  src={`https://placehold.co/600x400/f1f5f9/475569?text=${type.charAt(0).toUpperCase() + type.slice(1)}`}
+                  alt="Placeholder"
+                  className="h-full w-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105"
+               />
+               <div className="absolute top-3 right-3 glass text-gray-800 text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg backdrop-blur-md shadow-lg border border-white/40">
+                 {type}
+               </div>
+          </div>
+        )
       )}
       
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="text-lg font-bold text-gray-900 group-hover:text-indigo-600 line-clamp-2 leading-tight mb-1">
+      <div className="flex flex-1 flex-col p-6 relative z-20">
+        <h3 className="text-xl font-bold text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-indigo-600 group-hover:to-purple-600 group-hover:bg-clip-text line-clamp-2 leading-tight mb-2 transition-all duration-300">
           {label}
         </h3>
         
         {subtitle && (
-            <p className="text-xs font-medium text-indigo-500 mb-2 uppercase tracking-wide">
+            <p className="text-xs font-semibold text-indigo-600 mb-3 uppercase tracking-wider bg-indigo-50 px-3 py-1 rounded-full inline-block self-start">
                 {subtitle}
             </p>
         )}
 
         {description && (
-          <p className="text-sm text-gray-500 line-clamp-3 mb-3 flex-1">{description}</p>
+          <p className="text-sm text-gray-600 line-clamp-3 mb-4 flex-1 leading-relaxed">{description}</p>
         )}
         
         {extra && (
-            <div className="mt-auto pt-3 border-t border-gray-100 text-xs text-gray-500 flex flex-wrap gap-2">
-                {Object.entries(extra).map(([k, v]) => (
-                    v ? <span key={k} className="bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
-                        <span className="font-semibold text-gray-700 mr-1">{k}:</span>{String(v).split('|').join(', ')}
-                    </span> : null
-                ))}
+            <div className="mt-auto pt-4 border-t border-gray-100 text-xs text-gray-500 flex flex-col gap-2.5">
+                {Object.entries(extra).map(([k, v]) => {
+                    if (!v || (Array.isArray(v) && v.length === 0)) return null;
+                    return (
+                        <div key={k} className="flex flex-wrap items-baseline gap-2">
+                            <span className="font-bold text-gray-800 text-xs uppercase tracking-wide">{k}:</span>
+                            {Array.isArray(v) ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {v.map((val, i) => (
+                                        <span key={i} className="bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-1.5 rounded-lg text-indigo-700 border border-indigo-200/50 text-xs font-medium shadow-sm hover:shadow-md transition-shadow">
+                                            {val}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : (
+                                <span className="text-gray-700 font-medium text-sm">{String(v)}</span>
+                            )}
+                        </div>
+                    );
+                })}
             </div>
         )}
 
-        <div className="mt-4 flex items-center text-sm font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
-          View Details <ArrowRight className="ml-1 h-4 w-4" />
+        <div className="mt-5 flex items-center text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent group-hover:translate-x-2 transition-all duration-300">
+          View Details <ArrowRight className="ml-2 h-4 w-4 text-indigo-600 group-hover:text-purple-600 transition-colors" />
         </div>
       </div>
     </Link>

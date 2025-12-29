@@ -5,7 +5,7 @@
  */
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X, Home, Search, Code, FileText, Users, LogIn, LogOut, Shield, User, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,15 +20,32 @@ const navigation = [
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const { user, isAuthenticated, isAdmin, isLoading, logout } = useAuth();
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <header 
+      className={cn(
+        "sticky top-0 z-50 transition-all duration-300",
+        scrolled 
+          ? "glass shadow-xl backdrop-blur-xl border-b border-indigo-200/50" 
+          : "bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-100"
+      )}
+    >
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Global">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="font-bold text-xl text-indigo-600">
+            <Link href="/" className="font-bold text-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent hover:from-indigo-700 hover:via-purple-700 hover:to-pink-700 transition-all">
               Complexhibit
             </Link>
           </div>
