@@ -157,7 +157,7 @@ export function ParticipantsSection({ data, title, colorClass, linkColorClass }:
               {Array.isArray(items) && items.map((item: any, idx: number) => (
                 <li key={idx}>
                   <Link 
-                    href={`/detail/actor/${item.uri?.split('/').pop()}`} 
+                    href={`/detail/actant/${item.uri?.split('/').pop()}`} 
                     className={`text-sm text-gray-700 ${linkColorClass} hover:underline flex items-start gap-2`}
                   >
                     <span className={linkColorClass.replace('hover:text-', 'text-').replace('600', '400')} style={{marginTop: '0.25rem'}}>•</span>
