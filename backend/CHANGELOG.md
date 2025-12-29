@@ -5,7 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-11-26
+## [1.1.0] - 2025-12-29
+
+### Added
+
+- **Premium UX/UI Design System**: Complete visual overhaul with modern, premium aesthetics
+  - Custom color palette with primary/accent shades (50-900)
+  - Google Fonts integration (Inter for body, Playfair Display for headings)
+  - Glassmorphism effects for depth and modern feel
+  - Custom CSS animations (gradient-shift, float, pulse-slow, shimmer)
+  - Customized scrollbar with brand colors
+  - Enhanced shadows, focus states, and selection styles
+
+- **Homepage Redesign**: Modern, engaging landing page
+  - Hero section with animated gradient text
+  - Floating badge with glassmorphism
+  - Animated background blobs in soft gradients
+  - Enhanced CTA buttons with gradient backgrounds
+  - Improved category cards with hover effects and decorative elements
+
+- **Component Enhancements**:
+  - ItemCard component with premium styling and micro-animations
+  - Navbar with dynamic scroll effect (glassmorphism on scroll)
+  - AsyncFilterSelect component for improved data filtering
+  - DatePicker UI component
+
+### Changed
+
+- **SPARQL Queries**: Improved query structure for artworks, exhibitions, institutions, and persons
+- **API Responses**: Better formatted responses and error handling
+- **Type Definitions**: Enhanced TypeScript types for better type safety
+- **Navbar Behavior**: Light glassmorphism on scroll for better link visibility
+
+### Fixed
+
+- **Navbar Contrast**: Resolved issue where navigation links were hard to read with dark glassmorphism effect
+
+## [1.0.0] - 2024-11-26
 
 ### 🎉 Major Refactoring
 
@@ -137,7 +173,3 @@ This release represents a complete architectural overhaul of the Complexhibit AP
 3. Install new dependencies: `pip install -r requirements.txt`
 4. Update Docker configuration if using containers
 5. Test all endpoints with new structure
-
----
-
-**For more details, see the [GitHub Releases](https://github.com/MartinM10/ontoexhibit-api/releases) page.**
