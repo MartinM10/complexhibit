@@ -41,7 +41,7 @@ env/
 htmlcov/
 *.spec
 backend/result.nt
-backend/virtuoso.ini
+# backend/virtuoso.ini
 backend/virtuoso.db
 backend/virtuoso-temp.db
 backend/virtuoso.lck
