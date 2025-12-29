@@ -16,7 +16,11 @@ import {
   getExhibitionMaking,
   getDatesAndPlace,
   getActorDetails,
-  getArtworkDetails
+  getArtworkDetails,
+  getInstitutionExhibitions,
+  getInstitutionDetails,
+  getInstitutionLenderExhibitions,
+  getInstitutionOwnedArtworks
 } from "@/lib/api";
 import { unCamel, cleanLabel } from "@/lib/utils";
 import MapSection from '@/components/MapSection';
@@ -36,6 +40,7 @@ import {
   ArtworkRelationsSidebar,
   ArtworkDetails,
   InstitutionSidebar,
+  InstitutionDetails
 } from "@/components/detail";
 
 interface PageProps {
@@ -44,7 +49,7 @@ interface PageProps {
 
 // Helper type guards
 const isActorType = (type: string) => 
-  ['actor', 'human_actant', 'person'].includes(type);
+  ['actor', 'human_actant', 'person', 'actant'].includes(type);
 
 const isArtworkType = (type: string) => 
   ['artwork', 'obra'].includes(type);
@@ -88,10 +93,25 @@ export default async function DetailPage({ params }: PageProps) {
     ? getDatesAndPlace(id).catch(() => null) 
     : Promise.resolve(null);
 
+  // Institution-specific
+  const institutionExhibitionsPromise = decodedType === 'institution'
+    ? getInstitutionExhibitions(id).catch(() => null)
+    : Promise.resolve(null);
+  const institutionDetailsPromise = decodedType === 'institution'
+    ? getInstitutionDetails(id).catch(() => null)
+    : Promise.resolve(null);
+  const institutionLenderExhibitionsPromise = decodedType === 'institution'
+    ? getInstitutionLenderExhibitions(id).catch(() => null)
+    : Promise.resolve(null);
+  const institutionOwnedArtworksPromise = decodedType === 'institution'
+    ? getInstitutionOwnedArtworks(id).catch(() => null)
+    : Promise.resolve(null);
+
   // Await all promises
   const [
     dataProperties, types, roles, actorDetails, artworkDetails,
-    participants, artworks, making, datesAndPlace
+    participants, artworks, making, datesAndPlace, institutionExhibitions, 
+    institutionDetails, institutionLenderExhibitions, institutionOwnedArtworks
   ] = await Promise.all([
     dataPropertiesPromise,
     typesPromise,
@@ -101,7 +121,11 @@ export default async function DetailPage({ params }: PageProps) {
     participantsPromise,
     artworksPromise,
     makingPromise,
-    datesAndPlacePromise
+    datesAndPlacePromise,
+    institutionExhibitionsPromise,
+    institutionDetailsPromise,
+    institutionLenderExhibitionsPromise,
+    institutionOwnedArtworksPromise
   ]);
 
   // ====================
@@ -111,11 +135,15 @@ export default async function DetailPage({ params }: PageProps) {
   const rawProperties = dataProperties?.data || {};
   const roleData = roles?.data || {};
   const participantData = participants?.data || {};
-  const artworkData = (artworks?.data as any)?.exposed || [];
   const makingData = making?.data || {};
   const datesAndPlaceData = datesAndPlace?.data || [];
   const actorData = actorDetails?.data || [];
   const artworkDetailData = artworkDetails?.data || [];
+  const institutionExhibitionsData = institutionExhibitions?.data || [];
+  const institutionData = institutionDetails?.data || [];
+  const institutionItem = Array.isArray(institutionData) && institutionData.length > 0 ? institutionData[0] : institutionData;
+  const institutionLenderExhibitionsData = institutionLenderExhibitions?.data || [];
+  const institutionOwnedArtworksData = institutionOwnedArtworks?.data || [];
 
   // Debug query for QueryLogger
   const debugQuery = decodedType === 'exhibition' 
@@ -124,7 +152,9 @@ export default async function DetailPage({ params }: PageProps) {
       ? (artworkDetails?.sparql || dataProperties?.sparql)
       : (isActorType(decodedType) 
         ? (actorDetails?.sparql || dataProperties?.sparql)
-        : dataProperties?.sparql));
+        : (decodedType === 'institution' 
+            ? (institutionExhibitions?.sparql || dataProperties?.sparql)
+            : dataProperties?.sparql)));
 
   // For exhibitions, find matching data
   const exhibitionData = decodedType === 'exhibition' && datesAndPlaceData.length > 0 
@@ -152,6 +182,7 @@ export default async function DetailPage({ params }: PageProps) {
     if (exhibitionData?.label) return cleanLabel(exhibitionData.label);
     if (isActorType(decodedType) && actorData[0]?.label) return cleanLabel(actorData[0].label);
     if (isArtworkType(decodedType) && artworkDetailData[0]?.label) return cleanLabel(artworkDetailData[0].label);
+    if (decodedType === 'institution' && institutionItem?.label) return cleanLabel(institutionItem.label);
     
     for (const key in properties) {
       if (key.toLowerCase().includes('label') || key.toLowerCase().includes('title') || key.toLowerCase().includes('name')) {
@@ -209,7 +240,11 @@ export default async function DetailPage({ params }: PageProps) {
                 )}
                 
                 {decodedType === 'institution' && (
-                  <InstitutionSidebar data={rawProperties} />
+                  <InstitutionSidebar 
+                    exhibitions={institutionExhibitionsData} 
+                    lenderExhibitions={institutionLenderExhibitionsData}
+                    ownedArtworks={institutionOwnedArtworksData}
+                  />
                 )}
                 
                 {decodedType === 'exhibition' && (
@@ -233,6 +268,11 @@ export default async function DetailPage({ params }: PageProps) {
                 {/* Artwork Details */}
                 {isArtworkType(decodedType) && (
                   <ArtworkDetails artworkData={artworkDetailData} />
+                )}
+
+                {/* Institution Details */}
+                {decodedType === 'institution' && (
+                  <InstitutionDetails data={institutionItem} />
                 )}
                 
                 {/* Exhibition Sections */}
