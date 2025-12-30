@@ -28,8 +28,7 @@ class Settings(BaseSettings):
     API_PREFIX: str = ""
     DEPLOY_PATH: str = ""
     
-    # Legacy settings
-    DJANGO_SECRET_KEY: str = ""
+    # User service URL (optional)
     USER_SERVICE_URL: str = ""
     
     # Database (PostgreSQL for auth)

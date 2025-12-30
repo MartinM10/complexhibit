@@ -1,175 +1,174 @@
-# Changelog
+# Registro de Cambios
 
-All notable changes to this project will be documented in this file.
+Todos los cambios notables de este proyecto se documentarán en este archivo.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+El formato está basado en [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+y este proyecto adhiere a [Versionado Semántico](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0] - 2025-12-29
 
-### Added
+### Añadido
 
-- **Premium UX/UI Design System**: Complete visual overhaul with modern, premium aesthetics
-  - Custom color palette with primary/accent shades (50-900)
-  - Google Fonts integration (Inter for body, Playfair Display for headings)
-  - Glassmorphism effects for depth and modern feel
-  - Custom CSS animations (gradient-shift, float, pulse-slow, shimmer)
-  - Customized scrollbar with brand colors
-  - Enhanced shadows, focus states, and selection styles
+- **Sistema de Diseño Premium UX/UI**: Renovación visual completa con estética moderna y premium
+  - Paleta de colores personalizada con matices primarios/accent (50-900)
+  - Integración de Google Fonts (Inter para cuerpo, Playfair Display para encabezados)
+  - Efectos de glassmorphism para profundidad y aspecto moderno
+  - Animaciones CSS personalizadas (gradient-shift, float, pulse-slow, shimmer)
+  - Scrollbar personalizado con colores de marca
+  - Sombras mejoradas, estados de focus y estilos de selección
 
-- **Homepage Redesign**: Modern, engaging landing page
-  - Hero section with animated gradient text
-  - Floating badge with glassmorphism
-  - Animated background blobs in soft gradients
-  - Enhanced CTA buttons with gradient backgrounds
-  - Improved category cards with hover effects and decorative elements
+- **Rediseño de la Página de Inicio**: Página de aterrizaje moderna y atractiva
+  - Sección hero con texto de gradiente animado
+  - Badge flotante con glassmorphism
+  - Blobs de fondo animados en gradientes suaves
+  - Botones CTA mejorados con fondos de gradiente
+  - Tarjetas de categoría mejoradas con efectos hover y elementos decorativos
 
-- **Component Enhancements**:
-  - ItemCard component with premium styling and micro-animations
-  - Navbar with dynamic scroll effect (glassmorphism on scroll)
-  - AsyncFilterSelect component for improved data filtering
-  - DatePicker UI component
+- **Mejoras de Componentes**:
+  - Componente ItemCard con estilos premium y micro-animaciones
+  - Navbar con efecto de scroll dinámico (glassmorphism al hacer scroll)
+  - Componente AsyncFilterSelect para filtrado mejorado de datos
+  - Componente UI DatePicker
 
-### Changed
+### Cambiado
 
-- **SPARQL Queries**: Improved query structure for artworks, exhibitions, institutions, and persons
-- **API Responses**: Better formatted responses and error handling
-- **Type Definitions**: Enhanced TypeScript types for better type safety
-- **Navbar Behavior**: Light glassmorphism on scroll for better link visibility
+- **Queries SPARQL**: Estructura de queries mejorada para obras, exposiciones, instituciones y personas
+- **Respuestas de API**: Respuestas mejor formateadas y manejo de errores
+- **Definiciones de Tipos**: Tipos TypeScript mejorados para mejor seguridad de tipos
+- **Comportamiento del Navbar**: Glassmorphism ligero al hacer scroll para mejor visibilidad de los enlaces
 
-### Fixed
+### Corregido
 
-- **Navbar Contrast**: Resolved issue where navigation links were hard to read with dark glassmorphism effect
+- **Contraste del Navbar**: Resuelto problema donde los enlaces de navigación eran difíciles de leer con efecto glassmorphism oscuro
 
 ## [1.0.0] - 2024-11-26
 
-### 🎉 Major Refactoring
+### 🎉 Refactorización Mayor
 
-This release represents a complete architectural overhaul of the Complexhibit API.
+Esta versión representa una revisión arquitectónica completa de la API Complexhibit.
 
-### Added
+### Añadido
 
-- **Modular Architecture**: Separated concerns into routers, services, models, and utilities
-- **Async SPARQL Client**: Replaced synchronous `SPARQLWrapper` with async `httpx`
-- **Query Organization**: Structured SPARQL queries into domain-specific modules
-- **Type Safety**: Full Pydantic v2 models with type hints throughout
-- **Configuration Management**: Environment-based settings with `pydantic-settings`
-- **Response Models**: Standardized API responses with `StandardResponseModel` and `ErrorResponseModel`
-- **Comprehensive Documentation**: 
-  - Updated README.md with modern formatting
-  - Added ARCHITECTURE.md with system design
-  - Added CONTRIBUTING.md with development guidelines
-  - Added LICENSE.md (MIT)
-  - Added CHANGELOG.md (this file)
-  - Enhanced ROUTES.md with all endpoints
-- **Docker Improvements**: Multi-stage Dockerfile with security best practices
-- **Docker Compose**: Full stack deployment with Virtuoso
-- **HTTP Tests**: Comprehensive test file for all endpoints
-- **Development Tools**: requirements-dev.txt with testing and linting tools
+- **Arquitectura Modular**: Separación de responsabilidades en routers, services, models y utilities
+- **Cliente SPARQL Asíncrono**: Reemplazado `SPARQLWrapper` síncrono por `httpx` asíncrono
+- **Organización de Queries**: Queries SPARQL estructuradas en módulos específicos de dominio
+- **Seguridad de Tipos**: Modelos Pydantic v2 completos con type hints en toda la aplicación
+- **Gestión de Configuración**: Configuración basada en entorno con `pydantic-settings`
+- **Modelos de Respuesta**: Respuestas de API estandarizadas con `StandardResponseModel` y `ErrorResponseModel`
+- **Documentación Completa**: 
+  - README.md actualizado con formato moderno
+  - Añadido ARCHITECTURE.md con diseño del sistema
+  - Añadido CONTRIBUTING.md con guías de desarrollo
+  - Añadido LICENSE.md (MIT)
+  - Añadido CHANGELOG.md (este archivo)
+  - ROUTES.md mejorado con todos los endpoints
+- **Mejoras de Docker**: Dockerfile multi-stage con mejores prácticas de seguridad
+- **Docker Compose**: Despliegue de stack completo con Virtuoso
+- **Tests HTTP**: Archivo de tests completo para todos los endpoints
+- **Herramientas de Desarrollo**: requirements-dev.txt con herramientas de testing y linting
 
-### Changed
+### Cambiado
 
-- **Project Structure**: Reorganized into `app/` directory with clear separation
-  - `app/core/` - Configuration and exceptions
-  - `app/models/` - Pydantic models
-  - `app/routers/` - API endpoints
-  - `app/services/` - Business logic and SPARQL client
-  - `app/utils/` - Helper functions
-- **SPARQL Queries**: Refactored from monolithic `queries.py` into organized modules
-- **Response Parsing**: Replaced complex `desglozarJSON` with cleaner parser utilities
-- **Dependencies**: Updated to latest stable versions
+- **Estructura del Proyecto**: Reorganizado en directorio `app/` con clara separación
+  - `app/core/` - Configuración y excepciones
+  - `app/models/` - Modelos Pydantic
+  - `app/routers/` - Endpoints de API
+  - `app/services/` - Lógica de negocio y cliente SPARQL
+  - `app/utils/` - Funciones helper
+- **Queries SPARQL**: Refactorizado de `queries.py` monolítico a módulos organizados
+- **Parseo de Respuestas**: Reemplazado complejo `desglozarJSON` con utilidades de parser más limpias
+- **Dependencias**: Actualizado a versiones estables más recientes
   - FastAPI 0.122.0
   - Pydantic 2.12.4
   - httpx 0.28.1
-  - Python 3.11+ recommended
+  - Python 3.11+ recomendado
 
-### Removed
+### Eliminado
 
-- **Legacy Files**: Removed old monolithic structure
-  - `main.py` (root) → `app/main.py`
+- **Archivos Legacy**: Removida estructura monolítica antigua
+  - `main.py` (raíz) → `app/main.py`
   - `queries.py` → `app/services/queries/*`
   - `commons.py` → `app/utils/helpers.py` + `app/core/config.py`
   - `models.py` → `app/models/domain.py`
-  - `main_virtuoso.py` and `main_stardog.py` (obsolete)
-- **SPARQLWrapper**: Removed in favor of async httpx
+  - `main_virtuoso.py` y `main_stardog.py` (obsoletos)
+- **SPARQLWrapper**: Removido en favor de httpx asíncrono
 
-### Fixed
+### Corregido
 
-- **Async Operations**: All SPARQL queries now non-blocking
-- **Import Organization**: Clean imports with proper module structure
-- **Environment Variables**: Proper validation and type checking
-- **Error Handling**: Consistent error responses across all endpoints
+- **Operaciones Asíncronas**: Todas las queries SPARQL ahora no bloqueantes
+- **Organización de Imports**: Imports limpios con estructura de módulos apropiada
+- **Variables de Entorno**: Validación y chequeo de tipos apropiados
+- **Manejo de Errores**: Respuestas de error consistentes en todos los endpoints
 
-### Security
+### Seguridad
 
-- **JWT Authentication**: Maintained and improved token-based auth
-- **Input Validation**: Enhanced with Pydantic models
-- **SPARQL Injection**: Better query parameterization
-- **Docker Security**: Non-root user in container
+- **Autenticación JWT**: Mantenida y mejorada autenticación basada en tokens
+- **Validación de Entrada**: Mejorada con modelos Pydantic
+- **Inyección SPARQL**: Mejor parametrización de queries
+- **Seguridad de Docker**: Usuario no-root en contenedor
 
-### Performance
+### Rendimiento
 
-- **Async I/O**: Non-blocking operations for better concurrency
-- **Connection Pooling**: Efficient httpx client management
-- **Smaller Docker Image**: Multi-stage build reduces image size
+- **I/O Asíncrono**: Operaciones no bloqueantes para mejor concurrencia
+- **Pool de Conexiones**: Gestión eficiente de cliente httpx
+- **Imagen Docker Más Pequeña**: Build multi-stage reduce tamaño de imagen
 
-## [0.9.0] - 2024-XX-XX (Previous Version)
+## [0.9.0] - 2024-XX-XX (Versión Anterior)
 
-### Initial Implementation
+### Implementación Inicial
 
-- Basic FastAPI application
-- SPARQL queries with SPARQLWrapper
-- Django frontend integration
-- Stardog and Virtuoso support
-- Basic authentication
+- Aplicación FastAPI básica
+- Queries SPARQL con SPARQLWrapper
+- Soporte para Stardog y Virtuoso
+- Autenticación básica
 
 ---
 
-## Migration Guide (0.9.0 → 1.0.0)
+## Guía de Migración (0.9.0 → 1.0.0)
 
 ### Breaking Changes
 
-1. **Import Paths Changed**
+1. **Rutas de Import Cambiadas**
    ```python
-   # Old
+   # Antiguo
    from models import Persona
    from queries import Query
    
-   # New
+   # Nuevo
    from app.models.domain import Persona
    from app.services.queries.persons import PersonQueries
    ```
 
-2. **SPARQL Client**
+2. **Cliente SPARQL**
    ```python
-   # Old (synchronous)
+   # Antiguo (síncrono)
    from SPARQLWrapper import SPARQLWrapper
    sparql = SPARQLWrapper(endpoint)
    results = sparql.query()
    
-   # New (asynchronous)
+   # Nuevo (asíncrono)
    from app.services.sparql_client import sparql_client
    results = await sparql_client.query(query_string)
    ```
 
-3. **Configuration**
+3. **Configuración**
    ```python
-   # Old
+   # Antiguo
    from commons import URI_ONTOLOGIA
    
-   # New
+   # Nuevo
    from app.core.config import settings
    uri = settings.URI_ONTOLOGIA
    ```
 
-4. **Response Format**
-   - All responses now use `StandardResponseModel` or `ErrorResponseModel`
-   - Consistent structure across all endpoints
+4. **Formato de Respuesta**
+   - Todas las respuestas ahora usan `StandardResponseModel` o `ErrorResponseModel`
+   - Estructura consistente en todos los endpoints
 
-### Upgrade Steps
+### Pasos de Actualización
 
-1. Update imports
-2. Update `.env` file with new structure
-3. Install new dependencies: `pip install -r requirements.txt`
-4. Update Docker configuration if using containers
-5. Test all endpoints with new structure
+1. Actualizar imports
+2. Actualizar archivo `.env` con nueva estructura
+3. Instalar nuevas dependencias: `pip install -r requirements.txt`
+4. Actualizar configuración de Docker si se usan contenedores
+5. Testear todos los endpoints con nueva estructura

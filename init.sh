@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Script de inicialización completa del proyecto OntoExhibit
+# Script de inicialización completa del proyecto Complexhibit
 # Ejecutar con: ./init.sh
 
 set -e
@@ -23,7 +23,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo "╔════════════════════════════════════════════════════════════╗"
-echo "║     OntoExhibit - Inicialización del Proyecto             ║"
+echo "║     Complexhibit - Inicialización del Proyecto             ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 

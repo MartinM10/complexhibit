@@ -47,7 +47,7 @@ docker-compose up -d
 
 Esto iniciará:
 - Virtuoso con la configuración optimizada
-- La API de OntoExhibit
+- La API de Complexhibit
 
 ### 2. Cargar los datos
 
@@ -206,7 +206,7 @@ VIRTUOSO_DBA_PASSWORD=contraseña_segura
 
 # API
 URI_ONTOLOGIA=https://w3id.org/OntoExhibit
-DJANGO_SECRET_KEY=secret_key_aleatorio
+JWT_SECRET=secret_key_aleatorio
 USER_SERVICE_URL=http://user-service:8001
 ```
 

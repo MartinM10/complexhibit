@@ -1,4 +1,4 @@
-# OntoExhibit API
+# Complexhibit API
 
 API REST para consultar el grafo de conocimiento OntoExhibit usando SPARQL sobre Virtuoso.
 
@@ -47,7 +47,7 @@ El script de inicialización:
 
 | Servicio | URL | Descripción |
 |----------|-----|-------------|
-| **API** | http://localhost:8000/api/v1/ | API REST de OntoExhibit |
+| **API** | http://localhost:8000/api/v1/ | API REST de Complexhibit |
 | **Virtuoso Conductor** | http://localhost:8890/conductor | Interfaz web de administración |
 | **SPARQL Endpoint** | http://localhost:8890/sparql | Endpoint SPARQL público |
 
@@ -60,7 +60,7 @@ El script de inicialización:
 ## 📁 Estructura del Proyecto
 
 ```
-ontoexhibit-api/
+complexhibit-api/
 ├── app/                    # Código de la API FastAPI
 │   ├── models/            # Modelos Pydantic
 │   ├── routers/           # Endpoints de la API

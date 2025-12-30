@@ -5,9 +5,9 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
-      # Only override values that are different in Docker context
+      # Solo sobrescribir valores que son diferentes en contexto Docker
       - VIRTUOSO_URL=http://virtuoso:8890/sparql
       - DATABASE_URL=postgresql://${POSTGRES_USER:-complexhibit}:${POSTGRES_PASSWORD:-complexhibit}@postgres:5432/${POSTGRES_DB:-complexhibit_auth}
       - DEPLOY_PATH=/api/v1

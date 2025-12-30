@@ -1,66 +1,66 @@
-# API Routes Reference
+# Referencia de Rutas de la API
 
-**Base URL:** `http://localhost:8000/api/v1`
+**URL Base:** `http://localhost:8000/api/v1`
 
-## 📚 Documentation
-- **Interactive Docs (Swagger):** http://localhost:8000/api/v1/docs
+## 📚 Documentación
+- **Docs Interactiva (Swagger):** http://localhost:8000/api/v1/docs
 - **ReDoc:** http://localhost:8000/api/v1/redoc
 - **OpenAPI JSON:** http://localhost:8000/api/v1/openapi.json
 
 ## 🏠 General
-- `GET /api/v1/` - Root endpoint (Hello World)
+- `GET /api/v1/` - Endpoint raíz (Hello World)
 
 ## 👥 Personas (Persons)
-- `GET /api/v1/all_personas` - Get all persons
-- `GET /api/v1/count_actants` - Count all actants
-- `GET /api/v1/get_persona/{id}` - Get person by ID
-- `POST /api/v1/post_persona` - Create new person
+- `GET /api/v1/all_personas` - Obtener todas las personas
+- `GET /api/v1/count_actants` - Contar todos los actantes
+- `GET /api/v1/get_persona/{id}` - Obtener persona por ID
+- `POST /api/v1/post_persona` - Crear nueva persona
 
 ## 🏛️ Instituciones (Institutions)
-- `GET /api/v1/all_instituciones` - Get all institutions
-- `GET /api/v1/count_instituciones` - Count all institutions
-- `GET /api/v1/get_institucion/{id}` - Get institution by ID
-- `POST /api/v1/post_institucion` - Create new institution
+- `GET /api/v1/all_instituciones` - Obtener todas las instituciones
+- `GET /api/v1/count_instituciones` - Contar todas las instituciones
+- `GET /api/v1/get_institucion/{id}` - Obtener institución por ID
+- `POST /api/v1/post_institucion` - Crear nueva institución
 
 ## 🎨 Exposiciones (Exhibitions)
-- `GET /api/v1/all_exposiciones` - Get all exhibitions
-- `GET /api/v1/count_exposiciones` - Count all exhibitions
-- `POST /api/v1/post_exposicion` - Create new exhibition
+- `GET /api/v1/all_exposiciones` - Obtener todas las exposiciones
+- `GET /api/v1/count_exposiciones` - Contar todas las exposiciones
+- `POST /api/v1/post_exposicion` - Crear nueva exposición
 
 ## 🖼️ Obras (Artworks)
-- `GET /api/v1/all_obras` - Get all artworks
-- `GET /api/v1/count_obras` - Count all artworks
-- `POST /api/v1/post_obra` - Create new artwork
+- `GET /api/v1/all_obras` - Obtener todas las obras
+- `GET /api/v1/count_obras` - Contar todas las obras
+- `POST /api/v1/post_obra` - Crear nueva obra
 
-## 🔍 Miscellaneous
-- `GET /api/v1/semantic_search?q={query}` - Semantic search
-- `GET /api/v1/all_classes` - Get all ontology classes
-- `GET /api/v1/get_object_any_type/{type}/{id}` - Get any object by type and ID
+## 🔍 Miscelánea
+- `GET /api/v1/semantic_search?q={query}` - Búsqueda semántica
+- `GET /api/v1/all_classes` - Obtener todas las clases de la ontología
+- `GET /api/v1/get_object_any_type/{type}/{id}` - Obtener cualquier objeto por tipo e ID
 
-## 🔐 Users (Authentication)
-- `GET /api/v1/users/me` - Get current user info (requires auth)
-- `GET /api/v1/secure-endpoint` - Secure endpoint example (requires auth)
+## 🔐 Usuarios (Autenticación)
+- `GET /api/v1/users/me` - Obtener información del usuario actual (requiere autenticación)
+- `GET /api/v1/secure-endpoint` - Ejemplo de endpoint seguro (requiere autenticación)
 
-## 📝 Examples
+## 📝 Ejemplos
 
-### Test basic endpoint:
+### Probar endpoint básico:
 ```bash
 curl http://localhost:8000/api/v1/
 ```
 
-### Count exhibitions:
+### Contar exposiciones:
 ```bash
 curl http://localhost:8000/api/v1/count_exposiciones
 ```
 
-### Get all persons:
+### Obtener todas las personas:
 ```bash
 curl http://localhost:8000/api/v1/all_personas
 ```
 
-### Semantic search:
+### Búsqueda semántica:
 ```bash
 curl "http://localhost:8000/api/v1/semantic_search?q=picasso"
 ```
 
-**Note:** All routes require the `/api/v1` prefix as configured in your `.env` file's `DEPLOY_PATH` variable.
+**Nota:** Todas las rutas requieren el prefijo `/api/v1` según está configurado en la variable `DEPLOY_PATH` de tu archivo `.env`.

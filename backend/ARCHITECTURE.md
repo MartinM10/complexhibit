@@ -1,20 +1,20 @@
-# System Architecture
+# Arquitectura del Sistema
 
-## Overview
+## Visión General
 
-Complexhibit API follows a **layered architecture** pattern with clear separation of concerns. The application is built using FastAPI and follows modern Python best practices with async/await patterns throughout.
+La API Complexhibit sigue un patrón de **arquitectura en capas** con clara separación de responsabilidades. La aplicación está construida usando FastAPI y sigue las mejores prácticas modernas de Python con patrones async/await en toda la aplicación.
 
-## Architecture Diagram
+## Diagrama de Arquitectura
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        Client Layer                         │
-│  (Web Browser, Mobile App, External Services)               │
+│                     Capa de Cliente                         │
+│  (Navegador Web, App Móvil, Servicios Externos)            │
 └────────────────────────┬────────────────────────────────────┘
                          │ HTTP/HTTPS
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                     API Gateway Layer                       │
+│                  Capa de API Gateway                        │
 │                    (FastAPI + CORS)                         │
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │  Routers (persons, institutions, exhibitions, etc.)  │   │
@@ -23,201 +23,201 @@ Complexhibit API follows a **layered architecture** pattern with clear separatio
                          │
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    Service Layer                            │
+│                    Capa de Servicio                         │
 │  ┌─────────────────┐  ┌──────────────────┐                  │
-│  │ SPARQL Client   │  │  Query Builders  │                  │
-│  │  (httpx async)  │  │  (persons, etc.) │                  │
+│  │ Cliente SPARQL  │  │ Constructores    │                  │
+│  │  (httpx async)  │  │  de Queries      │                  │
 │  └─────────────────┘  └──────────────────┘                  │
 └────────────────────────┬────────────────────────────────────┘
-                         │ SPARQL Protocol
+                         │ Protocolo SPARQL
                          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                   Data Layer                                │
+│                   Capa de Datos                             │
 │              Virtuoso Triplestore                           │
-│         (RDF/OWL Knowledge Graph)                           │
+│         (Grafo de Conocimiento RDF/OWL)                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Layer Descriptions
+## Descripción de Capas
 
-### 1. API Gateway Layer (`app/routers/`)
+### 1. Capa de API Gateway (`app/routers/`)
 
-**Responsibility**: Handle HTTP requests, route to appropriate handlers, validate input/output
+**Responsabilidad**: Manejar peticiones HTTP, enrutarlas a los manejadores apropiados, validar entrada/salida
 
-**Components**:
-- `persons.py` - Person/artist endpoints
-- `institutions.py` - Institution endpoints
-- `exhibitions.py` - Exhibition endpoints
-- `artworks.py` - Artwork endpoints
-- `misc.py` - Search and utility endpoints
+**Componentes**:
+- `persons.py` - Endpoints de personas/artistas
+- `institutions.py` - Endpoints de instituciones
+- `exhibitions.py` - Endpoints de exposiciones
+- `artworks.py` - Endpoints de obras de arte
+- `misc.py` - Endpoints de búsqueda y utilidad
 
-**Key Features**:
-- Request validation with Pydantic models
-- Response serialization
-- Error handling and HTTP status codes
-- Dependency injection for authentication
+**Características Clave**:
+- Validación de peticiones con modelos Pydantic
+- Serialización de respuestas
+- Manejo de errores y códigos de estado HTTP
+- Inyección de dependencias para autenticación
 
-### 2. Service Layer (`app/services/`)
+### 2. Capa de Servicio (`app/services/`)
 
-**Responsibility**: Business logic, SPARQL query execution, data transformation
+**Responsabilidad**: Lógica de negocio, ejecución de queries SPARQL, transformación de datos
 
-**Components**:
+**Componentes**:
 
-#### SPARQL Client (`sparql_client.py`)
-- Asynchronous HTTP client using `httpx`
-- Connection pooling and timeout management
-- SELECT and UPDATE query execution
-- Error handling and retry logic
+#### Cliente SPARQL (`sparql_client.py`)
+- Cliente HTTP asíncrono usando `httpx`
+- Gestión de pool de conexiones y timeouts
+- Ejecución de queries SELECT y UPDATE
+- Manejo de errores y lógica de reintentos
 
-#### Query Builders (`services/queries/`)
-- `base.py` - Common SPARQL prefixes and constants
-- `persons.py` - Person-related queries
-- `institutions.py` - Institution queries
-- `exhibitions.py` - Exhibition queries
-- `artworks.py` - Artwork queries
-- `misc.py` - Search and utility queries
-- `utils.py` - Query generation helpers
+#### Constructores de Queries (`services/queries/`)
+- `base.py` - Prefijos SPARQL comunes y constantes
+- `persons.py` - Queries relacionadas con personas
+- `institutions.py` - Queries de instituciones
+- `exhibitions.py` - Queries de exposiciones
+- `artworks.py` - Queries de obras de arte
+- `misc.py` - Queries de búsqueda y utilidad
+- `utils.py` - Helpers para generación de queries
 
-**Design Pattern**: Builder pattern for constructing SPARQL queries
+**Patrón de Diseño**: Patrón Builder para construir queries SPARQL
 
-### 3. Model Layer (`app/models/`)
+### 3. Capa de Modelo (`app/models/`)
 
-**Responsibility**: Data validation, serialization, type safety
+**Responsabilidad**: Validación de datos, serialización, seguridad de tipos
 
-**Components**:
-- `domain.py` - Domain entities (Persona, Exposicion, ObraDeArte, etc.)
-- `responses.py` - API response models (StandardResponseModel, ErrorResponseModel)
+**Componentes**:
+- `domain.py` - Entidades de dominio (Persona, Exposicion, ObraDeArte, etc.)
+- `responses.py` - Modelos de respuesta API (StandardResponseModel, ErrorResponseModel)
 
-**Technology**: Pydantic v2 with full type hints
+**Tecnología**: Pydantic v2 con type hints completos
 
-### 4. Core Layer (`app/core/`)
+### 4. Capa Core (`app/core/`)
 
-**Responsibility**: Application configuration, shared utilities, exceptions
+**Responsabilidad**: Configuración de aplicación, utilidades compartidas, excepciones
 
-**Components**:
-- `config.py` - Environment-based settings using Pydantic Settings
-- `exceptions.py` - Custom exception classes
+**Componentes**:
+- `config.py` - Configuración basada en entorno usando Pydantic Settings
+- `exceptions.py` - Clases de excepción personalizadas
 
-### 5. Utilities (`app/utils/`)
+### 5. Utilidades (`app/utils/`)
 
-**Responsibility**: Helper functions, data transformation
+**Responsabilidad**: Funciones helper, transformación de datos
 
-**Components**:
-- `helpers.py` - Date conversion, hashing, string normalization
-- `parsers.py` - SPARQL response parsing and grouping
+**Componentes**:
+- `helpers.py` - Conversión de fechas, hashing, normalización de strings
+- `parsers.py` - Parseo de respuestas SPARQL y agrupación
 
-## Data Flow
+## Flujo de Datos
 
-### Read Operation (GET Request)
-
-```
-1. Client → HTTP GET /api/v1/all_personas
-2. Router → Validate request, inject dependencies
-3. Service → Build SPARQL SELECT query
-4. SPARQL Client → Execute query against Virtuoso
-5. Parser → Transform SPARQL JSON to Python dicts
-6. Router → Serialize to Pydantic models
-7. Client ← JSON response
-```
-
-### Write Operation (POST Request)
+### Operación de Lectura (Petición GET)
 
 ```
-1. Client → HTTP POST /api/v1/post_persona + JSON body
-2. Router → Validate Persona model
-3. Service → Build SPARQL INSERT query
-4. SPARQL Client → Execute UPDATE against Virtuoso
-5. Router → Return success/error response
-6. Client ← JSON response
+1. Cliente → HTTP GET /api/v1/all_personas
+2. Router → Validar petición, inyectar dependencias
+3. Servicio → Construir query SPARQL SELECT
+4. Cliente SPARQL → Ejecutar query contra Virtuoso
+5. Parser → Transformar JSON SPARQL a dicts de Python
+6. Router → Serializar a modelos Pydantic
+7. Cliente ← Respuesta JSON
 ```
 
-## Key Design Decisions
-
-### 1. Asynchronous Architecture
-
-**Why**: Non-blocking I/O for better performance and scalability
-
-**Implementation**:
-- `async/await` throughout the application
-- `httpx.AsyncClient` for SPARQL queries
-- FastAPI's native async support
-
-### 2. Dependency Injection
-
-**Why**: Testability, loose coupling, easier mocking
-
-**Implementation**:
-- FastAPI's `Depends()` for injecting SPARQL client
-- Singleton pattern for client instance
-- Easy to mock for testing
-
-### 3. Pydantic Models
-
-**Why**: Type safety, automatic validation, OpenAPI schema generation
-
-**Implementation**:
-- Domain models for entities
-- Response models for API contracts
-- Settings model for configuration
-
-### 4. Modular Query Organization
-
-**Why**: Maintainability, reusability, separation of concerns
-
-**Implementation**:
-- Queries organized by domain (persons, institutions, etc.)
-- Shared utilities in `utils.py`
-- Constants in `base.py`
-
-### 5. Environment-Based Configuration
-
-**Why**: Security, flexibility across environments
-
-**Implementation**:
-- `.env` file for local development
-- Environment variables for production
-- Pydantic Settings for validation
-
-## Security Considerations
-
-### Authentication Flow
+### Operación de Escritura (Petición POST)
 
 ```
-1. Client → Request with JWT token in Authorization header
-2. Middleware → Extract and validate token
-3. Dependencies → Decode JWT using DJANGO_SECRET_KEY
-4. Router → Access user info from decoded token
-5. Service → Execute authorized operation
+1. Cliente → HTTP POST /api/v1/post_persona + cuerpo JSON
+2. Router → Validar modelo Persona
+3. Servicio → Construir query SPARQL INSERT
+4. Cliente SPARQL → Ejecutar UPDATE contra Virtuoso
+5. Router → Retornar respuesta de éxito/error
+6. Cliente ← Respuesta JSON
 ```
 
-### Security Features
+## Decisiones de Diseño Clave
 
-- JWT-based authentication
-- CORS middleware for cross-origin requests
-- Environment variable for secrets (not in code)
-- Input validation with Pydantic
-- SPARQL injection prevention (parameterized queries)
+### 1. Arquitectura Asíncrona
 
-## Performance Optimizations
+**Por qué**: I/O no bloqueante para mejor rendimiento y escalabilidad
 
-### Current
+**Implementación**:
+- `async/await` en toda la aplicación
+- `httpx.AsyncClient` para queries SPARQL
+- Soporte nativo async de FastAPI
 
-- Asynchronous I/O for concurrent requests
-- Connection pooling in httpx client
-- Efficient SPARQL query construction
+### 2. Inyección de Dependencias
 
-### Planned
+**Por qué**: Testabilidad, bajo acoplamiento, mocking más fácil
 
-- Redis caching layer for frequent queries
-- Query result pagination
-- GraphQL endpoint for flexible querying
-- Database query optimization
+**Implementación**:
+- `Depends()` de FastAPI para inyectar cliente SPARQL
+- Patrón Singleton para instancia del cliente
+- Fácil de mockear para testing
 
-## Scalability
+### 3. Modelos Pydantic
 
-### Horizontal Scaling
+**Por qué**: Seguridad de tipos, validación automática, generación de esquema OpenAPI
 
-The application is **stateless** and can be scaled horizontally:
+**Implementación**:
+- Modelos de dominio para entidades
+- Modelos de respuesta para contratos de API
+- Modelo de settings para configuración
+
+### 4. Organización Modular de Queries
+
+**Por qué**: Mantenibilidad, reusabilidad, separación de responsabilidades
+
+**Implementación**:
+- Queries organizadas por dominio (persons, institutions, etc.)
+- Utilidades compartidas en `utils.py`
+- Constantes en `base.py`
+
+### 5. Configuración Basada en Entorno
+
+**Por qué**: Seguridad, flexibilidad entre entornos
+
+**Implementación**:
+- Archivo `.env` para desarrollo local
+- Variables de entorno para producción
+- Pydantic Settings para validación
+
+## Consideraciones de Seguridad
+
+### Flujo de Autenticación
+
+```
+1. Cliente → Petición con token JWT en header Authorization
+2. Middleware → Extraer y validar token
+3. Dependencias → Decodificar JWT usando JWT_SECRET
+4. Router → Acceder a info de usuario desde token decodificado
+5. Servicio → Ejecutar operación autorizada
+```
+
+### Características de Seguridad
+
+- Autenticación basada en JWT
+- Middleware CORS para peticiones cross-origin
+- Variable de entorno para secretos (no en código)
+- Validación de entrada con Pydantic
+- Prevención de inyección SPARQL (queries parametrizadas)
+
+## Optimizaciones de Rendimiento
+
+### Actuales
+
+- I/O asíncrono paraconvocate peticiones concurrentes
+- Pool de conexiones en cliente httpx
+- Construcción eficiente de queries SPARQL
+
+### Planificadas
+
+- Capa de caché Redis para queries frecuentes
+- Paginación de resultados de queries
+- Endpoint GraphQL para consulta flexible
+- Optimización de queries de base de datos
+
+## Escalabilidad
+
+### Escalado Horizontal
+
+La aplicación es **sin estado** y puede escalarse horizontalmente:
 
 ```
 ┌─────────┐     ┌─────────┐     ┌─────────┐
@@ -227,7 +227,7 @@ The application is **stateless** and can be scaled horizontally:
      └───────────────┼───────────────┘
                      │
               ┌──────▼──────┐
-              │ Load Balancer│
+              │Load Balancer│
               └──────┬──────┘
                      │
               ┌──────▼──────┐
@@ -235,68 +235,68 @@ The application is **stateless** and can be scaled horizontally:
               └─────────────┘
 ```
 
-### Deployment Options
+### Opciones de Despliegue
 
-1. **Docker Containers**: Multiple containers behind a load balancer
-2. **Kubernetes**: Pod autoscaling based on CPU/memory
-3. **Serverless**: AWS Lambda / Google Cloud Functions (with cold start considerations)
+1. **Contenedores Docker**: Múltiples contenedores detrás de un balanceador de carga
+2. **Kubernetes**: Autoescalado de Pods basado en CPU/memoria
+3. **Serverless**: AWS Lambda / Google Cloud Functions (con consideraciones de arranque en frío)
 
-## Technology Stack
+## Stack Tecnológico
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Web Framework | FastAPI | High-performance async API |
-| HTTP Client | httpx | Async SPARQL queries |
-| Validation | Pydantic v2 | Type safety and validation |
-| Authentication | python-jose | JWT handling |
-| Triplestore | Virtuoso | RDF/SPARQL database |
-| Ontology | OntoExhibit | Cultural heritage schema |
-| Container | Docker | Deployment |
-| Server | Uvicorn | ASGI server |
+| Capa | Tecnología | Propósito |
+|-------|-----------|---------| 
+| Framework Web | FastAPI | API async de alto rendimiento |
+| Cliente HTTP | httpx | Queries SPARQL async |
+| Validación | Pydantic v2 | Seguridad de tipos y validación |
+| Autenticación | python-jose | Manejo de JWT |
+| Triplestore | Virtuoso | Base de datos RDF/SPARQL |
+| Ontología | OntoExhibit | Esquema de patrimonio cultural |
+| Contenedor | Docker | Despliegue |
+| Servidor | Uvicorn | Servidor ASGI |
 
-## Future Enhancements
+## Mejoras Futuras
 
-### Short Term
-- [ ] Comprehensive test suite (pytest + httpx)
-- [ ] API rate limiting
-- [ ] Request/response logging
-- [ ] Health check endpoints
+### Corto Plazo
+- [ ] Suite completa de tests (pytest + httpx)
+- [ ] Limitación de tasa de API
+- [ ] Logging de peticiones/respuestas
+- [ ] Endpoints de health check
 
-### Medium Term
-- [ ] GraphQL endpoint
-- [ ] Redis caching layer
-- [ ] Elasticsearch for full-text search
-- [ ] WebSocket support for real-time updates
+### Mediano Plazo
+- [ ] Endpoint GraphQL
+- [ ] Capa de caché Redis
+- [ ] Elasticsearch para búsqueda de texto completo
+- [ ] Soporte WebSocket para actualizaciones en tiempo real
 
-### Long Term
-- [ ] Microservices architecture
-- [ ] Event-driven architecture with message queues
-- [ ] Machine learning for recommendations
-- [ ] Multi-tenancy support
+### Largo Plazo
+- [ ] Arquitectura de microservicios
+- [ ] Arquitectura event-driven con colas de mensajes
+- [ ] Machine learning para recomendaciones
+- [ ] Soporte multi-tenancy
 
-## Monitoring and Observability
+## Monitoreo y Observabilidad
 
-### Recommended Tools
+### Herramientas Recomendadas
 
-- **Logging**: Structured logging with `structlog`
-- **Metrics**: Prometheus + Grafana
+- **Logging**: Logging estructurado con `structlog`
+- **Métricas**: Prometheus + Grafana
 - **Tracing**: OpenTelemetry
-- **Error Tracking**: Sentry
-- **APM**: New Relic or DataDog
+- **Seguimiento de Errores**: Sentry
+- **APM**: New Relic o DataDog
 
-## Development Workflow
+## Flujo de Trabajo de Desarrollo
 
 ```
-1. Feature Branch → Local Development
-2. Unit Tests → pytest
-3. Code Review → Pull Request
+1. Feature Branch → Desarrollo Local
+2. Tests Unitarios → pytest
+3. Revisión de Código → Pull Request
 4. CI/CD → GitHub Actions
-5. Staging Deploy → Docker Compose
-6. Integration Tests → Automated
-7. Production Deploy → Kubernetes/Docker Swarm
+5. Despliegue Staging → Docker Compose
+6. Tests de Integración → Automatizados
+7. Despliegue Producción → Kubernetes/Docker Swarm
 ```
 
 ---
 
-**Last Updated**: 2025-11-26
-**Version**: 1.0.0
+**Última Actualización**: 2025-11-26
+**Versión**: 1.0.0

@@ -1,97 +1,97 @@
-# Security Policy
+# Política de Seguridad
 
-## Supported Versions
+## Versiones Soportadas
 
-We release patches for security vulnerabilities for the following versions:
+Liberamos parches para vulnerabilidades de seguridad para las siguientes versiones:
 
-| Version | Supported          |
+| Versión | Soportada          |
 | ------- | ------------------ |
 | 1.0.x   | :white_check_mark: |
 | < 1.0   | :x:                |
 
-## Reporting a Vulnerability
+## Reportar una Vulnerabilidad
 
-We take the security of Complexhibit API seriously. If you believe you have found a security vulnerability, please report it to us as described below.
+Tomamos la seguridad de la API Complexhibit muy en serio. Si crees que has encontrado una vulnerabilidad de seguridad, por favor repórtala como se describe a continuación.
 
-### Please do NOT:
+### Por favor NO:
 
-- Open a public GitHub issue
-- Disclose the vulnerability publicly before it has been addressed
+- Abrir un issue público en GitHub
+- Divulgar la vulnerabilidad públicamente antes de que haya sido abordada
 
-### Please DO:
+### Por favor SÍ:
 
-1. **Email us directly** at: [martinjs@uma.es]
-2. **Include the following information**:
-   - Type of vulnerability
-   - Full paths of source file(s) related to the vulnerability
-   - Location of the affected source code (tag/branch/commit or direct URL)
-   - Step-by-step instructions to reproduce the issue
-   - Proof-of-concept or exploit code (if possible)
-   - Impact of the vulnerability
+1. **Envíanos un email directamente** a: [martinjs@uma.es]
+2. **Incluir la siguiente información**:
+   - Tipo de vulnerabilidad
+   - Rutas completas de archivo(s) fuente relacionado(s) con la vulnerabilidad
+   - Ubicación del código fuente afectado (tag/branch/commit o URL directa)
+   - Instrucciones paso a paso para reproducir el problema
+   - Código de prueba de concepto o exploit (si es posible)
+   - Impacto de la vulnerabilidad
 
-### What to expect:
+### Qué esperar:
 
-- **Acknowledgment**: We will acknowledge receipt of your vulnerability report within 48 hours
-- **Communication**: We will send you regular updates about our progress
-- **Timeline**: We aim to patch critical vulnerabilities within 7 days
-- **Credit**: We will credit you in our security advisory (unless you prefer to remain anonymous)
+- **Reconocimiento**: Reconoceremos la recepción de tu reporte de vulnerabilidad en 48 horas
+- **Comunicación**: Te enviaremos actualizaciones regulares sobre nuestro progreso
+- **Cronograma**: Nuestro objetivo es parchear vulnerabilidades críticas en 7 días
+- **Crédito**: Te acreditaremos en nuestro aviso de seguridad (a menos que prefieras permanecer anónimo)
 
-## Security Best Practices
+## Mejores Prácticas de Seguridad
 
-### For Developers
+### Para Desarrolladores
 
-1. **Environment Variables**: Never commit `.env` files or secrets to the repository
-2. **Dependencies**: Keep dependencies up to date with `pip-audit` or `safety`
-3. **Authentication**: Always use JWT tokens for protected endpoints
-4. **Input Validation**: Use Pydantic models for all inputs
-5. **SPARQL Injection**: Use parameterized queries, never string concatenation
+1. **Variables de Entorno**: Nunca hacer commit de archivos `.env` o secretos al repositorio
+2. **Dependencias**: Mantener dependencias actualizadas con `pip-audit` o `safety`
+3. **Autenticación**: Siempre usar tokens JWT para endpoints protegidos
+4. **Validación de Entrada**: Usar modelos Pydantic para todas las entradas
+5. **Inyección SPARQL**: Usar queries parametrizadas, nunca concatenación de strings
 
-### For Deployment
+### Para Despliegue
 
-1. **HTTPS Only**: Always use HTTPS in production
-2. **Secrets Management**: Use proper secret management (e.g., AWS Secrets Manager, HashiCorp Vault)
-3. **Docker Security**: 
-   - Run containers as non-root user
-   - Use official base images
-   - Scan images with Trivy or similar tools
-4. **Network Security**: 
-   - Use firewalls to restrict access
-   - Implement rate limiting
-   - Use VPCs for database access
+1. **Solo HTTPS**: Siempre usar HTTPS en producción
+2. **Gestión de Secretos**: Usar gestión apropiada de secretos (ej: AWS Secrets Manager, HashiCorp Vault)
+3. **Seguridad de Docker**: 
+   - Ejecutar contenedores como usuario no-root
+   - Usar imágenes base oficiales
+   - Escanear imágenes con Trivy o herramientas similares
+4. **Seguridad de Red**: 
+   - Usar firewalls para restringir acceso
+   - Implementar limitación de tasa
+   - Usar VPCs para acceso a base de datos
 
-### Known Security Considerations
+### Consideraciones de Seguridad Conocidas
 
-1. **JWT Secret**: The `DJANGO_SECRET_KEY` must be kept secure and rotated regularly
-2. **SPARQL Endpoint**: Should be behind authentication and not publicly accessible
-3. **CORS**: Configure `allow_origins` appropriately for production (not `["*"]`)
+1. **Secreto JWT**: El `JWT_SECRET` debe mantenerse seguro y rotarse regularmente
+2. **Endpoint SPARQL**: Debe estar detrás de autenticación y no ser públicamente accesible
+3. **CORS**: Configurar `allow_origins` apropiadamente para producción (no `["*"]`)
 
-## Security Updates
+## Actualizaciones de Seguridad
 
-Security updates will be released as patch versions (e.g., 1.0.1, 1.0.2) and documented in:
+Las actualizaciones de seguridad se liberarán como versiones de parche (ej: 1.0.1, 1.0.2) y se documentarán en:
 - [CHANGELOG.md](CHANGELOG.md)
 - [GitHub Security Advisories](https://github.com/MartinM10/ontoexhibit-api/security/advisories)
 - [GitHub Releases](https://github.com/MartinM10/ontoexhibit-api/releases)
 
-## Automated Security Scanning
+## Escaneo de Seguridad Automatizado
 
-This project uses:
-- **Dependabot**: Automated dependency updates
-- **Trivy**: Container vulnerability scanning
-- **GitHub CodeQL**: Code security analysis
-- **Safety**: Python dependency vulnerability checking
+Este proyecto usa:
+- **Dependabot**: Actualizaciones automatizadas de dependencias
+- **Trivy**: Escaneo de vulnerabilidades de contenedores
+- **GitHub CodeQL**: Análisis de seguridad de código
+- **Safety**: Verificación de vulnerabilidades de dependencias Python
 
-## Compliance
+## Cumplimiento
 
-This project follows:
-- OWASP Top 10 security practices
-- CWE (Common Weakness Enumeration) guidelines
-- Secure coding standards for Python
+Este proyecto sigue:
+- Prácticas de seguridad OWASP Top 10
+- Directrices CWE (Common Weakness Enumeration)
+- Estándares de codificación segura para Python
 
-## Contact
+## Contacto
 
-For security-related questions or concerns, contact:
+Para preguntas o preocupaciones relacionadas con seguridad, contactar:
 - **Email**: martinjs@uma.es
 
 ---
 
-**Last Updated**: 2025-11-26
+**Última Actualización**: 2025-11-26

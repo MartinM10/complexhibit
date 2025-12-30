@@ -1,4 +1,4 @@
-# Script de inicialización completa del proyecto OntoExhibit
+# Script de inicialización completa del proyecto Complexhibit
 # Ejecutar con: .\init.ps1
 
 param(
@@ -6,7 +6,7 @@ param(
 )
 
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
-Write-Host "     OntoExhibit - Inicializacion del Proyecto          " -ForegroundColor Cyan
+Write-Host "     Complexhibit - Inicializacion del Proyecto         " -ForegroundColor Cyan
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
 Write-Host ""
 

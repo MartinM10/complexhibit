@@ -1,50 +1,51 @@
-# Deployment Guide
+# Guía de Despliegue
 
-This guide covers different deployment strategies for the Complexhibit API.
+Esta guía cubre diferentes estrategias de despliegue para la API Complexhibit.
 
-## Table of Contents
+## Tabla de Contenidos
 
-- [Local Development](#local-development)
-- [Docker Deployment](#docker-deployment)
-- [Docker Compose (Full Stack)](#docker-compose-full-stack)
-- [Cloud Deployment](#cloud-deployment)
-- [Production Checklist](#production-checklist)
+- [Desarrollo Local](#desarrollo-local)
+- [Despliegue con Docker](#despliegue-con-docker)
+- [Docker Compose (Stack Completo)](#docker-compose-stack-completo)
+- [Despliegue en la Nube](#despliegue-en-la-nube)
+- [Lista de Verificación de Producción](#lista-de-verificación-de-producción)
 
-## Local Development
+## Desarrollo Local
 
-### Quick Start
+### Inicio Rápido
 
 ```bash
-# Clone repository
+# Clonar repositorio
 git clone <repository-url>
 cd frontend-next/backend
 
-# Create virtual environment
+# Crear entorno virtual
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 
-# Install dependencies
+# Instalar dependencias
 pip install -r requirements.txt
 
-# Configure environment
-cp .env.template .env
-# Edit .env with your settings
+# Configurar entorno
+# Copiar desde .env.template de la raíz a backend/.env
+cp ../.env.template .env
+# Editar .env con tu configuración
 
-# Run development server
+# Ejecutar servidor de desarrollo
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
-Access the API at http://localhost:8000/api/v1/docs
+Acceder a la API en http://localhost:8000/api/v1/docs
 
-## Docker Deployment
+## Despliegue con Docker
 
-### Build and Run
+### Construir y Ejecutar
 
 ```bash
-# Build image
+# Construir imagen
 docker build -t complexhibit-api .
 
-# Run container
+# Ejecutar contenedor
 docker run -d \
   --name complexhibit-api \
   -p 8000:8000 \
@@ -52,7 +53,7 @@ docker run -d \
   complexhibit-api
 ```
 
-### With Custom Port
+### Con Puerto Personalizado
 
 ```bash
 docker run -d \
@@ -62,71 +63,71 @@ docker run -d \
   complexhibit-api
 ```
 
-## Docker Compose (Full Stack)
+## Docker Compose (Stack Completo)
 
-Deploy API + Virtuoso triplestore:
+Desplegar API + Virtuoso triplestore:
 
 ```bash
-# Start services
+# Iniciar servicios
 docker-compose up -d
 
-# View logs
+# Ver logs
 docker-compose logs -f
 
-# Stop services
+# Detener servicios
 docker-compose down
 
-# Stop and remove volumes
+# Detener y eliminar volúmenes
 docker-compose down -v
 ```
 
-### Services
+### Servicios
 
 - **API**: http://localhost:8000/api/v1/
 - **Virtuoso**: http://localhost:8890/sparql
 - **Virtuoso Conductor**: http://localhost:8890/conductor
 
-## Cloud Deployment
+## Despliegue en la Nube
 
 ### AWS (Elastic Beanstalk)
 
-1. **Install EB CLI**
+1. **Instalar EB CLI**
    ```bash
    pip install awsebcli
    ```
 
-2. **Initialize EB**
+2. **Inicializar EB**
    ```bash
    eb init -p docker complexhibit-api
    ```
 
-3. **Create Environment**
+3. **Crear Entorno**
    ```bash
    eb create complexhibit-prod
    ```
 
-4. **Deploy**
+4. **Desplegar**
    ```bash
    eb deploy
    ```
 
-5. **Set Environment Variables**
+5. **Configurar Variables de Entorno**
    ```bash
    eb setenv URI_ONTOLOGIA=https://w3id.org/OntoExhibit/ \
             VIRTUOSO_URL=your-virtuoso-url \
-            DJANGO_SECRET_KEY=your-secret-key
+            JWT_SECRET=your-secret-key
    ```
 
 ### AWS (ECS/Fargate)
 
-1. **Push to ECR**
+1. **Subir a ECR**
    ```bash
    aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin YOUR_ECR_URL
    docker tag complexhibit-api:latest YOUR_ECR_URL/complexhibit-api:latest
    docker push YOUR_ECR_URL/complexhibit-api:latest
    ```
 
-2. **Create Task Definition** (JSON)
+2. **Crear Definición de Tarea** (JSON)
    ```json
    {
      "family": "complexhibit-api",
@@ -141,13 +142,13 @@ docker-compose down -v
          {"name": "DEPLOY_PATH", "value": "/api/v1"}
        ],
        "secrets": [
-         {"name": "DJANGO_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:..."}
+         {"name": "JWT_SECRET", "valueFrom": "arn:aws:secretsmanager:..."}
        ]
      }]
    }
    ```
 
-3. **Create Service**
+3. **Crear Servicio**
    ```bash
    aws ecs create-service \
      --cluster your-cluster \
@@ -160,10 +161,10 @@ docker-compose down -v
 ### Google Cloud (Cloud Run)
 
 ```bash
-# Build and push to GCR
+# Construir y subir a GCR
 gcloud builds submit --tag gcr.io/YOUR_PROJECT/complexhibit-api
 
-# Deploy
+# Desplegar
 gcloud run deploy complexhibit-api \
   --image gcr.io/YOUR_PROJECT/complexhibit-api \
   --platform managed \
@@ -178,82 +179,82 @@ gcloud run deploy complexhibit-api \
 # Login
 heroku login
 
-# Create app
+# Crear app
 heroku create complexhibit-api
 
-# Set environment variables
+# Configurar variables de entorno
 heroku config:set URI_ONTOLOGIA=https://w3id.org/OntoExhibit/
 heroku config:set VIRTUOSO_URL=your-virtuoso-url
 
-# Deploy
+# Desplegar
 git push heroku main
 ```
 
 ### DigitalOcean App Platform
 
-1. Connect GitHub repository
-2. Configure build settings:
-   - **Type**: Docker
+1. Conectar repositorio GitHub
+2. Configurar ajustes de build:
+   - **Tipo**: Docker
    - **Dockerfile**: `Dockerfile`
-3. Set environment variables in dashboard
-4. Deploy
+3. Configurar variables de entorno en el dashboard
+4. Desplegar
 
-## Production Checklist
+## Lista de Verificación de Producción
 
-### Security
+### Seguridad
 
-- [ ] Use HTTPS (SSL/TLS certificates)
-- [ ] Set strong `DJANGO_SECRET_KEY`
-- [ ] Configure CORS properly (not `["*"]`)
-- [ ] Use environment variables for secrets
-- [ ] Enable rate limiting
-- [ ] Implement API key authentication
-- [ ] Regular security updates
+- [ ] Usar HTTPS (certificados SSL/TLS)
+- [ ] Configurar `JWT_SECRET` fuerte
+- [ ] Configurar CORS correctamente (no `["*"]`)
+- [ ] Usar variables de entorno para secretos
+- [ ] Habilitar limitación de tasa
+- [ ] Implementar autenticación de API key
+- [ ] Actualizaciones de seguridad regulares
 
-### Performance
+### Rendimiento
 
-- [ ] Enable caching (Redis)
-- [ ] Use CDN for static assets
-- [ ] Configure connection pooling
-- [ ] Set up load balancer
-- [ ] Enable gzip compression
-- [ ] Optimize database queries
+- [ ] Habilitar caché (Redis)
+- [ ] Usar CDN para assets estáticos
+- [ ] Configurar pool de conexiones
+- [ ] Configurar balanceador de carga
+- [ ] Habilitar compresión gzip
+- [ ] Optimizar queries de base de datos
 
-### Monitoring
+### Monitoreo
 
-- [ ] Set up logging (CloudWatch, Stackdriver, etc.)
-- [ ] Configure error tracking (Sentry)
-- [ ] Set up uptime monitoring
-- [ ] Configure alerts
-- [ ] Enable APM (Application Performance Monitoring)
+- [ ] Configurar logging (CloudWatch, Stackdriver, etc.)
+- [ ] Configurar seguimiento de errores (Sentry)
+- [ ] Configurar monitoreo de uptime
+- [ ] Configurar alertas
+- [ ] Habilitar APM (Application Performance Monitoring)
 
-### Reliability
+### Confiabilidad
 
-- [ ] Set up health checks
-- [ ] Configure auto-scaling
-- [ ] Implement circuit breakers
-- [ ] Set up backup strategy
-- [ ] Test disaster recovery
+- [ ] Configurar health checks
+- [ ] Configurar auto-escalado
+- [ ] Implementar circuit breakers
+- [ ] Configurar estrategia de backup
+- [ ] Testear recuperación ante desastres
 
-### Documentation
+### Documentación
 
-- [ ] Update API documentation
-- [ ] Document deployment process
-- [ ] Create runbooks for common issues
-- [ ] Document environment variables
+- [ ] Actualizar documentación de API
+- [ ] Documentar proceso de despliegue
+- [ ] Crear runbooks para problemas comunes
+- [ ] Documentar variables de entorno
 
-## Environment Variables
+## Variables de Entorno
 
-### Required
+### Requeridas
 
 ```env
 URI_ONTOLOGIA=https://w3id.org/OntoExhibit/
 VIRTUOSO_URL=http://your-virtuoso:8890/sparql
-DJANGO_SECRET_KEY=your-secret-key-here
+JWT_SECRET=your-secret-key-here
 DEFAULT_GRAPH_URL=http://your-virtuoso:8890/DAV/home/dba/rdf_sink
 ```
 
-### Optional
+### Opcionales
 
 ```env
 DEPLOY_PATH=/api/v1
@@ -264,9 +265,9 @@ USERNAME_STARDOG=admin
 PASSWORD_STARDOG=admin
 ```
 
-## Scaling
+## Escalado
 
-### Horizontal Scaling
+### Escalado Horizontal
 
 ```bash
 # Docker Swarm
@@ -276,9 +277,9 @@ docker service scale complexhibit-api=5
 kubectl scale deployment complexhibit-api --replicas=5
 ```
 
-### Load Balancing
+### Balanceo de Carga
 
-#### Nginx Configuration
+#### Configuración Nginx
 
 ```nginx
 upstream complexhibit_api {
@@ -299,40 +300,40 @@ server {
 }
 ```
 
-## Troubleshooting
+## Solución de Problemas
 
-### Common Issues
+### Problemas Comunes
 
-1. **Port already in use**
+1. **Puerto ya en uso**
    ```bash
-   # Find process using port 8000
+   # Encontrar proceso usando puerto 8000
    lsof -i :8000
-   # Kill process
+   # Matar proceso
    kill -9 PID
    ```
 
-2. **Environment variables not loading**
-   - Check `.env` file exists
-   - Verify file permissions
-   - Check for syntax errors in `.env`
+2. **Variables de entorno no se cargan**
+   - Verificar que el archivo `.env` existe
+   - Verificar permisos del archivo
+   - Buscar errores de sintaxis en `.env`
 
-3. **SPARQL connection errors**
-   - Verify Virtuoso is running
-   - Check network connectivity
-   - Verify SPARQL endpoint URL
+3. **Errores de conexión SPARQL**
+   - Verificar que Virtuoso está ejecutándose
+   - Verificar conectividad de red
+   - Verificar URL del endpoint SPARQL
 
-4. **Docker build fails**
-   - Clear Docker cache: `docker system prune -a`
-   - Check Dockerfile syntax
-   - Verify base image availability
+4. **Build de Docker falla**
+   - Limpiar caché de Docker: `docker system prune -a`
+   - Verificar sintaxis del Dockerfile
+   - Verificar disponibilidad de imagen base
 
-## Support
+## Soporte
 
-For deployment issues:
-- Check [GitHub Issues](https://github.com/MartinM10/ontoexhibit-api/issues)
-- Read [CONTRIBUTING.md](CONTRIBUTING.md)
-- Contact maintainers
+Para problemas de despliegue:
+- Revisar [GitHub Issues](https://github.com/MartinM10/ontoexhibit-api/issues)
+- Leer [CONTRIBUTING.md](CONTRIBUTING.md)
+- Contactar a los mantenedores
 
 ---
 
-**Last Updated**: 2025-11-26
+**Última Actualización**: 2025-11-26

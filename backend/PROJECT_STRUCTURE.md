@@ -1,24 +1,24 @@
-# Project Structure
+# Estructura del Proyecto
 
 ```
 backend/
 │
 ├── 📁 .github/
 │   └── workflows/
-│       └── ci-cd.yml                 # GitHub Actions CI/CD pipeline
+│       └── ci-cd.yml                 # Pipeline CI/CD de GitHub Actions
 │
-├── 📁 app/                           # Main application directory
-│   ├── 📁 core/                      # Core configuration
+├── 📁 app/                           # Directorio principal de la aplicación
+│   ├── 📁 core/                      # Configuración core
 │   │   ├── __init__.py
-│   │   ├── config.py                 # Pydantic settings
-│   │   └── exceptions.py             # Custom exceptions
+│   │   ├── config.py                 # Configuración Pydantic
+│   │   └── exceptions.py             # Excepciones personalizadas
 │   │
-│   ├── 📁 models/                    # Data models
+│   ├── 📁 models/                    # Modelos de datos
 │   │   ├── __init__.py
-│   │   ├── domain.py                 # Domain entities (Persona, Exposicion, etc.)
-│   │   └── responses.py              # API response models
+│   │   ├── domain.py                 # Entidades de dominio (Persona, Exposicion, etc.)
+│   │   └── responses.py              # Modelos de respuesta API
 │   │
-│   ├── 📁 routers/                   # API endpoints
+│   ├── 📁 routers/                   # Endpoints de API
 │   │   ├── __init__.py
 │   │   ├── persons.py                # /all_personas, /post_persona, etc.
 │   │   ├── institutions.py           # /all_instituciones, etc.
@@ -26,180 +26,180 @@ backend/
 │   │   ├── artworks.py               # /all_obras, etc.
 │   │   └── misc.py                   # /semantic_search, /all_classes, etc.
 │   │
-│   ├── 📁 services/                  # Business logic
+│   ├── 📁 services/                  # Lógica de negocio
 │   │   ├── __init__.py
-│   │   ├── sparql_client.py          # Async SPARQL client (httpx)
-│   │   └── 📁 queries/               # SPARQL query builders
+│   │   ├── sparql_client.py          # Cliente SPARQL asíncrono (httpx)
+│   │   └── 📁 queries/               # Constructores de queries SPARQL
 │   │       ├── __init__.py
-│   │       ├── base.py               # Common prefixes and constants
-│   │       ├── persons.py            # Person queries
-│   │       ├── institutions.py       # Institution queries
-│   │       ├── exhibitions.py        # Exhibition queries
-│   │       ├── artworks.py           # Artwork queries
-│   │       ├── misc.py               # Search queries
-│   │       └── utils.py              # Query generation helpers
+│   │       ├── base.py               # Prefijos comunes y constantes
+│   │       ├── persons.py            # Queries de personas
+│   │       ├── institutions.py       # Queries de instituciones
+│   │       ├── exhibitions.py        # Queries de exposiciones
+│   │       ├── artworks.py           # Queries de obras
+│   │       ├── misc.py               # Queries de búsqueda
+│   │       └── utils.py              # Helpers de generación de queries
 │   │
-│   ├── 📁 utils/                     # Helper functions
+│   ├── 📁 utils/                     # Funciones helper
 │   │   ├── __init__.py
-│   │   ├── helpers.py                # Date conversion, hashing, etc.
-│   │   └── parsers.py                # SPARQL response parsing
+│   │   ├── helpers.py                # Conversión de fechas, hashing, etc.
+│   │   └── parsers.py                # Parseo de respuestas SPARQL
 │   │
 │   ├── __init__.py
-│   ├── dependencies.py               # FastAPI dependencies (auth, etc.)
-│   └── main.py                       # Application entry point
+│   ├── dependencies.py               # Dependencias de FastAPI (auth, etc.)
+│   └── main.py                       # Punto de entrada de la aplicación
 │
-├── 📄 .env.template                  # Environment variables template
-├── 📄 .env                           # Local environment (gitignored)
-├── 📄 .gitignore                     # Git ignore rules
-├── 📄 .gitattributes                 # Git attributes (line endings)
+├── 📄 .env.template                  # Template de variables de entorno
+├── 📄 .env                           # Entorno local (gitignored)
+├── 📄 .gitignore                     # Reglas de Git ignore
+├── 📄 .gitattributes                 # Atributos de Git (line endings)
 ├── 📄 .pre-commit-config.yaml        # Pre-commit hooks
 │
-├── 📄 ARCHITECTURE.md                # System architecture documentation
-├── 📄 CHANGELOG.md                   # Version history and changes
-├── 📄 CONTRIBUTING.md                # Contribution guidelines
-├── 📄 DEPLOYMENT.md                  # Deployment instructions
-├── 📄 LICENSE.md                     # MIT License
-├── 📄 README.md                      # Project overview
-├── 📄 ROUTES.md                      # API routes reference
-├── 📄 SECURITY.md                    # Security policy
+├── 📄 ARCHITECTURE.md                # Documentación de arquitectura del sistema
+├── 📄 CHANGELOG.md                   # Historial de versiones y cambios
+├── 📄 CONTRIBUTING.md                # Guías de contribución
+├── 📄 DEPLOYMENT.md                  # Instrucciones de despliegue
+├── 📄 LICENSE.md                     # Licencia MIT
+├── 📄 README.md                      # Resumen del proyecto
+├── 📄 ROUTES.md                      # Referencia de rutas de API
+├── 📄 SECURITY.md                    # Política de seguridad
 │
-├── 📄 Dockerfile                     # Docker image definition
-├── 📄 docker-compose.yml             # Docker Compose configuration
-├── 📄 pyproject.toml                 # Python project configuration
-├── 📄 requirements.txt               # Production dependencies
-├── 📄 requirements-dev.txt           # Development dependencies
-└── 📄 test_main.http                 # HTTP test requests
+├── 📄 Dockerfile                     # Definición de imagen Docker
+├── 📄 docker-compose.yml             # Configuración Docker Compose
+├── 📄 pyproject.toml                 # Configuración del proyecto Python
+├── 📄 requirements.txt               # Dependencias de producción
+├── 📄 requirements-dev.txt           # Dependencias de desarrollo
+└── 📄 test_main.http                 # Peticiones HTTP de prueba
 ```
 
-## File Descriptions
+## Descripción de Archivos
 
-### Application Code (`app/`)
+### Código de Aplicación (`app/`)
 
-| File/Directory | Purpose |
-|----------------|---------|
-| `core/config.py` | Environment-based configuration using Pydantic Settings |
-| `core/exceptions.py` | Custom exception classes (SparqlError, ResourceNotFoundError) |
-| `models/domain.py` | Pydantic models for entities (Persona, Exposicion, ObraDeArte, etc.) |
-| `models/responses.py` | Standardized API response models |
-| `routers/*.py` | FastAPI routers for different resource types |
-| `services/sparql_client.py` | Asynchronous SPARQL client using httpx |
-| `services/queries/*.py` | SPARQL query builders organized by domain |
-| `utils/helpers.py` | Helper functions (hashing, date conversion, normalization) |
-| `utils/parsers.py` | SPARQL response parsing utilities |
-| `dependencies.py` | FastAPI dependency injection (authentication, client) |
-| `main.py` | FastAPI application instance and router registration |
+| Archivo/Directorio | Propósito |
+|----------------|---------| 
+| `core/config.py` | Configuración basada en entorno usando Pydantic Settings |
+| `core/exceptions.py` | Clases de excepción personalizadas (SparqlError, ResourceNotFoundError) |
+| `models/domain.py` | Modelos Pydantic para entidades (Persona, Exposicion, ObraDeArte, etc.) |
+| `models/responses.py` | Modelos de respuesta API estandarizados |
+| `routers/*.py` | Routers de FastAPI para diferentes tipos de recursos |
+| `services/sparql_client.py` | Cliente SPARQL asíncrono usando httpx |
+| `services/queries/*.py` | Constructores de queries SPARQL organizados por dominio |
+| `utils/helpers.py` | Funciones helper (hashing, conversión de fechas, normalización) |
+| `utils/parsers.py` | Utilidades de parseo de respuestas SPARQL |
+| `dependencies.py` | Inyección de dependencias de FastAPI (autenticación, cliente) |
+| `main.py` | Instancia de aplicación FastAPI y registro de routers |
 
-### Documentation
+### Documentación
 
-| File | Purpose |
-|------|---------|
-| `README.md` | Project overview, quick start, features |
-| `ARCHITECTURE.md` | System design, architecture diagrams, design decisions |
-| `CONTRIBUTING.md` | Development setup, coding standards, PR process |
-| `DEPLOYMENT.md` | Deployment guides for various platforms |
-| `ROUTES.md` | Complete API endpoint reference |
-| `CHANGELOG.md` | Version history and migration guides |
-| `SECURITY.md` | Security policy and vulnerability reporting |
-| `LICENSE.md` | MIT License |
+| Archivo | Propósito |
+|------|---------| 
+| `README.md` | Resumen del proyecto, inicio rápido, características |
+| `ARCHITECTURE.md` | Diseño del sistema, diagramas de arquitectura, decisiones de diseño |
+| `CONTRIBUTING.md` | Configuración de desarrollo, estándares de código, proceso PR |
+| `DEPLOYMENT.md` | Guías de despliegue para varias plataformas |
+| `ROUTES.md` | Referencia completa de endpoints de API |
+| `CHANGELOG.md` | Historial de versiones y guías de migración |
+| `SECURITY.md` | Política de seguridad y reporte de vulnerabilidades |
+| `LICENSE.md` | Licencia MIT |
 
-### Configuration
+### Configuración
 
-| File | Purpose |
-|------|---------|
-| `.env.template` | Template for environment variables |
-| `.gitignore` | Files to ignore in version control |
-| `.gitattributes` | Git attributes (line endings, etc.) |
-| `.pre-commit-config.yaml` | Pre-commit hooks for code quality |
-| `pyproject.toml` | Python project metadata and tool configuration |
-| `requirements.txt` | Production Python dependencies |
-| `requirements-dev.txt` | Development dependencies (testing, linting) |
+| Archivo | Propósito |
+|------|---------| 
+| `.env.template` | Template para variables de entorno |
+| `.gitignore` | Archivos a ignorar en control de versiones |
+| `.gitattributes` | Atributos de Git (line endings, etc.) |
+| `.pre-commit-config.yaml` | Pre-commit hooks para calidad de código |
+| `pyproject.toml` | Metadatos del proyecto Python y configuración de herramientas |
+| `requirements.txt` | Dependencias Python de producción |
+| `requirements-dev.txt` | Dependencias de desarrollo (testing, linting) |
 
 ### Docker
 
-| File | Purpose |
-|------|---------|
-| `Dockerfile` | Multi-stage Docker image definition |
-| `docker-compose.yml` | Full stack deployment (API + Virtuoso) |
+| Archivo | Propósito |
+|------|---------| 
+| `Dockerfile` | Definición de imagen Docker multi-stage |
+| `docker-compose.yml` | Despliegue de stack completo (API + Virtuoso) |
 
 ### Testing
 
-| File | Purpose |
-|------|---------|
-| `test_main.http` | HTTP request examples for manual testing |
+| Archivo | Propósito |
+|------|---------| 
+| `test_main.http` | Ejemplos de peticiones HTTP para testing manual |
 
 ### CI/CD
 
-| File | Purpose |
-|------|---------|
-| `.github/workflows/ci-cd.yml` | GitHub Actions pipeline (test, lint, build, deploy) |
+| Archivo | Propósito |
+|------|---------| 
+| `.github/workflows/ci-cd.yml` | Pipeline de GitHub Actions (test, lint, build, deploy) |
 
-## Key Directories
+## Directorios Clave
 
-### `app/routers/` - API Endpoints
+### `app/routers/` - Endpoints de API
 
-Each router file handles a specific resource type:
-- **persons.py**: Person/artist management
-- **institutions.py**: Museum, gallery, institution management
-- **exhibitions.py**: Exhibition event management
-- **artworks.py**: Artwork management
-- **misc.py**: Search, utility endpoints
+Cada archivo router maneja un tipo de recurso específico:
+- **persons.py**: Gestión de personas/artistas
+- **institutions.py**: Gestión de museos, galerías, instituciones
+- **exhibitions.py**: Gestión de eventos de exposiciones
+- **artworks.py**: Gestión de obras de arte
+- **misc.py**: Búsqueda, endpoints de utilidad
 
-### `app/services/queries/` - SPARQL Queries
+### `app/services/queries/` - Queries SPARQL
 
-Organized by domain for maintainability:
-- **base.py**: Common SPARQL prefixes and constants
-- **persons.py**: Person-related queries (SELECT, INSERT)
-- **institutions.py**: Institution queries
-- **exhibitions.py**: Exhibition queries
-- **artworks.py**: Artwork queries
-- **misc.py**: Search and utility queries
-- **utils.py**: Query generation helpers
+Organizadas por dominio para mantenibilidad:
+- **base.py**: Prefijos SPARQL comunes y constantes
+- **persons.py**: Queries relacionadas con personas (SELECT, INSERT)
+- **institutions.py**: Queries de instituciones
+- **exhibitions.py**: Queries de exposiciones
+- **artworks.py**: Queries de obras de arte
+- **misc.py**: Queries de búsqueda y utilidad
+- **utils.py**: Helpers de generación de queries
 
-## Technology Stack
+## Stack Tecnológico
 
-| Layer | Technology |
-|-------|-----------|
+| Capa | Tecnología |
+|-------|-----------| 
 | **Framework** | FastAPI 0.122.0 |
-| **Server** | Uvicorn (ASGI) |
-| **HTTP Client** | httpx (async) |
-| **Validation** | Pydantic v2 |
-| **Authentication** | python-jose (JWT) |
-| **Database** | Virtuoso (SPARQL) |
-| **Ontology** | OntoExhibit + CIDOC-CRM |
-| **Container** | Docker |
+| **Servidor** | Uvicorn (ASGI) |
+| **Cliente HTTP** | httpx (async) |
+| **Validación** | Pydantic v2 |
+| **Autenticación** | python-jose (JWT) |
+| **Base de Datos** | Virtuoso (SPARQL) |
+| **Ontología** | OntoExhibit + CIDOC-CRM |
+| **Contenedor** | Docker |
 | **CI/CD** | GitHub Actions |
 
-## Development Workflow
+## Flujo de Trabajo de Desarrollo
 
 ```
-1. Clone repository
-2. Create virtual environment
-3. Install dependencies (requirements.txt + requirements-dev.txt)
-4. Configure .env file
-5. Run development server (uvicorn --reload)
-6. Make changes
-7. Run tests (pytest)
-8. Format code (black, isort)
-9. Commit (pre-commit hooks run automatically)
-10. Push and create PR
+1. Clonar repositorio
+2. Crear entorno virtual
+3. Instalar dependencias (requirements.txt + requirements-dev.txt)
+4. Configurar archivo .env
+5. Ejecutar servidor de desarrollo (uvicorn --reload)
+6. Hacer cambios
+7. Ejecutar tests (pytest)
+8. Formatear código (black, isort)
+9. Commit (pre-commit hooks corren automáticamente)
+10. Push y crear PR
 ```
 
-## Deployment Options
+## Opciones de Despliegue
 
 - **Local**: `uvicorn app.main:app --reload`
 - **Docker**: `docker build` + `docker run`
 - **Docker Compose**: `docker-compose up`
-- **Cloud**: AWS ECS, Google Cloud Run, Heroku, DigitalOcean
+- **Nube**: AWS ECS, Google Cloud Run, Heroku, DigitalOcean
 
-## Next Steps
+## Próximos Pasos
 
-1. Read [README.md](README.md) for project overview
-2. Check [ARCHITECTURE.md](ARCHITECTURE.md) for system design
-3. Follow [CONTRIBUTING.md](CONTRIBUTING.md) for development
-4. Use [DEPLOYMENT.md](DEPLOYMENT.md) for deployment
-5. Reference [ROUTES.md](ROUTES.md) for API endpoints
+1. Leer [README.md](README.md) para resumen del proyecto
+2. Revisar [ARCHITECTURE.md](ARCHITECTURE.md) para diseño del sistema
+3. Seguir [CONTRIBUTING.md](CONTRIBUTING.md) para desarrollo
+4. Usar [DEPLOYMENT.md](DEPLOYMENT.md) para despliegue
+5. Consultar [ROUTES.md](ROUTES.md) para endpoints de API
 
 ---
 
-**Last Updated**: 2025-11-26
-**Version**: 1.0.0
+**Última Actualización**: 2025-11-26
+**Versión**: 1.0.0

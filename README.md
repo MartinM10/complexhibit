@@ -1,38 +1,39 @@
-# Complexhibit / OntoExhibit
+# Complexhibit
 
-This is the monorepo for the Complexhibit project, consisting of a FastAPI backend and a Next.js frontend.
+Este es el monorepo del proyecto Complexhibit, que consiste en un backend FastAPI y un frontend Next.js.
 
-## Project Structure
+## Estructura del Proyecto
 
-- **`backend/`**: Contains the FastAPI application, ontology files, and data processing scripts.
-- **`frontend/`**: Contains the Next.js web application.
-- **`docker-compose.yml`**: Orchestrates the services (Backend, Frontend, Virtuoso).
+- **`backend/`**: Contiene la aplicación FastAPI, archivos de ontología y scripts de procesamiento de datos.
+- **`frontend/`**: Contiene la aplicación web Next.js.
+- **`docker-compose.yml`**: Orquesta los servicios (Backend, Frontend, Virtuoso).
 
-## Getting Started
+## Inicio Rápido
 
-### Prerequisites
+### Requisitos Previos
 
-- [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed.
+- [Docker](https://www.docker.com/) y [Docker Compose](https://docs.docker.com/compose/) instalados.
 
-### Configuration (.env)
+### Configuración (.env)
 
-The project uses environment variables for configuration.
+El proyecto utiliza un único archivo `.env` consolidado para toda la configuración.
 
-1.  **Root `.env`**: This file is used by `docker-compose` to configure the services.
-    - Copy `.env.template` to `.env` in the root directory (if not already present).
-    - Key variables:
-        - `URI_ONTOLOGIA`: Base URI for the ontology.
-        - `DJANGO_SECRET_KEY`: Secret key for the backend (legacy name, used for FastAPI security).
-        - `VIRTUOSO_DBA_PASSWORD`: Password for the Virtuoso database.
-        - `NEXT_PUBLIC_API_URL`: URL for the backend API (client-side).
-        - `API_URL`: URL for the backend API (server-side/Docker internal).
+1.  **`.env` en la raíz**: Copia `.env.template` a `.env` en el directorio raíz.
+    - Este archivo contiene todas las variables de configuración tanto para Docker como para desarrollo local
+    - Variables clave:
+        - `URI_ONTOLOGIA`: URI base para la ontología.
+        - `JWT_SECRET`: Clave secreta para autenticación JWT en el backend FastAPI.
+        - `VIRTUOSO_DBA_PASSWORD`: Contraseña para la base de datos Virtuoso.
+        - `POSTGRES_*`: Credenciales de la base de datos PostgreSQL.
+        - `NEXT_PUBLIC_API_URL`: URL para la API del backend (lado cliente).
+        - `API_URL`: URL para la API del backend (lado servidor/Docker interno).
+    - ¡Para producción, asegúrate de cambiar todos los secretos y contraseñas!
 
-2.  **Backend `.env`**: Located in `backend/.env`.
-    - This file is **only** used for local development (running backend without Docker). When running with Docker, all configuration comes from `docker-compose.yml` and the root `.env`.
+2.  **Desarrollo Local**: Si ejecutas el backend localmente (sin Docker), copia el `.env` de la raíz a `backend/.env`.
 
-### Running the Application
+### Ejecutar la Aplicación
 
-You can use the provided initialization scripts for a quick setup (checks Docker, creates .env, starts services, loads data):
+Puedes usar los scripts de inicialización proporcionados para una configuración rápida (verifica Docker, crea .env, inicia servicios, carga datos):
 
 **Windows:**
 ```powershell
@@ -45,29 +46,29 @@ chmod +x init.sh
 ./init.sh
 ```
 
-Or manually with Docker Compose:
+O manualmente con Docker Compose:
 
 ```bash
 docker-compose up -d --build
 ```
 
-### Accessing the Services
+### Acceder a los Servicios
 
 - **Frontend**: [http://localhost:3000](http://localhost:3000)
 - **Backend API**: [http://localhost:8000/api/v1/](http://localhost:8000/api/v1/)
 - **Virtuoso SPARQL Endpoint**: [http://localhost:8890/sparql](http://localhost:8890/sparql)
 - **Virtuoso Conductor**: [http://localhost:8890/conductor](http://localhost:8890/conductor)
 
-## Development
+## Desarrollo
 
 ### Backend
-See [backend/README.md](backend/README.md) for detailed backend development instructions.
+Consulta [backend/README.md](backend/README.md) para instrucciones detalladas de desarrollo del backend.
 
 ### Frontend
-See [frontend/README.md](frontend/README.md) for detailed frontend development instructions.
+Consulta [frontend/README.md](frontend/README.md) para instrucciones detalladas de desarrollo del frontend.
 
-## License
+## Licencia
 
-This software is proprietary and owned by **iArtHis Lab**. © 2025 iArtHis Lab. All Rights Reserved.
+Este software es propietario y pertenece a **iArtHis Lab**. © 2025 iArtHis Lab. Todos los derechos reservados.
 
-For licensing inquiries, please contact iArtHis Lab.
+Para consultas sobre licencias, contacta a iArtHis Lab.

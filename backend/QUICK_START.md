@@ -1,8 +1,8 @@
-# 📋 Resumen Ejecutivo - OntoExhibit Setup
+# 📋 Resumen Ejecutivo - Complexhibit Setup
 
 ## ✅ Configuración Implementada
 
-Automatización completa de la configuración de Virtuoso y carga de datos para el proyecto OntoExhibit:
+Automatización completa de la configuración de Virtuoso y carga de datos para el proyecto Complexhibit:
 
 ### 1. **Archivos Creados**
 

@@ -17,7 +17,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.DJANGO_SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[ALGORITHM])
         sub: str = payload.get("sub")
         if sub is None:
             raise credentials_exception

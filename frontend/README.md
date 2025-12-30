@@ -1,43 +1,43 @@
 # Complexhibit Frontend
 
-Frontend application for Complexhibit, built with Next.js.
+Aplicación frontend para Complexhibit, construida con Next.js.
 
-## Getting Started
+## Inicio Rápido
 
-### Prerequisites
+### Requisitos Previos
 
 - Node.js 18+
-- Backend services running (see root README)
+- Servicios del backend ejecutándose (ver README raíz)
 
-### Installation
+### Instalación
 
 ```bash
 npm install
 ```
 
-### Configuration
+### Configuración
 
-The application relies on environment variables for API connection.
-When running via Docker (from root), these are injected automatically.
+La aplicación depende de variables de entorno para la conexión con la API.
+Cuando se ejecuta vía Docker (desde la raíz), estas se inyectan automáticamente.
 
-For local development:
-1. Create a `.env.local` file in this directory.
-2. Add the following:
+Para desarrollo local:
+1. Crea un archivo `.env.local` en este directorio.
+2. Añade lo siguiente:
 
 ```bash
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 ```
 
-### Running Locally
+### Ejecución Local
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser.
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-## Project Structure
+## Estructura del Proyecto
 
-- `src/app`: App router pages and layouts.
-- `src/components`: Reusable UI components.
-- `src/lib`: Utility functions and API clients.
+- `src/app`: Páginas y layouts del App Router.
+- `src/components`: Componentes UI reutilizables.
+- `src/lib`: Funciones de utilidad y clientes API.
