@@ -47,6 +47,9 @@ ld_dir('/database', 'result.nt', '$GRAPH_URI');
 SELECT * FROM DB.DBA.load_list;
 rdf_loader_run();
 checkpoint;
+RDF_OBJ_FT_RULE_ADD(null, null, 'All');
+VT_INC_INDEX_DB_DBA_RDF_OBJ();
+checkpoint;
 SELECT COUNT(*) FROM DB.DBA.RDF_QUAD WHERE G = iri_to_id('$GRAPH_URI');
 EXIT;
 "@

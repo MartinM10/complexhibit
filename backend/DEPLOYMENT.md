@@ -87,6 +87,34 @@ docker-compose down -v
 - **Virtuoso**: http://localhost:8890/sparql
 - **Virtuoso Conductor**: http://localhost:8890/conductor
 
+### Configuración de Virtuoso (Rendimiento)
+
+El proyecto incluye dos configuraciones para Virtuoso en `backend/`:
+
+1. **`virtuoso.dev.ini` (Por defecto)**:
+   - Optimizado para desarrollo local y Docker Desktop.
+   - Configurado para sistemas con 4-8 GB de RAM.
+   - Usado por defecto como `virtuoso.ini`.
+
+2. **`virtuoso.prod.ini`**:
+   - Optimizado para servidores de producción dedicados.
+   - Requiere 32GB+ de RAM.
+   - Habilita buffers grandes para máximo rendimiento.
+
+**Para pasar a Producción:**
+```bash
+cp backend/virtuoso.prod.ini backend/virtuoso.ini
+# Reiniciar contenedor
+docker-compose restart virtuoso
+```
+
+**Nota sobre Índices:**
+Los scripts de carga (`load_data.ps1` y `load_data.sh`) ejecutan automáticamente la optimización de índices. Si cargas datos manualmente, ejecuta estos comandos en Virtuoso para asegurar el rendimiento:
+```sql
+RDF_OBJ_FT_RULE_ADD(null, null, 'All');
+VT_INC_INDEX_DB_DBA_RDF_OBJ();
+```
+
 ## Despliegue en la Nube
 
 ### AWS (Elastic Beanstalk)
