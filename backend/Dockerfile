@@ -5,7 +5,8 @@ FROM python:3.11-slim as builder
 WORKDIR /app
 
 # Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y \    gcc \
+RUN apt-get update && apt-get install -y \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar requirements e instalar dependencias de Python
@@ -24,7 +25,6 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copiar código de la aplicación
 COPY ./app ./app
-COPY .env.template .env.template
 
 # Crear usuario no-root
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
