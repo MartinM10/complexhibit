@@ -14,7 +14,8 @@ class SparqlClient:
     ):
         self.endpoint_url = endpoint_url
         self.default_graph = default_graph
-        self.timeout = httpx.Timeout(30.0, connect=60.0)
+        # Timeout: 60s for reads (queries can be slow), 10s for connect
+        self.timeout = httpx.Timeout(60.0, connect=10.0)
 
     async def query(self, query: str) -> Dict[str, Any]:
         """
