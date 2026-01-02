@@ -115,12 +115,34 @@ async def create_institution(
 
 @router.get("/get_institution_exhibitions/{id:path}")
 async def get_institution_exhibitions(id: str, client: SparqlClient = Depends(get_sparql_client)):
-    """Get exhibitions hosted by or organized by the institution."""
+    """Get exhibitions hosted by or organized by the institution, grouped by role."""
     query = InstitutionQueries.GET_HOSTED_EXHIBITIONS % id
     try:
         response = await client.query(query)
         data = parse_sparql_response(response)
-        return {"data": data}
+        
+        # Group by role
+        grouped = {
+            "venue": [],
+            "organizer": [],
+            "funder": []
+        }
+        
+        for item in data:
+            role = (item.get("role") or "").lower()
+            exhibition = {
+                "uri": item.get("uri"),
+                "label": item.get("label"),
+                "start_date": item.get("start_date")
+            }
+            if role == "venue":
+                grouped["venue"].append(exhibition)
+            elif role == "organizer":
+                grouped["organizer"].append(exhibition)
+            elif role == "funder":
+                grouped["funder"].append(exhibition)
+        
+        return {"data": grouped}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

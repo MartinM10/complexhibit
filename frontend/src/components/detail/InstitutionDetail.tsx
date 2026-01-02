@@ -103,61 +103,100 @@ export function InstitutionDetails({ data }: InstitutionDetailsProps) {
 }
 
 interface InstitutionSidebarProps {
-  exhibitions?: any[];
+  exhibitions?: {
+    venue?: any[];
+    organizer?: any[];
+    funder?: any[];
+  };
   lenderExhibitions?: any[];
   ownedArtworks?: any[];
 }
 
-export function InstitutionSidebar({ exhibitions = [], lenderExhibitions = [], ownedArtworks = [] }: InstitutionSidebarProps) {
-  const hasData = exhibitions.length > 0 || lenderExhibitions.length > 0 || ownedArtworks.length > 0;
+export function InstitutionSidebar({ exhibitions = {}, lenderExhibitions = [], ownedArtworks = [] }: InstitutionSidebarProps) {
+  const venueExhibitions = exhibitions?.venue || [];
+  const organizerExhibitions = exhibitions?.organizer || [];
+  const funderExhibitions = exhibitions?.funder || [];
   
-  if (!hasData) return null;
+  const hasExhibitions = venueExhibitions.length > 0 || organizerExhibitions.length > 0 || funderExhibitions.length > 0;
+  const hasLender = lenderExhibitions.length > 0;
+  const hasArtworks = ownedArtworks.length > 0;
+  
+  if (!hasExhibitions && !hasLender && !hasArtworks) return null;
   
   // Transform exhibitions to LinkedEntity format
-  const hostedExhibitionEntities: LinkedEntity[] = exhibitions.map(exh => ({
-    label: `${exh.label || "Untitled Exhibition"}${exh.role ? ` (${exh.role})` : ""}${exh.start_date ? ` - ${exh.start_date}` : ""}`,
-    uri: exh.uri
-  }));
-  
-  const lenderExhibitionEntities: LinkedEntity[] = lenderExhibitions.map(exh => ({
+  const toEntities = (items: any[]) => items.map(exh => ({
     label: `${exh.label || "Untitled Exhibition"}${exh.start_date ? ` - ${exh.start_date}` : ""}`,
     uri: exh.uri
   }));
   
+  const lenderEntities: LinkedEntity[] = toEntities(lenderExhibitions);
   const artworkEntities: LinkedEntity[] = ownedArtworks.map(art => ({
     label: `${art.label || "Untitled Artwork"}${art.type ? ` (${art.type})` : ""}`,
     uri: art.uri
   }));
   
   return (
-    <SidebarCard title="Related Entities">
-      <DefinitionList>
-        {hostedExhibitionEntities.length > 0 && (
-          <EntityList 
-            label="Hosted/Organized Exhibitions" 
-            entities={hostedExhibitionEntities} 
-            colorClass="text-indigo-600 hover:text-indigo-800"
-            fallbackType="exhibition"
-          />
-        )}
-        {lenderExhibitionEntities.length > 0 && (
-          <EntityList 
-            label="Lender For Exhibitions" 
-            entities={lenderExhibitionEntities} 
-            colorClass="text-purple-600 hover:text-purple-800"
-            fallbackType="exhibition"
-          />
-        )}
-        {artworkEntities.length > 0 && (
-          <EntityList 
-            label="Owned Artworks" 
-            entities={artworkEntities} 
-            colorClass="text-pink-600 hover:text-pink-800"
-            fallbackType="artwork"
-          />
-        )}
-      </DefinitionList>
-    </SidebarCard>
+    <>
+      {/* Exhibition Roles */}
+      {hasExhibitions && (
+        <SidebarCard title="Exhibition Roles">
+          <DefinitionList>
+            {venueExhibitions.length > 0 && (
+              <EntityList 
+                label="Hosted At (Venue)" 
+                entities={toEntities(venueExhibitions)} 
+                colorClass="text-indigo-600 hover:text-indigo-800"
+                fallbackType="exhibition"
+              />
+            )}
+            {organizerExhibitions.length > 0 && (
+              <EntityList 
+                label="Organized" 
+                entities={toEntities(organizerExhibitions)} 
+                colorClass="text-blue-600 hover:text-blue-800"
+                fallbackType="exhibition"
+              />
+            )}
+            {funderExhibitions.length > 0 && (
+              <EntityList 
+                label="Funded" 
+                entities={toEntities(funderExhibitions)} 
+                colorClass="text-green-600 hover:text-green-800"
+                fallbackType="exhibition"
+              />
+            )}
+          </DefinitionList>
+        </SidebarCard>
+      )}
+      
+      {/* Lender Role */}
+      {hasLender && (
+        <SidebarCard title="Lender For">
+          <DefinitionList>
+            <EntityList 
+              label="Exhibitions" 
+              entities={lenderEntities} 
+              colorClass="text-purple-600 hover:text-purple-800"
+              fallbackType="exhibition"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+      
+      {/* Owned Assets */}
+      {hasArtworks && (
+        <SidebarCard title="Owned Assets">
+          <DefinitionList>
+            <EntityList 
+              label="Artworks" 
+              entities={artworkEntities} 
+              colorClass="text-pink-600 hover:text-pink-800"
+              fallbackType="artwork"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+    </>
   );
 }
 

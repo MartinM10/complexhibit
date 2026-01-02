@@ -178,6 +178,14 @@ class InstitutionQueries:
                 ?role_node <https://w3id.org/OntoExhibit#isRoleOf> ?inst_uri .
                 BIND("Organizer" AS ?role)
             }}
+            UNION
+            {{
+                # Funder/Sponsor role - institution has a financer role
+                ?inst_uri <https://w3id.org/OntoExhibit#hasRole> ?funder_role .
+                ?funder_role <https://w3id.org/OntoExhibit#isFunderOf> ?making .
+                ?making <https://w3id.org/OntoExhibit#isExhibitionMakingOf> ?uri .
+                BIND("Funder" AS ?role)
+            }}
             
             ?uri rdf:type <https://w3id.org/OntoExhibit#Exhibition> .
             
