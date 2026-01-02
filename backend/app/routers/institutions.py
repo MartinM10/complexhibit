@@ -209,3 +209,45 @@ async def get_institution_executives(id: str, client: SparqlClient = Depends(get
         return {"data": executives}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_institution_parent/{id:path}")
+async def get_institution_parent(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get the parent organization of this institution."""
+    query = InstitutionQueries.get_parent_organization(id)
+    try:
+        response = await client.query(query)
+        flat_data = parse_sparql_response(response)
+        
+        parent = None
+        if flat_data and len(flat_data) > 0:
+            item = flat_data[0]
+            parent = {
+                "uri": item.get("parent_uri"),
+                "label": item.get("parent_label")
+            }
+        
+        return {"data": parent}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_institution_children/{id:path}")
+async def get_institution_children(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get child organizations of this institution."""
+    query = InstitutionQueries.get_child_organizations(id)
+    try:
+        response = await client.query(query)
+        flat_data = parse_sparql_response(response)
+        
+        children = []
+        for item in flat_data:
+            children.append({
+                "uri": item.get("child_uri"),
+                "label": item.get("child_label")
+            })
+        
+        return {"data": children}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

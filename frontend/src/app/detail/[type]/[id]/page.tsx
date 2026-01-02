@@ -24,7 +24,9 @@ import {
   getPersonCollaborators,
   getInstitutionCollaborators,
   getPersonExecutivePositions,
-  getInstitutionExecutives
+  getInstitutionExecutives,
+  getInstitutionParent,
+  getInstitutionChildren
 } from "@/lib/api";
 import { unCamel, cleanLabel } from "@/lib/utils";
 import MapSection from '@/components/MapSection';
@@ -50,7 +52,7 @@ import {
   InstitutionDetails,
   InstitutionCollaborators,
   InstitutionHeadquarters,
-  InstitutionExecutives
+  InstitutionSubsidiaries
 } from "@/components/detail";
 
 interface PageProps {
@@ -128,6 +130,12 @@ export default async function DetailPage({ params }: PageProps) {
   const institutionExecutivesPromise = decodedType === 'institution'
     ? getInstitutionExecutives(id).catch(() => null)
     : Promise.resolve(null);
+  const institutionParentPromise = decodedType === 'institution'
+    ? getInstitutionParent(id).catch(() => null)
+    : Promise.resolve(null);
+  const institutionChildrenPromise = decodedType === 'institution'
+    ? getInstitutionChildren(id).catch(() => null)
+    : Promise.resolve(null);
 
   // Await all promises
   const [
@@ -135,7 +143,7 @@ export default async function DetailPage({ params }: PageProps) {
     participants, artworks, making, datesAndPlace, institutionExhibitions, 
     institutionDetails, institutionLenderExhibitions, institutionOwnedArtworks,
     personCollaborators, institutionCollaboratorsData, personExecutivePositions,
-    institutionExecutivesData
+    institutionExecutivesData, institutionParentData, institutionChildrenData
   ] = await Promise.all([
     dataPropertiesPromise,
     typesPromise,
@@ -153,7 +161,9 @@ export default async function DetailPage({ params }: PageProps) {
     personCollaboratorsPromise,
     institutionCollaboratorsPromise,
     personExecutivePositionsPromise,
-    institutionExecutivesPromise
+    institutionExecutivesPromise,
+    institutionParentPromise,
+    institutionChildrenPromise
   ]);
 
   // ====================
@@ -176,6 +186,8 @@ export default async function DetailPage({ params }: PageProps) {
   const institutionCollaboratorsList = institutionCollaboratorsData?.data || [];
   const personExecutivePositionsData = personExecutivePositions?.data || [];
   const institutionExecutivesList = institutionExecutivesData?.data || [];
+  const parentOrganization = institutionParentData?.data || null;
+  const childOrganizations = institutionChildrenData?.data || [];
 
   // Debug query for QueryLogger
   const debugQuery = decodedType === 'exhibition' 
@@ -283,7 +295,7 @@ export default async function DetailPage({ params }: PageProps) {
                       ownedArtworks={institutionOwnedArtworksData}
                     />
                     <InstitutionCollaborators collaborators={institutionCollaboratorsList} />
-                    <InstitutionExecutives executives={institutionExecutivesList} />
+                    <InstitutionSubsidiaries childOrganizations={childOrganizations} />
                   </>
                 )}
                 
@@ -328,7 +340,11 @@ export default async function DetailPage({ params }: PageProps) {
                 {/* Institution Details */}
                 {decodedType === 'institution' && (
                   <>
-                    <InstitutionDetails data={institutionItem} />
+                    <InstitutionDetails 
+                      data={institutionItem} 
+                      executives={institutionExecutivesList} 
+                      parentOrganization={parentOrganization}
+                    />
                     <InstitutionHeadquarters data={institutionItem} />
                     
                     {/* Headquarters Map */}

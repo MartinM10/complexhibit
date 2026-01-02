@@ -282,6 +282,38 @@ class InstitutionQueries:
         """
 
     @staticmethod
+    def get_parent_organization(inst_id: str) -> str:
+        """Get the parent organization of this institution (hasParentOrganization)."""
+        return f"""
+            {PREFIXES}
+            SELECT DISTINCT ?parent_uri ?parent_label
+            WHERE {{
+                BIND(<https://w3id.org/OntoExhibit#institution/{inst_id}> AS ?institution)
+                
+                # Institution has a parent organization
+                ?institution <https://w3id.org/OntoExhibit#hasParentOrganization> ?parent_uri .
+                ?parent_uri rdfs:label ?parent_label .
+            }}
+            ORDER BY ?parent_label
+        """
+
+    @staticmethod
+    def get_child_organizations(inst_id: str) -> str:
+        """Get child organizations of this institution (isParentOrganizationOf)."""
+        return f"""
+            {PREFIXES}
+            SELECT DISTINCT ?child_uri ?child_label
+            WHERE {{
+                BIND(<https://w3id.org/OntoExhibit#institution/{inst_id}> AS ?institution)
+                
+                # Institution is the parent of child organizations
+                ?institution <https://w3id.org/OntoExhibit#isParentOrganizationOf> ?child_uri .
+                ?child_uri rdfs:label ?child_label .
+            }}
+            ORDER BY ?child_label
+        """
+
+    @staticmethod
     def add_institucion(entidad: Institucion) -> str:
         id_generated = generate_hashed_id()
         entidad.id = id_generated

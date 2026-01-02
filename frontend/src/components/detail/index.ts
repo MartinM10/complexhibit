@@ -43,5 +43,5 @@ export {
   InstitutionDetails,
   InstitutionCollaborators,
   InstitutionHeadquarters,
-  InstitutionExecutives
+  InstitutionSubsidiaries
 } from './InstitutionDetail';

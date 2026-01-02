@@ -117,6 +117,14 @@ export async function getInstitutionExecutives(id: string) {
   return fetchFromApi(`/get_institution_executives/${id}`);
 }
 
+export async function getInstitutionParent(id: string) {
+  return fetchFromApi(`/get_institution_parent/${id}`);
+}
+
+export async function getInstitutionChildren(id: string) {
+  return fetchFromApi(`/get_institution_children/${id}`);
+}
+
 export async function executeSparql(query: string) {
   const url = new URL(`${API_URL}/sparql`);
   const response = await fetch(url.toString(), {

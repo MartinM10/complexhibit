@@ -23,9 +23,15 @@ interface InstitutionData {
 
 interface InstitutionDetailsProps {
   data: InstitutionData | InstitutionData[];
+  executives?: LinkedEntity[];
+  parentOrganization?: LinkedEntity | null;
 }
 
-export function InstitutionDetails({ data }: InstitutionDetailsProps) {
+export function InstitutionDetails({ 
+  data, 
+  executives = [], 
+  parentOrganization 
+}: InstitutionDetailsProps) {
   const institution = Array.isArray(data) ? data[0] : data;
   
   const hasData = institution && (
@@ -33,8 +39,10 @@ export function InstitutionDetails({ data }: InstitutionDetailsProps) {
     institution.ownershipType || institution.email || 
     institution.telephone || institution.uriHtml
   );
+  const hasExecutives = executives.length > 0;
+  const hasParent = parentOrganization && parentOrganization.uri;
   
-  if (!hasData) {
+  if (!hasData && !hasExecutives && !hasParent) {
     return null;
   }
   
@@ -43,10 +51,10 @@ export function InstitutionDetails({ data }: InstitutionDetailsProps) {
       <SectionHeader title="Institution Details" colorClass="bg-green-600" />
       <SectionWrapper>
         <div className="space-y-4">
-          <PropertyRow label="Alternative Name" value={institution.apelation} />
-          <PropertyRow label="Ownership Type" value={institution.ownershipType} />
+          <PropertyRow label="Alternative Name" value={institution?.apelation} />
+          <PropertyRow label="Ownership Type" value={institution?.ownershipType} />
           
-          {institution.label_place && (
+          {institution?.label_place && (
             <div className="flex flex-col">
               <span className="text-xs font-semibold text-gray-500 uppercase">Location</span>
               <span className="text-gray-900">
@@ -65,7 +73,7 @@ export function InstitutionDetails({ data }: InstitutionDetailsProps) {
           )}
           
           {/* Contact Information */}
-          {(institution.email || institution.telephone || institution.uriHtml) && (
+          {(institution?.email || institution?.telephone || institution?.uriHtml) && (
             <>
               <hr className="border-gray-100" />
               <div className="grid sm:grid-cols-2 gap-4">
@@ -96,6 +104,43 @@ export function InstitutionDetails({ data }: InstitutionDetailsProps) {
               </div>
             </>
           )}
+          
+          {/* Executive Leadership */}
+          {hasExecutives && (
+            <>
+              <hr className="border-gray-100" />
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-gray-500 uppercase mb-2">Executive Leadership</span>
+                <div className="flex flex-wrap gap-2">
+                  {executives.map((exec, idx) => (
+                    <EntityLink 
+                      key={idx}
+                      label={cleanLabel(exec.label || "Executive")} 
+                      uri={exec.uri!} 
+                      fallbackType="actant"
+                      className="text-amber-600 hover:text-amber-800 hover:underline"
+                    />
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+          
+          {/* Parent Organization */}
+          {hasParent && parentOrganization && (
+            <>
+              <hr className="border-gray-100" />
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-gray-500 uppercase mb-1">Parent Organization</span>
+                <EntityLink 
+                  label={cleanLabel(parentOrganization.label || "Parent")} 
+                  uri={parentOrganization.uri!} 
+                  fallbackType="institution"
+                  className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                />
+              </div>
+            </>
+          )}
         </div>
       </SectionWrapper>
     </section>
@@ -117,11 +162,13 @@ export function InstitutionSidebar({ exhibitions = {}, lenderExhibitions = [], o
   const organizerExhibitions = exhibitions?.organizer || [];
   const funderExhibitions = exhibitions?.funder || [];
   
-  const hasExhibitions = venueExhibitions.length > 0 || organizerExhibitions.length > 0 || funderExhibitions.length > 0;
   const hasLender = lenderExhibitions.length > 0;
   const hasArtworks = ownedArtworks.length > 0;
+  const hasVenue = venueExhibitions.length > 0;
+  const hasOrganizer = organizerExhibitions.length > 0;
+  const hasFunder = funderExhibitions.length > 0;
   
-  if (!hasExhibitions && !hasLender && !hasArtworks) return null;
+  if (!hasVenue && !hasOrganizer && !hasFunder && !hasLender && !hasArtworks) return null;
   
   // Transform exhibitions to LinkedEntity format
   const toEntities = (items: any[]) => items.map(exh => ({
@@ -137,34 +184,44 @@ export function InstitutionSidebar({ exhibitions = {}, lenderExhibitions = [], o
   
   return (
     <>
-      {/* Exhibition Roles */}
-      {hasExhibitions && (
-        <SidebarCard title="Exhibition Roles">
+      {/* Venue - Exhibitions hosted at this institution */}
+      {venueExhibitions.length > 0 && (
+        <SidebarCard title="Venue For">
           <DefinitionList>
-            {venueExhibitions.length > 0 && (
-              <EntityList 
-                label="Hosted At (Venue)" 
-                entities={toEntities(venueExhibitions)} 
-                colorClass="text-indigo-600 hover:text-indigo-800"
-                fallbackType="exhibition"
-              />
-            )}
-            {organizerExhibitions.length > 0 && (
-              <EntityList 
-                label="Organized" 
-                entities={toEntities(organizerExhibitions)} 
-                colorClass="text-blue-600 hover:text-blue-800"
-                fallbackType="exhibition"
-              />
-            )}
-            {funderExhibitions.length > 0 && (
-              <EntityList 
-                label="Funded" 
-                entities={toEntities(funderExhibitions)} 
-                colorClass="text-green-600 hover:text-green-800"
-                fallbackType="exhibition"
-              />
-            )}
+            <EntityList 
+              label="Exhibitions" 
+              entities={toEntities(venueExhibitions)} 
+              colorClass="text-indigo-600 hover:text-indigo-800"
+              fallbackType="exhibition"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+      
+      {/* Organizer - Exhibitions organized by this institution */}
+      {organizerExhibitions.length > 0 && (
+        <SidebarCard title="Organized">
+          <DefinitionList>
+            <EntityList 
+              label="Exhibitions" 
+              entities={toEntities(organizerExhibitions)} 
+              colorClass="text-blue-600 hover:text-blue-800"
+              fallbackType="exhibition"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+      
+      {/* Funder - Exhibitions funded by this institution */}
+      {funderExhibitions.length > 0 && (
+        <SidebarCard title="Funded">
+          <DefinitionList>
+            <EntityList 
+              label="Exhibitions" 
+              entities={toEntities(funderExhibitions)} 
+              colorClass="text-green-600 hover:text-green-800"
+              fallbackType="exhibition"
+            />
           </DefinitionList>
         </SidebarCard>
       )}
@@ -258,6 +315,27 @@ export function InstitutionExecutives({ executives }: InstitutionExecutivesProps
           entities={executives} 
           colorClass="text-amber-600 hover:text-amber-800"
           fallbackType="actant"
+        />
+      </DefinitionList>
+    </SidebarCard>
+  );
+}
+
+interface InstitutionSubsidiariesProps {
+  childOrganizations?: LinkedEntity[];
+}
+
+export function InstitutionSubsidiaries({ childOrganizations = [] }: InstitutionSubsidiariesProps) {
+  if (!childOrganizations || childOrganizations.length === 0) return null;
+  
+  return (
+    <SidebarCard title="Subsidiary Organizations">
+      <DefinitionList>
+        <EntityList 
+          label="Institutions" 
+          entities={childOrganizations} 
+          colorClass="text-emerald-600 hover:text-emerald-800"
+          fallbackType="institution"
         />
       </DefinitionList>
     </SidebarCard>
