@@ -292,7 +292,7 @@ class ExhibitionQueries:
                 f"\t\t{sujeto}> {uri_ontologia}hasExhibitionMaking> {uri_id_exhibition_making} .\n"
             )
             POST_EXHIBITION += (
-                f"\t\t{uri_id_exhibition_making} {uri_ontologia}madeExhibition> {sujeto}> .\n"
+                f"\t\t{uri_id_exhibition_making} {uri_ontologia}isExhibitionMakingOf> {sujeto}> .\n"
             )
 
             # ... (Simplified logic for brevity, assuming similar structure to original but cleaner)

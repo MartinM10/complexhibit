@@ -95,6 +95,7 @@ class InstitutionQueries:
         {PREFIXES}
         SELECT DISTINCT ?label ?uri ?apelation ?label_place ?place_uri 
                         ?ownershipType ?email ?telephone ?uriHtml
+                        ?headquarters_address ?headquarters_lat ?headquarters_long
         WHERE 
         {{
             {{
@@ -123,10 +124,40 @@ class InstitutionQueries:
             OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#apelation> ?apelation }}
             OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#ownershipType> ?ownershipType }}
             OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#email> ?email }}
-            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#telephone> ?telephone }}
-            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#uriHtml> ?uriHtml }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#phone> ?telephone }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#webPage> ?uriHtml }}
+            OPTIONAL {{
+                ?uri <https://w3id.org/OntoExhibit#hasHeadquarters> ?headquarters .
+                ?headquarters rdf:type <https://w3id.org/OntoExhibit#Headquarter> .
+                OPTIONAL {{
+                    ?headquarters <https://w3id.org/OntoExhibit#isHeadquarteredAt> ?hq_site .
+                    ?hq_site rdfs:label ?headquarters_address
+                }}
+                OPTIONAL {{ ?headquarters <http://www.w3.org/2003/01/geo/wgs84_pos#lat> ?headquarters_lat }}
+                OPTIONAL {{ ?headquarters <http://www.w3.org/2003/01/geo/wgs84_pos#long> ?headquarters_long }}
+            }}
         }}
     """
+
+    @staticmethod
+    def get_institution_executives(inst_id: str) -> str:
+        """Get executive positions held at this institution."""
+        return f"""
+            {PREFIXES}
+            SELECT DISTINCT ?person_uri ?person_label
+            WHERE {{
+                BIND(<https://w3id.org/OntoExhibit#institution/{inst_id}> AS ?institution)
+                
+                # Institution has executive position
+                ?institution <https://w3id.org/OntoExhibit#executivePositionHeldsBy> ?exec_position .
+                ?exec_position rdf:type <https://w3id.org/OntoExhibit#Executive_Position> .
+                ?exec_position <https://w3id.org/OntoExhibit#isExecutivePositionOf> ?person_uri .
+                
+                ?person_uri rdfs:label ?person_label .
+            }}
+            ORDER BY ?person_label
+        """
+
 
     GET_HOSTED_EXHIBITIONS = f"""
         {PREFIXES}
@@ -205,6 +236,42 @@ class InstitutionQueries:
             OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#type> ?type }}
         }} GROUP BY ?uri
     """
+
+    @staticmethod
+    def get_institution_collaborators(inst_id: str) -> str:
+        """Get all persons who collaborate with this institution."""
+        return f"""
+            {PREFIXES}
+            SELECT DISTINCT ?collaborator_uri ?collaborator_label
+            WHERE {{
+                BIND(<https://w3id.org/OntoExhibit#institution/{inst_id}> AS ?institution)
+                
+                # Persons that collaborate with this institution (bidirectional)
+                {{
+                    ?collaborator_uri <https://w3id.org/OntoExhibit#collaboratesWith> ?institution .
+                }}
+                UNION
+                {{
+                    ?institution <https://w3id.org/OntoExhibit#collaboratesWith> ?collaborator_uri .
+                }}
+                
+                ?collaborator_uri rdfs:label ?collaborator_label .
+                
+                # Ensure it's a person/human_actant
+                {{
+                    ?collaborator_uri rdf:type <https://w3id.org/OntoExhibit#Human_Actant> .
+                }}
+                UNION
+                {{
+                    ?collaborator_uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E21_Person> .
+                }}
+                UNION
+                {{
+                    ?collaborator_uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> .
+                }}
+            }}
+            ORDER BY ?collaborator_label
+        """
 
     @staticmethod
     def add_institucion(entidad: Institucion) -> str:

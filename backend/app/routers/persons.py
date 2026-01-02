@@ -36,12 +36,14 @@ async def all_persons(
     death_date: Optional[str] = None,
     gender: Optional[str] = None,
     activity: Optional[str] = None,
+    entity_type: Optional[str] = None,
     client: SparqlClient = Depends(get_sparql_client)
 ):
     """
     Get paginated list of persons/actors with optional filtering.
     
     Uses cursor-based pagination for stable, efficient results.
+    Supports entity_type filter: 'person' for individuals, 'group' for groups.
     """
     # Decode cursor
     last_label, last_uri = None, None
@@ -60,7 +62,8 @@ async def all_persons(
         birth_date=birth_date,
         death_date=death_date,
         gender=gender,
-        activity=activity
+        activity=activity,
+        entity_type=entity_type
     )
     
     # Use shared pagination utility
@@ -141,5 +144,54 @@ async def get_actor_roles(id: str, client: SparqlClient = Depends(get_sparql_cli
             })
         
         return {"data": roles_by_type}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_person_collaborators/{id:path}")
+async def get_person_collaborators(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get all persons and institutions that collaborate with this person."""
+    query = PersonQueries.get_person_collaborators(id)
+    try:
+        response = await client.query(query)
+        flat_data = parse_sparql_response(response)
+        
+        # Group by collaborator type
+        collaborators = {
+            "persons": [],
+            "institutions": []
+        }
+        for item in flat_data:
+            collab_type = item.get("collaborator_type", "unknown")
+            entry = {
+                "uri": item.get("collaborator_uri"),
+                "label": item.get("collaborator_label")
+            }
+            if collab_type == "institution":
+                collaborators["institutions"].append(entry)
+            else:
+                collaborators["persons"].append(entry)
+        
+        return {"data": collaborators}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_person_executive_positions/{id:path}")
+async def get_person_executive_positions(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get institutions where this person holds an executive position."""
+    query = PersonQueries.get_person_executive_positions(id)
+    try:
+        response = await client.query(query)
+        flat_data = parse_sparql_response(response)
+        
+        positions = []
+        for item in flat_data:
+            positions.append({
+                "uri": item.get("institution_uri"),
+                "label": item.get("institution_label")
+            })
+        
+        return {"data": positions}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

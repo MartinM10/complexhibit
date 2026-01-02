@@ -161,11 +161,19 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
     const extra: Record<string, string | string[]> = {};
     
     if (type === 'person' || type === 'actant' || type === 'human_actant' || type === 'actor') {
-      if (item.birth_place_label) extra["Born in"] = item.birth_place_label;
-      if (item.birth_date_label) extra["Born"] = item.birth_date_label;
-      if (item.death_date_label) extra["Died"] = item.death_date_label;
-      if (item.gender) extra["Gender"] = item.gender;
-      if (item.activity) extra["Activity"] = item.activity;
+      // Use arrays for consistent tag styling with exhibitions/artworks
+      if (item.birth_place_label) extra["Born in"] = [item.birth_place_label];
+      if (item.birth_date_label) extra["Born"] = [item.birth_date_label];
+      if (item.death_date_label) extra["Died"] = [item.death_date_label];
+      if (item.foundation_date_label) extra["Founded"] = [item.foundation_date_label];
+      if (item.foundation_place_label) extra["Founded in"] = [item.foundation_place_label];
+      if (item.dissolution_date_label) extra["Dissolved"] = [item.dissolution_date_label];
+      if (item.gender) extra["Gender"] = [item.gender];
+      // Activity is pipe-separated, so parse it as a list
+      const activities = parseSimpleList(item.activity);
+      if (activities) extra["Activity"] = activities;
+      // Show entity type as a tag
+      if (item.entity_type) extra["Type"] = [item.entity_type === 'group' ? 'Group' : 'Person'];
     } else if (type === 'exhibition') {
       if (item.label_starting_date) extra["Opening"] = item.label_starting_date;
       if (item.label_ending_date) extra["Closing"] = item.label_ending_date;

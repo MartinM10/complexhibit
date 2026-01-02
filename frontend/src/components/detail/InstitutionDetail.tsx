@@ -16,6 +16,9 @@ interface InstitutionData {
   email?: string;
   telephone?: string;
   uriHtml?: string;
+  headquarters_address?: string;
+  headquarters_lat?: string;
+  headquarters_long?: string;
 }
 
 interface InstitutionDetailsProps {
@@ -153,6 +156,70 @@ export function InstitutionSidebar({ exhibitions = [], lenderExhibitions = [], o
             fallbackType="artwork"
           />
         )}
+      </DefinitionList>
+    </SidebarCard>
+  );
+}
+
+interface InstitutionCollaboratorsProps {
+  collaborators: LinkedEntity[];
+}
+
+export function InstitutionCollaborators({ collaborators }: InstitutionCollaboratorsProps) {
+  if (!collaborators || collaborators.length === 0) return null;
+  
+  return (
+    <SidebarCard title="Collaborating Persons">
+      <DefinitionList>
+        <EntityList 
+          label="Persons" 
+          entities={collaborators} 
+          colorClass="text-indigo-600 hover:text-indigo-800"
+          fallbackType="actant"
+        />
+      </DefinitionList>
+    </SidebarCard>
+  );
+}
+
+interface InstitutionHeadquartersProps {
+  data: InstitutionData | InstitutionData[];
+}
+
+export function InstitutionHeadquarters({ data }: InstitutionHeadquartersProps) {
+  const institution = Array.isArray(data) ? data[0] : data;
+  
+  if (!institution?.headquarters_address) return null;
+  
+  return (
+    <section>
+      <SectionHeader title="Headquarters" colorClass="bg-teal-600" />
+      <SectionWrapper>
+        <div className="flex flex-col">
+          <span className="text-xs font-semibold text-gray-500 uppercase">Address</span>
+          <span className="text-gray-900">{institution.headquarters_address}</span>
+        </div>
+      </SectionWrapper>
+    </section>
+  );
+}
+
+interface InstitutionExecutivesProps {
+  executives: LinkedEntity[];
+}
+
+export function InstitutionExecutives({ executives }: InstitutionExecutivesProps) {
+  if (!executives || executives.length === 0) return null;
+  
+  return (
+    <SidebarCard title="Executive Leadership">
+      <DefinitionList>
+        <EntityList 
+          label="Executives" 
+          entities={executives} 
+          colorClass="text-amber-600 hover:text-amber-800"
+          fallbackType="actant"
+        />
       </DefinitionList>
     </SidebarCard>
   );

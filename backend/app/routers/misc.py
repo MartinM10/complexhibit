@@ -27,6 +27,10 @@ async def semantic_search(q: str, client: SparqlClient = Depends(get_sparql_clie
 
 @router.get("/filter_options/{filter_type}")
 async def get_filter_options(filter_type: str, client: SparqlClient = Depends(get_sparql_client)):
+    # Handle static options that don't require SPARQL query
+    if filter_type == "entity_type":
+        return {"data": ["Person", "Group"]}
+    
     query = ""
     if filter_type == "gender":
         query = MiscQueries.GET_DISTINCT_GENDERS

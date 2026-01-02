@@ -147,3 +147,43 @@ async def get_institution_owned_artworks(id: str, client: SparqlClient = Depends
         return {"data": data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_institution_collaborators/{id:path}")
+async def get_institution_collaborators(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get persons who collaborate with this institution."""
+    query = InstitutionQueries.get_institution_collaborators(id)
+    try:
+        response = await client.query(query)
+        flat_data = parse_sparql_response(response)
+        
+        collaborators = []
+        for item in flat_data:
+            collaborators.append({
+                "uri": item.get("collaborator_uri"),
+                "label": item.get("collaborator_label")
+            })
+        
+        return {"data": collaborators}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_institution_executives/{id:path}")
+async def get_institution_executives(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get executive position holders at this institution."""
+    query = InstitutionQueries.get_institution_executives(id)
+    try:
+        response = await client.query(query)
+        flat_data = parse_sparql_response(response)
+        
+        executives = []
+        for item in flat_data:
+            executives.append({
+                "uri": item.get("person_uri"),
+                "label": item.get("person_label")
+            })
+        
+        return {"data": executives}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

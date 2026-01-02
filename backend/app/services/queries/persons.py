@@ -24,7 +24,7 @@ class PersonQueries:
     @staticmethod
     def get_personas_ids(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None,
                          birth_place: str = None, birth_date: str = None, death_date: str = None, 
-                         gender: str = None, activity: str = None) -> str:
+                         gender: str = None, activity: str = None, entity_type: str = None) -> str:
         
         filters = []
         inner_joins = []
@@ -40,30 +40,46 @@ class PersonQueries:
             inner_joins.append("OPTIONAL { ?uri <https://w3id.org/OntoExhibit#activity_type> ?inner_activity }")
         
         if birth_place and not text_search:
-            filters.append(f'regex(?inner_birth_place_label, "{birth_place}", "i")')
+            # Search in both Birth Place (individuals) and Foundation Place (groups)
+            filters.append(f'(regex(?inner_birth_place_label, "{birth_place}", "i") || regex(?inner_foundation_place_label, "{birth_place}", "i"))')
             inner_joins.append("""
                 OPTIONAL {
                     ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth_bp .
                     OPTIONAL { ?birth_bp <https://w3id.org/OntoExhibit#hasPlaceOfBirth> ?place_bp . ?place_bp rdfs:label ?inner_birth_place_label }
                 }
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasFoundation> ?foundation_bp .
+                    OPTIONAL { ?foundation_bp <https://w3id.org/OntoExhibit#hasPlaceOfFoundation> ?place_fp . ?place_fp rdfs:label ?inner_foundation_place_label }
+                }
             """)
 
         if birth_date:
-            filters.append(f'regex(str(?inner_birth_date_label), "{birth_date}", "i")')
+            # Search in both Birth Date (individuals) and Foundation Date (groups)
+            filters.append(f'(regex(str(?inner_birth_date_label), "{birth_date}", "i") || regex(str(?inner_foundation_date_label), "{birth_date}", "i"))')
             inner_joins.append("""
                 OPTIONAL {
                     ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth_bd .
                     OPTIONAL { ?birth_bd <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_bd . ?time_bd rdfs:label ?inner_birth_date_label }
                 }
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasFoundation> ?foundation_bd .
+                    OPTIONAL { ?foundation_bd <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_fd . ?time_fd rdfs:label ?inner_foundation_date_label }
+                }
             """)
             
         if death_date:
-            filters.append(f'regex(str(?inner_death_date_label), "{death_date}", "i")')
+            # Search in both Death Date (individuals) and Dissolution Date (groups)
+            filters.append(f'(regex(str(?inner_death_date_label), "{death_date}", "i") || regex(str(?inner_dissolution_date_label), "{death_date}", "i"))')
             inner_joins.append("""
                 OPTIONAL {
                     ?uri <https://w3id.org/OntoExhibit#died> ?death_dd .
                     ?death_dd <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_death_dd .
                     ?time_death_dd rdfs:label ?inner_death_date_label
+                }
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasDissolution> ?dissolution_dd .
+                    ?dissolution_dd <https://w3id.org/OntoExhibit#hasTimeSpan> ?time_diss_dd .
+                    ?time_diss_dd rdfs:label ?inner_dissolution_date_label
                 }
             """)
 
@@ -86,25 +102,44 @@ class PersonQueries:
 
         inner_joins_str = "\n".join(inner_joins)
 
+        # Build type patterns based on entity_type filter
+        if entity_type and entity_type.lower() == 'person':
+            # Only individuals (E21_Person)
+            type_patterns = """
+                ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E21_Person> .
+                ?uri rdfs:label ?label
+            """
+        elif entity_type and entity_type.lower() == 'group':
+            # Only groups (E74_Group)
+            type_patterns = """
+                ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> .
+                ?uri rdfs:label ?label
+            """
+        else:
+            # All types (default)
+            type_patterns = """
+                {
+                    ?uri rdf:type <https://w3id.org/OntoExhibit#Human_Actant> .
+                    ?uri rdfs:label ?label
+                }
+                UNION
+                {
+                    ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E21_Person> .
+                    ?uri rdfs:label ?label
+                }
+                UNION
+                {
+                    ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> .
+                    ?uri rdfs:label ?label
+                }
+            """
+
         return f"""
             {PREFIXES}
             SELECT distinct ?uri ?label
             WHERE 
             {{
-                {{
-                    ?uri rdf:type <https://w3id.org/OntoExhibit#Human_Actant> .
-                    ?uri rdfs:label ?label
-                }}
-                UNION
-                {{
-                    ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E21_Person> .
-                    ?uri rdfs:label ?label
-                }}
-                UNION
-                {{
-                    ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> .
-                    ?uri rdfs:label ?label
-                }}
+                {type_patterns}
                 {inner_joins_str}
                 {filter_clause}
                 {pagination_filter}
@@ -122,18 +157,24 @@ class PersonQueries:
         
         return f"""
             {PREFIXES}
-            SELECT ?uri (SAMPLE(COALESCE(?inner_person_name, ?inner_label, "")) as ?label) 
+            SELECT ?uri (SAMPLE(COALESCE(?inner_person_name, ?inner_group_name, ?inner_label, "")) as ?label) 
                    (SAMPLE(?inner_birth_place_label) as ?birth_place_label)
                    (SAMPLE(?inner_birth_date_label) as ?birth_date_label)
                    (SAMPLE(?inner_death_date_label) as ?death_date_label)
                    (SAMPLE(?inner_gender) as ?gender)
                    (GROUP_CONCAT(DISTINCT ?inner_activity; separator="|") as ?activity)
+                   (SAMPLE(?inner_foundation_place_label) as ?foundation_place_label)
+                   (SAMPLE(?inner_foundation_date_label) as ?foundation_date_label)
+                   (SAMPLE(?inner_foundation_place_uri) as ?foundation_place_uri)
+                   (SAMPLE(?inner_entity_type) as ?entity_type)
+                   (SAMPLE(?inner_dissolution_date_label) as ?dissolution_date_label)
             WHERE 
             {{
                 VALUES ?uri {{ {uris_str} }}
                 
                 OPTIONAL {{ ?uri rdfs:label ?inner_label . }}
                 OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#person_name> ?inner_person_name . }}
+                OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#name> ?inner_group_name . }}
                 
                 OPTIONAL {{
                     ?uri <https://w3id.org/OntoExhibit#hasBirth> ?birth .
@@ -157,6 +198,24 @@ class PersonQueries:
                 OPTIONAL {{
                     ?uri <https://w3id.org/OntoExhibit#activity_type> ?inner_activity
                 }}
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#hasFoundation> ?foundation .
+                    OPTIONAL {{ 
+                        ?foundation <https://w3id.org/OntoExhibit#hasPlaceOfFoundation> ?inner_foundation_place_uri .
+                        ?inner_foundation_place_uri rdfs:label ?inner_foundation_place_label 
+                    }}
+                    OPTIONAL {{
+                        ?foundation <https://w3id.org/OntoExhibit#hasTimeSpan> ?foundation_time .
+                        ?foundation_time rdfs:label ?inner_foundation_date_label
+                    }}
+                }}
+                OPTIONAL {{
+                    ?uri <https://w3id.org/OntoExhibit#hasDissolution> ?dissolution .
+                    ?dissolution <https://w3id.org/OntoExhibit#hasTimeSpan> ?dissolution_time .
+                    ?dissolution_time rdfs:label ?inner_dissolution_date_label
+                }}
+                # Determine entity type
+                OPTIONAL {{ ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> . BIND("group" AS ?inner_entity_type) }}
             }}
             GROUP BY ?uri
         """
@@ -164,13 +223,21 @@ class PersonQueries:
     GET_PERSONS_AND_GROUPS = f"""
         {PREFIXES}
         SELECT ?uri 
-               (SAMPLE(COALESCE(?inner_person_name, ?inner_label, "")) as ?label)
+               (SAMPLE(COALESCE(?inner_person_name, ?inner_group_name, ?inner_label, "")) as ?label)
                (SAMPLE(?inner_label_place) as ?label_place)
                (SAMPLE(?inner_place_uri) as ?place_uri)
                (SAMPLE(?inner_label_date) as ?label_date)
                (SAMPLE(?inner_death_date) as ?death_date)
                (SAMPLE(?inner_gender) as ?gender)
                (GROUP_CONCAT(DISTINCT ?inner_activity; separator="|") as ?activity)
+               (SAMPLE(?inner_residence_address) as ?residence_address)
+               (SAMPLE(?inner_residence_lat) as ?residence_lat)
+               (SAMPLE(?inner_residence_long) as ?residence_long)
+               (SAMPLE(?inner_foundation_place_label) as ?foundation_place_label)
+               (SAMPLE(?inner_foundation_date_label) as ?foundation_date_label)
+               (SAMPLE(?inner_foundation_place_uri) as ?foundation_place_uri)
+               (SAMPLE(?inner_entity_type) as ?entity_type)
+               (SAMPLE(?inner_dissolution_date) as ?dissolution_date_label)
         WHERE 
         {{
             {{
@@ -187,6 +254,7 @@ class PersonQueries:
             
             OPTIONAL {{ ?uri rdfs:label ?inner_label }}
             OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#person_name> ?inner_person_name }}
+            OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#name> ?inner_group_name }}
 
             OPTIONAL 
             {{
@@ -208,11 +276,95 @@ class PersonQueries:
             }}
             OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#gender> ?inner_gender }}
             OPTIONAL {{ ?uri <https://w3id.org/OntoExhibit#activity_type> ?inner_activity }}
+            OPTIONAL {{
+                ?uri <https://w3id.org/OntoExhibit#hasResidency> ?residence .
+                ?residence rdf:type <https://w3id.org/OntoExhibit#Place_Of_Residence> .
+                OPTIONAL {{ ?residence <https://w3id.org/OntoExhibit#address> ?inner_residence_address }}
+                OPTIONAL {{ ?residence <http://www.w3.org/2003/01/geo/wgs84_pos#lat> ?inner_residence_lat }}
+                OPTIONAL {{ ?residence <http://www.w3.org/2003/01/geo/wgs84_pos#long> ?inner_residence_long }}
+            }}
+            OPTIONAL {{
+                ?uri <https://w3id.org/OntoExhibit#hasFoundation> ?foundation .
+                OPTIONAL {{ 
+                    ?foundation <https://w3id.org/OntoExhibit#hasPlaceOfFoundation> ?inner_foundation_place_uri .
+                    ?inner_foundation_place_uri rdfs:label ?inner_foundation_place_label 
+                }}
+                OPTIONAL {{
+                    ?foundation <https://w3id.org/OntoExhibit#hasTimeSpan> ?foundation_time .
+                    ?foundation_time rdfs:label ?inner_foundation_date_label
+                }}
+            }}
+            OPTIONAL {{
+                ?uri <https://w3id.org/OntoExhibit#hasDissolution> ?dissolution .
+                ?dissolution <https://w3id.org/OntoExhibit#hasTimeSpan> ?dissolution_time .
+                ?dissolution_time rdfs:label ?inner_dissolution_date
+            }}
+            # Determine entity type
+            OPTIONAL {{ ?uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> . BIND("group" AS ?inner_entity_type) }}
             FILTER (regex(str(?uri), "%s", "i"))
         }} 
         GROUP BY ?uri
         ORDER BY ?label
     """
+
+    @staticmethod
+    def get_person_collaborators(person_id: str) -> str:
+        """Get all collaborators (persons and institutions) for a person."""
+        return f"""
+            {PREFIXES}
+            SELECT DISTINCT ?collaborator_uri ?collaborator_label ?collaborator_type
+            WHERE {{
+                BIND(<https://w3id.org/OntoExhibit#human_actant/{person_id}> AS ?person)
+                
+                # Person collaborates with others (bidirectional check)
+                {{
+                    ?person <https://w3id.org/OntoExhibit#collaboratesWith> ?collaborator_uri .
+                }}
+                UNION
+                {{
+                    ?collaborator_uri <https://w3id.org/OntoExhibit#collaboratesWith> ?person .
+                }}
+                
+                ?collaborator_uri rdfs:label ?collaborator_label .
+                
+                # Determine collaborator type
+                OPTIONAL {{
+                    {{ ?collaborator_uri rdf:type <https://w3id.org/OntoExhibit#Human_Actant> . BIND("person" AS ?type_person) }}
+                    UNION
+                    {{ ?collaborator_uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E21_Person> . BIND("person" AS ?type_person) }}
+                    UNION
+                    {{ ?collaborator_uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> . BIND("person" AS ?type_person) }}
+                    UNION
+                    {{ ?collaborator_uri rdf:type <https://w3id.org/OntoExhibit#Institution> . BIND("institution" AS ?type_inst) }}
+                    UNION
+                    {{ ?collaborator_uri rdf:type <https://w3id.org/OntoExhibit#Museum> . BIND("institution" AS ?type_inst) }}
+                    UNION
+                    {{ ?collaborator_uri rdf:type <https://w3id.org/OntoExhibit#Cultural_Institution> . BIND("institution" AS ?type_inst) }}
+                }}
+                BIND(COALESCE(?type_inst, ?type_person, "unknown") AS ?collaborator_type)
+            }}
+            ORDER BY ?collaborator_label
+        """
+
+    @staticmethod
+    def get_person_executive_positions(person_id: str) -> str:
+        """Get institutions where this person holds an executive position."""
+        return f"""
+            {PREFIXES}
+            SELECT DISTINCT ?institution_uri ?institution_label
+            WHERE {{
+                BIND(<https://w3id.org/OntoExhibit#human_actant/{person_id}> AS ?person)
+                
+                # Executive position links person to institution
+                ?exec_position rdf:type <https://w3id.org/OntoExhibit#Executive_Position> .
+                ?exec_position <https://w3id.org/OntoExhibit#isExecutivePositionOf> ?person .
+                ?exec_position <https://w3id.org/OntoExhibit#executivePositionHeldsIn> ?institution_uri .
+                
+                ?institution_uri rdfs:label ?institution_label .
+            }}
+            ORDER BY ?institution_label
+        """
+
 
     @staticmethod
     def get_actor_roles(actor_id: str) -> str:
@@ -271,7 +423,7 @@ class PersonQueries:
                     }}
                     
                     # Get the exhibition from making
-                    ?making <https://w3id.org/OntoExhibit#madeExhibition> ?item_uri .
+                    ?making <https://w3id.org/OntoExhibit#isExhibitionMakingOf> ?item_uri .
                     BIND("exhibition" AS ?item_type)
                 }}
                 

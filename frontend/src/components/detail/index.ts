@@ -25,7 +25,10 @@ export {
 // Actor/Person components
 export { 
   ActorRolesSidebar, 
-  ActorBiography 
+  ActorBiography,
+  ActorResidence,
+  ActorCollaborators,
+  ActorExecutivePositions
 } from './ActorDetail';
 
 // Artwork components
@@ -37,5 +40,8 @@ export {
 // Institution components
 export { 
   InstitutionSidebar,
-  InstitutionDetails
+  InstitutionDetails,
+  InstitutionCollaborators,
+  InstitutionHeadquarters,
+  InstitutionExecutives
 } from './InstitutionDetail';

@@ -36,9 +36,10 @@ export const FILTER_CONFIGS: Record<string, FilterConfig[]> = {
     { key: 'activity', type: 'select', placeholder: 'Project / Activity', optionsKey: 'activity' },
   ],
   person: [
-    { key: 'birth_place', type: 'text', placeholder: 'Birth Place' },
-    { key: 'birth_date', type: 'date', placeholder: 'Birth Date' },
-    { key: 'death_date', type: 'date', placeholder: 'Death Date' },
+    { key: 'entity_type', type: 'select', placeholder: 'Type', optionsKey: 'entity_type' },
+    { key: 'birth_place', type: 'text', placeholder: 'Origin Place' },
+    { key: 'birth_date', type: 'date', placeholder: 'Origin Date' },
+    { key: 'death_date', type: 'date', placeholder: 'End Date' },
     { key: 'gender', type: 'select', placeholder: 'Gender', optionsKey: 'gender' },
     { key: 'activity', type: 'select', placeholder: 'Activity/Profession', optionsKey: 'activity' },
   ],
@@ -58,10 +59,10 @@ export const FILTER_OPTION_ENDPOINTS: Record<string, string[]> = {
   exhibition: ['exhibition_type', 'exhibition_theme'],
   artwork: ['artwork_type', 'topic'],
   institution: ['activity'],
-  person: ['gender', 'activity'],
-  actant: ['gender', 'activity'],
-  human_actant: ['gender', 'activity'],
-  actor: ['gender', 'activity'],
+  person: ['gender', 'activity', 'entity_type'],
+  actant: ['gender', 'activity', 'entity_type'],
+  human_actant: ['gender', 'activity', 'entity_type'],
+  actor: ['gender', 'activity', 'entity_type'],
 };
 
 // ====================

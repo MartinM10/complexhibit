@@ -101,6 +101,22 @@ export async function getInstitutionOwnedArtworks(id: string) {
   return fetchFromApi(`/get_institution_owned_artworks/${id}`);
 }
 
+export async function getPersonCollaborators(id: string) {
+  return fetchFromApi(`/get_person_collaborators/${id}`);
+}
+
+export async function getInstitutionCollaborators(id: string) {
+  return fetchFromApi(`/get_institution_collaborators/${id}`);
+}
+
+export async function getPersonExecutivePositions(id: string) {
+  return fetchFromApi(`/get_person_executive_positions/${id}`);
+}
+
+export async function getInstitutionExecutives(id: string) {
+  return fetchFromApi(`/get_institution_executives/${id}`);
+}
+
 export async function executeSparql(query: string) {
   const url = new URL(`${API_URL}/sparql`);
   const response = await fetch(url.toString(), {
