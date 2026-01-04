@@ -26,7 +26,11 @@ import {
   getPersonExecutivePositions,
   getInstitutionExecutives,
   getInstitutionParent,
-  getInstitutionChildren
+  getInstitutionChildren,
+  getCatalogDetails,
+  getExhibitionCatalogs,
+  getProducerCatalogs,
+  getCatalogExhibitions
 } from "@/lib/api";
 import { unCamel, cleanLabel } from "@/lib/utils";
 import MapSection from '@/components/MapSection';
@@ -52,7 +56,11 @@ import {
   InstitutionDetails,
   InstitutionCollaborators,
   InstitutionHeadquarters,
-  InstitutionSubsidiaries
+  InstitutionSubsidiaries,
+  CatalogDetails,
+  CatalogSidebar,
+  ExhibitionCatalogs,
+  ProducedCatalogs
 } from "@/components/detail";
 
 interface PageProps {
@@ -137,13 +145,34 @@ export default async function DetailPage({ params }: PageProps) {
     ? getInstitutionChildren(id).catch(() => null)
     : Promise.resolve(null);
 
+  // Catalog-specific
+  const catalogDetailsPromise = decodedType === 'catalog'
+    ? getCatalogDetails(id).catch(() => null)
+    : Promise.resolve(null);
+  
+  // Catalogs for exhibitions
+  const exhibitionCatalogsPromise = decodedType === 'exhibition'
+    ? getExhibitionCatalogs(id).catch(() => null)
+    : Promise.resolve(null);
+  
+  // Produced catalogs for actants and institutions
+  const producedCatalogsPromise = (isActorType(decodedType) || decodedType === 'institution')
+    ? getProducerCatalogs(id).catch(() => null)
+    : Promise.resolve(null);
+  
+  // Exhibitions for a catalog
+  const catalogExhibitionsPromise = decodedType === 'catalog'
+    ? getCatalogExhibitions(id).catch(() => null)
+    : Promise.resolve(null);
+
   // Await all promises
   const [
     dataProperties, types, roles, actorDetails, artworkDetails,
     participants, artworks, making, datesAndPlace, institutionExhibitions, 
     institutionDetails, institutionLenderExhibitions, institutionOwnedArtworks,
     personCollaborators, institutionCollaboratorsData, personExecutivePositions,
-    institutionExecutivesData, institutionParentData, institutionChildrenData
+    institutionExecutivesData, institutionParentData, institutionChildrenData,
+    catalogDetails, exhibitionCatalogs, producedCatalogs, catalogExhibitions
   ] = await Promise.all([
     dataPropertiesPromise,
     typesPromise,
@@ -163,7 +192,11 @@ export default async function DetailPage({ params }: PageProps) {
     personExecutivePositionsPromise,
     institutionExecutivesPromise,
     institutionParentPromise,
-    institutionChildrenPromise
+    institutionChildrenPromise,
+    catalogDetailsPromise,
+    exhibitionCatalogsPromise,
+    producedCatalogsPromise,
+    catalogExhibitionsPromise
   ]);
 
   // ====================
@@ -188,6 +221,35 @@ export default async function DetailPage({ params }: PageProps) {
   const institutionExecutivesList = institutionExecutivesData?.data || [];
   const parentOrganization = institutionParentData?.data || null;
   const childOrganizations = institutionChildrenData?.data || [];
+  const catalogData = catalogDetails?.data || [];
+  const exhibitionCatalogsData = exhibitionCatalogs?.data || [];
+  const producedCatalogsData = producedCatalogs?.data || [];
+  
+  // Parse catalogs to LinkedEntity format
+  const catalogEntities = exhibitionCatalogsData.map((c: any) => ({
+    uri: c.catalog_uri,
+    label: c.catalog_label
+  }));
+  
+  const producedCatalogEntities = producedCatalogsData.map((c: any) => ({
+    uri: c.catalog_uri,
+    label: c.catalog_label
+  }));
+  
+  // Parse catalog producers
+  const catalogProducers = catalogData[0]?.producers 
+    ? catalogData[0].producers.split('|').map((p: string) => {
+        const [uri, label] = p.split('::');
+        return { uri, label };
+      })
+    : [];
+  
+  // Parse catalog exhibitions
+  const catalogExhibitionsData = catalogExhibitions?.data || [];
+  const catalogExhibitionEntities = catalogExhibitionsData.map((e: any) => ({
+    uri: e.exhibition_uri,
+    label: e.exhibition_label
+  }));
 
   // Debug query for QueryLogger
   const debugQuery = decodedType === 'exhibition' 
@@ -226,6 +288,7 @@ export default async function DetailPage({ params }: PageProps) {
     if (exhibitionData?.label) return cleanLabel(exhibitionData.label);
     if (isActorType(decodedType) && actorData[0]?.label) return cleanLabel(actorData[0].label);
     if (isArtworkType(decodedType) && artworkDetailData[0]?.label) return cleanLabel(artworkDetailData[0].label);
+    if (decodedType === 'catalog' && catalogData[0]?.label) return cleanLabel(catalogData[0].label);
     if (decodedType === 'institution' && institutionItem?.label) return cleanLabel(institutionItem.label);
     
     for (const key in properties) {
@@ -284,6 +347,7 @@ export default async function DetailPage({ params }: PageProps) {
                     <ActorRolesSidebar roleData={roleData} />
                     <ActorCollaborators collaborators={personCollaboratorsData} />
                     <ActorExecutivePositions positions={personExecutivePositionsData} />
+                    <ProducedCatalogs catalogs={producedCatalogEntities} title="Produced Catalogs" />
                   </>
                 )}
                 
@@ -296,17 +360,25 @@ export default async function DetailPage({ params }: PageProps) {
                     />
                     <InstitutionCollaborators collaborators={institutionCollaboratorsList} />
                     <InstitutionSubsidiaries childOrganizations={childOrganizations} />
+                    <ProducedCatalogs catalogs={producedCatalogEntities} title="Published Catalogs" />
                   </>
                 )}
                 
                 {decodedType === 'exhibition' && (
-                  <ExhibitionSidebar 
-                    curators={curators}
-                    organizers={organizers}
-                    funders={funders}
-                    lenders={lenders}
-                    exhibitors={exhibitors}
-                  />
+                  <>
+                    <ExhibitionSidebar 
+                      curators={curators}
+                      organizers={organizers}
+                      funders={funders}
+                      lenders={lenders}
+                      exhibitors={exhibitors}
+                    />
+                    <ExhibitionCatalogs catalogs={catalogEntities} />
+                  </>
+                )}
+                
+                {decodedType === 'catalog' && (
+                  <CatalogSidebar producers={catalogProducers} exhibitions={catalogExhibitionEntities} />
                 )}
               </div>
 
@@ -337,7 +409,6 @@ export default async function DetailPage({ params }: PageProps) {
                   <ArtworkDetails artworkData={artworkDetailData} />
                 )}
 
-                {/* Institution Details */}
                 {decodedType === 'institution' && (
                   <>
                     <InstitutionDetails 
@@ -359,6 +430,11 @@ export default async function DetailPage({ params }: PageProps) {
                       </section>
                     )}
                   </>
+                )}
+                
+                {/* Catalog Details */}
+                {decodedType === 'catalog' && (
+                  <CatalogDetails data={catalogData} />
                 )}
                 
                 {/* Exhibition Sections */}

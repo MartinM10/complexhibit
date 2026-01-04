@@ -45,3 +45,12 @@ export {
   InstitutionHeadquarters,
   InstitutionSubsidiaries
 } from './InstitutionDetail';
+
+// Catalog components
+export { 
+  CatalogDetails,
+  CatalogSidebar,
+  ExhibitionCatalogs,
+  ProducedCatalogs
+} from './CatalogDetail';
+
