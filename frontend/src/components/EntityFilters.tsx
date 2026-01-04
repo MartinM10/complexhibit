@@ -28,6 +28,7 @@ export const FILTER_CONFIGS: Record<string, FilterConfig[]> = {
     { key: 'author_uri', type: 'async_select', placeholder: 'Artist / Author', entityType: 'actant' },
     { key: 'type_filter', type: 'select', placeholder: 'Type', optionsKey: 'artwork_type' },
     { key: 'start_date', type: 'date', placeholder: 'Creation Date' },
+    { key: 'production_place', type: 'text', placeholder: 'Place of Creation' },
     { key: 'owner_uri', type: 'async_select', placeholder: 'Owner', entityType: 'institution' },
     { key: 'topic', type: 'select', placeholder: 'Topic', optionsKey: 'topic' },
     { key: 'exhibition_uri', type: 'async_select', placeholder: 'Shown in Exhibition', entityType: 'exhibition' },

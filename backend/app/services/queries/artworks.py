@@ -22,7 +22,8 @@ class ArtworkQueries:
     def get_obras_ids(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None, 
                       author_name: str = None, type_filter: str = None, start_date: str = None, owner: str = None,
                       topic: str = None, exhibition: str = None,
-                      author_uri: str = None, owner_uri: str = None, exhibition_uri: str = None) -> str:
+                      author_uri: str = None, owner_uri: str = None, exhibition_uri: str = None,
+                      production_place: str = None) -> str:
         
         filters = []
         inner_joins = []
@@ -85,6 +86,16 @@ class ArtworkQueries:
                 OPTIONAL { ?uri <https://w3id.org/OntoExhibit#isDisplayedAt> ?uri_exhibition_ex . ?uri_exhibition_ex rdfs:label ?inner_exhibition }
              """)
 
+        if production_place:
+             filters.append(f'regex(?inner_production_place, "{production_place}", "i")')
+             inner_joins.append("""
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasProduction> ?prod_pp .
+                    ?prod_pp <https://w3id.org/OntoExhibit#takesPlaceAt> ?place_pp .
+                    ?place_pp rdfs:label ?inner_production_place .
+                }
+             """)
+
         if author_uri:
              inner_joins.append(f"""
                 ?uri <https://w3id.org/OntoExhibit#hasProduction> ?prod_au .
@@ -140,9 +151,9 @@ class ArtworkQueries:
             SELECT ?uri (SAMPLE(COALESCE(?inner_title_label, ?inner_label, "")) as ?label) 
                    (GROUP_CONCAT(DISTINCT ?inner_type; separator="|") as ?type)
                    (SAMPLE(?inner_apelation) as ?apelation)
-                   (SAMPLE(?inner_label_place) as ?label_place)
                    (SAMPLE(?inner_label_starting_date) as ?label_starting_date)
                    (SAMPLE(?inner_label_ending_date) as ?label_ending_date)
+                   (SAMPLE(?inner_production_place) as ?production_place)
                    (GROUP_CONCAT(DISTINCT CONCAT(?inner_author, ":::", STR(?uri_author)); separator="|") as ?authors)
                    (GROUP_CONCAT(DISTINCT CONCAT(?inner_owner, ":::", STR(?uri_owner_role)); separator="|") as ?owners)
                    (GROUP_CONCAT(DISTINCT ?inner_topic; separator="|") as ?topic)
@@ -181,6 +192,10 @@ class ArtworkQueries:
                         ?prod <https://w3id.org/OntoExhibit#hasTimeSpan> ?tr .
                         ?tr <https://w3id.org/OntoExhibit#hasEndingDate> ?end_date .
                         ?end_date rdfs:label ?inner_label_ending_date .
+                     }}
+                     OPTIONAL {{
+                        ?prod <https://w3id.org/OntoExhibit#takesPlaceAt> ?place_uri .
+                        ?place_uri rdfs:label ?inner_production_place .
                      }}
                 }}
                 OPTIONAL {{

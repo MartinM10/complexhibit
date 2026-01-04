@@ -209,6 +209,7 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
 
       if (authors) extra["Artist"] = authors;
       if (item.label_starting_date) extra["Date"] = item.label_starting_date;
+      if (item.production_place) extra["Place"] = item.production_place;
       
       const types = parseSimpleList(item.type);
       if (types) extra["Type"] = types;

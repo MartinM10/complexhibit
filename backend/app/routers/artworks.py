@@ -58,6 +58,7 @@ async def all_artworks(
     author_uri: Optional[str] = None,
     owner_uri: Optional[str] = None,
     exhibition_uri: Optional[str] = None,
+    production_place: Optional[str] = None,
     client: SparqlClient = Depends(get_sparql_client)
 ):
     """
@@ -86,7 +87,8 @@ async def all_artworks(
         exhibition=exhibition,
         author_uri=author_uri,
         owner_uri=owner_uri,
-        exhibition_uri=exhibition_uri
+        exhibition_uri=exhibition_uri,
+        production_place=production_place
     )
     
     # Use shared pagination utility

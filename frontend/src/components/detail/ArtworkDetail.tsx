@@ -92,7 +92,7 @@ export function ArtworkDetails({ artworkData }: ArtworkDetailsProps) {
             {artwork?.apelation && (
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-gray-500 uppercase">Alternative Name</span>
-                <span className="text-gray-900 text-lg font-medium">{artwork.apelation}</span>
+                <span className="text-gray-900">{artwork.apelation}</span>
               </div>
             )}
             
@@ -100,7 +100,7 @@ export function ArtworkDetails({ artworkData }: ArtworkDetailsProps) {
             {artwork?.label_starting_date && (
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-gray-500 uppercase">Creation Date</span>
-                <span className="text-gray-900 text-lg font-medium">{artwork.label_starting_date}</span>
+                <span className="text-gray-900">{artwork.label_starting_date}</span>
               </div>
             )}
             
@@ -108,7 +108,7 @@ export function ArtworkDetails({ artworkData }: ArtworkDetailsProps) {
             {artwork?.production_place && (
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-gray-500 uppercase">Place of Creation</span>
-                <span className="text-gray-900 text-lg font-medium">{artwork.production_place}</span>
+                <span className="text-gray-900">{artwork.production_place}</span>
               </div>
             )}
             
