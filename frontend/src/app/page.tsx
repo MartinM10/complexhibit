@@ -18,6 +18,13 @@ const categories = [
     color: "bg-purple-500",
   },
   {
+    name: "Actors",
+    description: "Learn about the people and organizations involved.",
+    href: "/all/actant",
+    icon: Users,
+    color: "bg-orange-500",
+  },
+  {
     name: "Institutions",
     description: "Find museums, galleries, and other cultural institutions.",
     href: "/all/institution",
@@ -25,11 +32,11 @@ const categories = [
     color: "bg-green-500",
   },
   {
-    name: "Actors",
-    description: "Learn about the people and organizations involved.",
-    href: "/all/actant",
-    icon: Users,
-    color: "bg-orange-500",
+    name: "Catalogs",
+    description: "Browse exhibition catalogs and documentation resources.",
+    href: "/all/catalog",
+    icon: BookOpen,
+    color: "bg-amber-500",
   },
 ];
 
