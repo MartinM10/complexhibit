@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import create_tables
 from app.dependencies import get_current_user
-from app.routers import artworks, exhibitions, institutions, misc, persons, auth
+from app.routers import artworks, exhibitions, institutions, misc, persons, auth, catalogs
 
 
 @asynccontextmanager
@@ -56,6 +56,7 @@ app.include_router(institutions.router)
 app.include_router(exhibitions.router)
 app.include_router(artworks.router)
 app.include_router(misc.router)
+app.include_router(catalogs.router)
 
 
 @app.get(f"{settings.DEPLOY_PATH}/", tags=["root"])
