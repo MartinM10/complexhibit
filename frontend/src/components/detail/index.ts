@@ -54,3 +54,9 @@ export {
   ProducedCatalogs
 } from './CatalogDetail';
 
+// Company components
+export { 
+  CompanyDetails,
+  CompanySidebar
+} from './CompanyDetail';
+

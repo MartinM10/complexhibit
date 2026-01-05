@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, Building2, Calendar, Users, Image as ImageIcon } from "lucide-react";
+import { ArrowRight, BookOpen, Building2, Calendar, Users, Image as ImageIcon, Briefcase } from "lucide-react";
 import HashRedirect from "@/components/HashRedirect";
 
 const categories = [
@@ -37,6 +37,13 @@ const categories = [
     href: "/all/catalog",
     icon: BookOpen,
     color: "bg-amber-500",
+  },
+  {
+    name: "Companies",
+    description: "Discover companies providing museography and services.",
+    href: "/all/company",
+    icon: Briefcase,
+    color: "bg-teal-500",
   },
 ];
 

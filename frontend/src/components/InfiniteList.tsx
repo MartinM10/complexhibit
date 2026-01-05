@@ -13,7 +13,7 @@ import ItemCard from "@/components/ItemCard";
 import EntityFilters, { FILTER_OPTION_ENDPOINTS } from "@/components/EntityFilters";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { unCamel, cleanLabel } from "@/lib/utils";
-import { Search, Loader2, Calendar, Building2, Users, Image as ImageIcon } from "lucide-react";
+import { Search, Loader2, Calendar, Building2, Users, Image as ImageIcon, BookOpen, Briefcase } from "lucide-react";
 import type { FilterOptions } from "@/lib/types";
 
 const TYPE_CONFIG: Record<string, { icon: any, color: string }> = {
@@ -24,6 +24,8 @@ const TYPE_CONFIG: Record<string, { icon: any, color: string }> = {
   person: { icon: Users, color: "bg-orange-500" },
   human_actant: { icon: Users, color: "bg-orange-500" },
   actor: { icon: Users, color: "bg-orange-500" },
+  catalog: { icon: BookOpen, color: "bg-amber-500" },
+  company: { icon: Briefcase, color: "bg-teal-500" },
 };
 
 

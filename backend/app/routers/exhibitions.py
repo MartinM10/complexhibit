@@ -144,3 +144,24 @@ async def create_exhibition(
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error adding exhibition: {str(e)}")
+
+
+@router.get("/get_exhibition_museographers/{id:path}")
+async def get_exhibition_museographers(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get companies that provided museography services for this exhibition."""
+    query = ExhibitionQueries.get_exhibition_museographers(id)
+    try:
+        response = await client.query(query)
+        flat_data = parse_sparql_response(response)
+        
+        museographers = []
+        for item in flat_data:
+            museographers.append({
+                "uri": item.get("company_uri"),
+                "label": item.get("company_label")
+            })
+        
+        return {"data": museographers}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

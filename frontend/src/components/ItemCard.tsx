@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 
 interface ItemCardProps {
   uri: string;
@@ -7,6 +10,81 @@ interface ItemCardProps {
   description?: string;
   type: string;
   imageUrl?: string;
+}
+
+// Client component wrapper for the expandable part
+function ExpandableExtra({ extra }: { extra: Record<string, any> }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const MAX_VISIBLE_TAGS = 3;
+  
+  // Check if there's any content to show
+  const hasContent = Object.entries(extra).some(([_, v]) => 
+    v && (!Array.isArray(v) || v.length > 0)
+  );
+  
+  if (!hasContent) return null;
+  
+  return (
+    <div className="mt-auto pt-4 border-t border-gray-100">
+      {!isExpanded ? (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsExpanded(true);
+          }}
+          className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium text-xs transition-colors"
+        >
+          <ChevronDown className="h-3 w-3" />
+          Show details
+        </button>
+      ) : (
+        <div className="text-xs text-gray-500 flex flex-col gap-2.5">
+          {Object.entries(extra).map(([k, v]) => {
+            if (!v || (Array.isArray(v) && v.length === 0)) return null;
+            
+            const isArray = Array.isArray(v);
+            const visibleItems = isArray ? v.slice(0, MAX_VISIBLE_TAGS) : v;
+            const hiddenCount = isArray ? Math.max(0, v.length - MAX_VISIBLE_TAGS) : 0;
+            
+            return (
+              <div key={k} className="flex flex-wrap items-baseline gap-2">
+                <span className="font-bold text-gray-800 text-xs uppercase tracking-wide">{k}:</span>
+                {isArray ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {visibleItems.map((val: any, i: number) => (
+                      <span key={i} className="bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-1.5 rounded-lg text-indigo-700 border border-indigo-200/50 text-xs font-medium shadow-sm hover:shadow-md transition-shadow">
+                        {val}
+                      </span>
+                    ))}
+                    {hiddenCount > 0 && (
+                      <span className="bg-gray-100 px-3 py-1.5 rounded-lg text-gray-600 border border-gray-200/50 text-xs font-medium">
+                        +{hiddenCount} more
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <span className="text-gray-700 font-medium text-sm">{String(v)}</span>
+                )}
+              </div>
+            );
+          })}
+          
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsExpanded(false);
+            }}
+            className="self-start mt-2 flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium text-xs transition-colors"
+          >
+            <ChevronUp className="h-3 w-3" />
+            Hide details
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function ItemCard({ uri, label, description, type, imageUrl, subtitle, extra, icon: Icon, color }: any) {
@@ -73,29 +151,7 @@ export default function ItemCard({ uri, label, description, type, imageUrl, subt
           <p className="text-sm text-gray-600 line-clamp-3 mb-4 flex-1 leading-relaxed">{description}</p>
         )}
         
-        {extra && (
-            <div className="mt-auto pt-4 border-t border-gray-100 text-xs text-gray-500 flex flex-col gap-2.5">
-                {Object.entries(extra).map(([k, v]) => {
-                    if (!v || (Array.isArray(v) && v.length === 0)) return null;
-                    return (
-                        <div key={k} className="flex flex-wrap items-baseline gap-2">
-                            <span className="font-bold text-gray-800 text-xs uppercase tracking-wide">{k}:</span>
-                            {Array.isArray(v) ? (
-                                <div className="flex flex-wrap gap-1.5">
-                                    {v.map((val, i) => (
-                                        <span key={i} className="bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-1.5 rounded-lg text-indigo-700 border border-indigo-200/50 text-xs font-medium shadow-sm hover:shadow-md transition-shadow">
-                                            {val}
-                                        </span>
-                                    ))}
-                                </div>
-                            ) : (
-                                <span className="text-gray-700 font-medium text-sm">{String(v)}</span>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        )}
+        {extra && <ExpandableExtra extra={extra} />}
 
         <div className="mt-5 flex items-center text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent group-hover:translate-x-2 transition-all duration-300">
           View Details <ArrowRight className="ml-2 h-4 w-4 text-indigo-600 group-hover:text-purple-600 transition-colors" />
@@ -104,3 +160,4 @@ export default function ItemCard({ uri, label, description, type, imageUrl, subt
     </Link>
   );
 }
+

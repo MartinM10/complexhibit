@@ -442,3 +442,23 @@ class ExhibitionQueries:
             OPTIONAL {{ ?artwork rdfs:label ?artwork_label }}
         }} GROUP BY ?uri
     """
+
+    @staticmethod
+    def get_exhibition_museographers(exhibition_id: str) -> str:
+        """Get companies that were museographers for this exhibition."""
+        return f"""
+            {PREFIXES}
+            SELECT DISTINCT ?company_uri ?company_label
+            WHERE {{
+                BIND(<https://w3id.org/OntoExhibit#exhibition/{exhibition_id}> AS ?exhibition)
+                
+                ?exhibition <https://w3id.org/OntoExhibit#hasExhibitionMaking> ?making .
+                ?making <https://w3id.org/OntoExhibit#hasMuseographer> ?museographer_role .
+                ?museographer_role <https://w3id.org/OntoExhibit#isRoleOf> ?company_uri .
+                
+                ?company_uri rdf:type <https://w3id.org/OntoExhibit#Company> .
+                ?company_uri rdfs:label ?company_label .
+            }}
+            ORDER BY ?company_label
+        """
+

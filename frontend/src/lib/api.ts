@@ -27,6 +27,7 @@ export async function getFromType(type: string, params: Record<string, string> =
   else if (type === 'artwork') endpoint = '/all_artworks';
   else if (type === 'institution') endpoint = '/all_institutions';
   else if (type === 'catalog') endpoint = '/all_catalogs';
+  else if (type === 'company') endpoint = '/all_companies';
   else if (type === 'actant' || type === 'actor' || type === 'human_actant' || type === 'person') endpoint = '/all_persons';
   else endpoint = `/get_object_any_type/${encodeURIComponent((type === 'person' ? 'human actant' : type).replace(/_/g, ' '))}`;
 
@@ -172,5 +173,18 @@ export async function getProducerCatalogs(id: string) {
 
 export async function getCatalogExhibitions(id: string) {
   return fetchFromApi(`/get_catalog_exhibitions/${id}`);
+}
+
+// Company API functions
+export async function getCompanyDetails(id: string) {
+  return fetchFromApi(`/get_company/${id}`);
+}
+
+export async function getCompanyMuseographerExhibitions(id: string) {
+  return fetchFromApi(`/get_company_museographer_exhibitions/${id}`);
+}
+
+export async function getExhibitionMuseographers(id: string) {
+  return fetchFromApi(`/get_exhibition_museographers/${id}`);
 }
 

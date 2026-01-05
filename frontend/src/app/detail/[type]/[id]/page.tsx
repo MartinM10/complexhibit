@@ -30,7 +30,10 @@ import {
   getCatalogDetails,
   getExhibitionCatalogs,
   getProducerCatalogs,
-  getCatalogExhibitions
+  getCatalogExhibitions,
+  getCompanyDetails,
+  getCompanyMuseographerExhibitions,
+  getExhibitionMuseographers
 } from "@/lib/api";
 import { unCamel, cleanLabel } from "@/lib/utils";
 import MapSection from '@/components/MapSection';
@@ -60,7 +63,12 @@ import {
   CatalogDetails,
   CatalogSidebar,
   ExhibitionCatalogs,
-  ProducedCatalogs
+  ProducedCatalogs,
+  CompanyDetails,
+  CompanySidebar,
+  SidebarCard,
+  DefinitionList,
+  EntityList
 } from "@/components/detail";
 
 interface PageProps {
@@ -165,6 +173,19 @@ export default async function DetailPage({ params }: PageProps) {
     ? getCatalogExhibitions(id).catch(() => null)
     : Promise.resolve(null);
 
+  // Company-specific
+  const companyDetailsPromise = decodedType === 'company'
+    ? getCompanyDetails(id).catch(() => null)
+    : Promise.resolve(null);
+  const companyMuseographerExhibitionsPromise = decodedType === 'company'
+    ? getCompanyMuseographerExhibitions(id).catch(() => null)
+    : Promise.resolve(null);
+  
+  // Museographers for exhibitions
+  const exhibitionMuseographersPromise = decodedType === 'exhibition'
+    ? getExhibitionMuseographers(id).catch(() => null)
+    : Promise.resolve(null);
+
   // Await all promises
   const [
     dataProperties, types, roles, actorDetails, artworkDetails,
@@ -172,7 +193,8 @@ export default async function DetailPage({ params }: PageProps) {
     institutionDetails, institutionLenderExhibitions, institutionOwnedArtworks,
     personCollaborators, institutionCollaboratorsData, personExecutivePositions,
     institutionExecutivesData, institutionParentData, institutionChildrenData,
-    catalogDetails, exhibitionCatalogs, producedCatalogs, catalogExhibitions
+    catalogDetails, exhibitionCatalogs, producedCatalogs, catalogExhibitions,
+    companyDetails, companyMuseographerExhibitions, exhibitionMuseographers
   ] = await Promise.all([
     dataPropertiesPromise,
     typesPromise,
@@ -196,7 +218,10 @@ export default async function DetailPage({ params }: PageProps) {
     catalogDetailsPromise,
     exhibitionCatalogsPromise,
     producedCatalogsPromise,
-    catalogExhibitionsPromise
+    catalogExhibitionsPromise,
+    companyDetailsPromise,
+    companyMuseographerExhibitionsPromise,
+    exhibitionMuseographersPromise
   ]);
 
   // ====================
@@ -251,6 +276,22 @@ export default async function DetailPage({ params }: PageProps) {
     label: e.exhibition_label
   }));
 
+  // Company data processing
+  const companyData = companyDetails?.data || [];
+  const companyItem = Array.isArray(companyData) && companyData.length > 0 ? companyData[0] : companyData;
+  const companyMuseographerExhibitionsData = companyMuseographerExhibitions?.data || [];
+  const museographerExhibitionEntities = companyMuseographerExhibitionsData.map((e: any) => ({
+    uri: e.uri,
+    label: e.label
+  }));
+  
+  // Museographers for exhibitions
+  const exhibitionMuseographersData = exhibitionMuseographers?.data || [];
+  const museographerEntities = exhibitionMuseographersData.map((m: any) => ({
+    uri: m.uri,
+    label: m.label
+  }));
+
   // Debug query for QueryLogger
   const debugQuery = decodedType === 'exhibition' 
     ? datesAndPlace?.sparql 
@@ -290,6 +331,7 @@ export default async function DetailPage({ params }: PageProps) {
     if (isArtworkType(decodedType) && artworkDetailData[0]?.label) return cleanLabel(artworkDetailData[0].label);
     if (decodedType === 'catalog' && catalogData[0]?.label) return cleanLabel(catalogData[0].label);
     if (decodedType === 'institution' && institutionItem?.label) return cleanLabel(institutionItem.label);
+    if (decodedType === 'company' && companyItem?.label) return cleanLabel(companyItem.label);
     
     for (const key in properties) {
       if (key.toLowerCase().includes('label') || key.toLowerCase().includes('title') || key.toLowerCase().includes('name')) {
@@ -373,12 +415,28 @@ export default async function DetailPage({ params }: PageProps) {
                       lenders={lenders}
                       exhibitors={exhibitors}
                     />
+                    {museographerEntities.length > 0 && (
+                      <SidebarCard title="Museography">
+                        <DefinitionList>
+                          <EntityList 
+                            label="Museographer" 
+                            entities={museographerEntities} 
+                            colorClass="text-teal-600 hover:text-teal-800"
+                            fallbackType="company"
+                          />
+                        </DefinitionList>
+                      </SidebarCard>
+                    )}
                     <ExhibitionCatalogs catalogs={catalogEntities} />
                   </>
                 )}
                 
                 {decodedType === 'catalog' && (
                   <CatalogSidebar producers={catalogProducers} exhibitions={catalogExhibitionEntities} />
+                )}
+
+                {decodedType === 'company' && (
+                  <CompanySidebar museographerExhibitions={museographerExhibitionEntities} />
                 )}
               </div>
 
@@ -435,6 +493,11 @@ export default async function DetailPage({ params }: PageProps) {
                 {/* Catalog Details */}
                 {decodedType === 'catalog' && (
                   <CatalogDetails data={catalogData} />
+                )}
+
+                {/* Company Details */}
+                {decodedType === 'company' && (
+                  <CompanyDetails data={companyItem} />
                 )}
                 
                 {/* Exhibition Sections */}
