@@ -16,7 +16,7 @@ export function parseLinkedEntities(value: string | undefined): LinkedEntity[] {
       return { label: label.trim(), uri: uri?.trim() || null };
     }
     return { label: item.trim(), uri: null };
-  });
+  }).filter(entity => entity.label && entity.label.length > 0);
 }
 
 // Section header component

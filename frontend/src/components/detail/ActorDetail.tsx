@@ -30,19 +30,28 @@ export function ActorRolesSidebar({ roleData }: ActorRolesSidebarProps) {
     return "text-gray-600 hover:text-gray-800";
   };
 
+  // Filter out roles with no items
+  const validRoles = Object.entries(roleData).filter(([_, items]) => 
+    Array.isArray(items) && items.length > 0
+  );
+  
+  if (validRoles.length === 0) return null;
+
   return (
-    <SidebarCard title="Roles Played">
-      <DefinitionList>
-        {Object.entries(roleData).map(([role, items]: [string, any]) => (
-          <EntityList 
-            key={role} 
-            label={unCamel(role)} 
-            entities={items} 
-            colorClass={getColorClass(role)} 
-          />
-        ))}
-      </DefinitionList>
-    </SidebarCard>
+    <>
+      {validRoles.map(([role, items]: [string, any]) => (
+        <SidebarCard key={role} title={unCamel(role)}>
+          <DefinitionList>
+            <EntityList 
+              label="Exhibitions" 
+              entities={items} 
+              colorClass={getColorClass(role)}
+              fallbackType="exhibition"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      ))}
+    </>
   );
 }
 

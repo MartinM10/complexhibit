@@ -27,21 +27,86 @@ interface ExhibitionSidebarProps {
 export function ExhibitionSidebar({ 
   curators, organizers, funders, lenders, exhibitors 
 }: ExhibitionSidebarProps) {
-  const hasData = curators.length > 0 || organizers.length > 0 || 
-                  funders.length > 0 || lenders.length > 0 || exhibitors.length > 0;
+  const hasExhibitors = exhibitors.length > 0;
+  const hasCurators = curators.length > 0;
+  const hasOrganizers = organizers.length > 0;
+  const hasFunders = funders.length > 0;
+  const hasLenders = lenders.length > 0;
   
-  if (!hasData) return null;
+  if (!hasExhibitors && !hasCurators && !hasOrganizers && !hasFunders && !hasLenders) return null;
   
   return (
-    <SidebarCard title="People & Organizations">
-      <DefinitionList>
-        <EntityList label="Exhibiting Artists" entities={exhibitors} colorClass="text-pink-600 hover:text-pink-800" />
-        <EntityList label="Curators" entities={curators} colorClass="text-indigo-600 hover:text-indigo-800" />
-        <EntityList label="Organizers" entities={organizers} colorClass="text-indigo-600 hover:text-indigo-800" />
-        <EntityList label="Funders" entities={funders} colorClass="text-green-600 hover:text-green-800" />
-        <EntityList label="Lenders" entities={lenders} colorClass="text-purple-600 hover:text-purple-800" />
-      </DefinitionList>
-    </SidebarCard>
+    <>
+      {/* Exhibiting Artists */}
+      {hasExhibitors && (
+        <SidebarCard title="Exhibiting Artists">
+          <DefinitionList>
+            <EntityList 
+              label="Artists" 
+              entities={exhibitors} 
+              colorClass="text-pink-600 hover:text-pink-800"
+              fallbackType="actant"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+      
+      {/* Curators */}
+      {hasCurators && (
+        <SidebarCard title="Curators">
+          <DefinitionList>
+            <EntityList 
+              label="Curators" 
+              entities={curators} 
+              colorClass="text-indigo-600 hover:text-indigo-800"
+              fallbackType="actant"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+      
+      {/* Organizers */}
+      {hasOrganizers && (
+        <SidebarCard title="Organizers">
+          <DefinitionList>
+            <EntityList 
+              label="Organizers" 
+              entities={organizers} 
+              colorClass="text-blue-600 hover:text-blue-800"
+              fallbackType="actant"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+      
+      {/* Funders */}
+      {hasFunders && (
+        <SidebarCard title="Funders">
+          <DefinitionList>
+            <EntityList 
+              label="Funders" 
+              entities={funders} 
+              colorClass="text-green-600 hover:text-green-800"
+              fallbackType="actant"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+      
+      {/* Lenders */}
+      {hasLenders && (
+        <SidebarCard title="Lenders">
+          <DefinitionList>
+            <EntityList 
+              label="Lenders" 
+              entities={lenders} 
+              colorClass="text-purple-600 hover:text-purple-800"
+              fallbackType="actant"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+    </>
   );
 }
 

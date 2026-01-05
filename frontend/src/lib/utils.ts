@@ -7,8 +7,13 @@ export function cn(...inputs: ClassValue[]) {
 
 export function unCamel(str: string): string {
   if (!str) return "";
-  const result = str.replace(/([A-Z])/g, " $1");
-  return result.charAt(0).toUpperCase() + result.slice(1).toLowerCase();
+  // Insert space before capital letters (for camelCase)
+  const result = str.replace(/([A-Z])/g, " $1").trim();
+  // Capitalize first letter of each word
+  return result
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 
 export function obtainTranslatedType(str: string): string | null {

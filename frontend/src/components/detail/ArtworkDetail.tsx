@@ -57,17 +57,57 @@ export function ArtworkRelationsSidebar({ artworkData }: ArtworkRelationsSidebar
     exhibitions = [{ label: artwork.exhibition, uri: artwork.exhibition_uri }];
   }
   
+  const hasAuthors = authors.length > 0;
+  const hasOwners = owners.length > 0;
+  const hasExhibitions = exhibitions.length > 0;
+  
   // Only render if there are relationships
-  if (authors.length === 0 && owners.length === 0 && exhibitions.length === 0) return null;
+  if (!hasAuthors && !hasOwners && !hasExhibitions) return null;
   
   return (
-    <SidebarCard title="Related Entities">
-      <DefinitionList>
-        <EntityList label="Author(s)" entities={authors} colorClass="text-amber-600 hover:text-amber-800" />
-        <EntityList label="Owner(s)" entities={owners} colorClass="text-emerald-600 hover:text-emerald-800" />
-        <EntityList label="Displayed At" entities={exhibitions} colorClass="text-indigo-600 hover:text-indigo-800" fallbackType="exhibition" />
-      </DefinitionList>
-    </SidebarCard>
+    <>
+      {/* Authors */}
+      {hasAuthors && (
+        <SidebarCard title="Author(s)">
+          <DefinitionList>
+            <EntityList 
+              label="Artists" 
+              entities={authors} 
+              colorClass="text-amber-600 hover:text-amber-800"
+              fallbackType="actant"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+      
+      {/* Owners */}
+      {hasOwners && (
+        <SidebarCard title="Owner(s)">
+          <DefinitionList>
+            <EntityList 
+              label="Owners" 
+              entities={owners} 
+              colorClass="text-emerald-600 hover:text-emerald-800"
+              fallbackType="actant"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+      
+      {/* Exhibitions */}
+      {hasExhibitions && (
+        <SidebarCard title="Displayed At">
+          <DefinitionList>
+            <EntityList 
+              label="Exhibitions" 
+              entities={exhibitions} 
+              colorClass="text-indigo-600 hover:text-indigo-800"
+              fallbackType="exhibition"
+            />
+          </DefinitionList>
+        </SidebarCard>
+      )}
+    </>
   );
 }
 
