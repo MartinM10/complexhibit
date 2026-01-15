@@ -47,7 +47,7 @@ export default function AboutPage() {
             <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                <p className="font-semibold text-gray-900">Complexhibit Team</p>
                <p className="mt-1">
-                 Email: <a href="mailto:contact@complexhibit.org" className="text-indigo-600 hover:text-indigo-500">contact@complexhibit.org</a>
+                 Email: <a href="mailto:nro@uma.es" className="text-indigo-600 hover:text-indigo-500">nro@uma.es</a>
                </p>
                <p className="mt-1">
                  Report Incidents: <Link href="/reports" className="text-indigo-600 hover:text-indigo-500 underline">Visit Report Page</Link>
