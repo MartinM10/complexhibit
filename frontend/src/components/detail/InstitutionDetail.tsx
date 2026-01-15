@@ -265,7 +265,7 @@ export function InstitutionCollaborators({ collaborators }: InstitutionCollabora
   if (!collaborators || collaborators.length === 0) return null;
   
   return (
-    <SidebarCard title="Collaborating Persons">
+    <SidebarCard title="Affiliated Persons">
       <DefinitionList>
         <EntityList 
           label="Persons" 
