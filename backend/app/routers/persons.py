@@ -150,29 +150,36 @@ async def get_actor_roles(id: str, client: SparqlClient = Depends(get_sparql_cli
 
 @router.get("/get_person_collaborators/{id:path}")
 async def get_person_collaborators(id: str, client: SparqlClient = Depends(get_sparql_client)):
-    """Get all persons and institutions that collaborate with this person."""
+    """Get all persons and institutions that collaborate with this person, grouped by relationship type."""
     query = PersonQueries.get_person_collaborators(id)
     try:
         response = await client.query(query)
         flat_data = parse_sparql_response(response)
         
-        # Group by collaborator type
-        collaborators = {
-            "persons": [],
-            "institutions": []
+        # Group by relationship type and collaborator type
+        result = {
+            "collaborations": [], # Person <-> Person (generic)
+            "memberships": [],    # Person <-> Group
+            "affiliations": []    # Person <-> Institution
         }
+        
         for item in flat_data:
+            relationship = item.get("relationship_type", "collaboration")
             collab_type = item.get("collaborator_type", "unknown")
+            
             entry = {
                 "uri": item.get("collaborator_uri"),
-                "label": item.get("collaborator_label")
+                "label": item.get("collaborator_label"),
+                "type": collab_type
             }
-            if collab_type == "institution":
-                collaborators["institutions"].append(entry)
-            else:
-                collaborators["persons"].append(entry)
+            
+            if relationship == "membership":
+                result["memberships"].append(entry)
+            elif relationship == "affiliation":
+                result["affiliations"].append(entry)
+            # Remove fallback to generic collaborations as user requested strict semantics
         
-        return {"data": collaborators}
+        return {"data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

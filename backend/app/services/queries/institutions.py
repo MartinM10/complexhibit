@@ -254,13 +254,17 @@ class InstitutionQueries:
             WHERE {{
                 BIND(<https://w3id.org/OntoExhibit#institution/{inst_id}> AS ?institution)
                 
-                # Persons that collaborate with this institution (bidirectional)
+                # --- AFFILIATIONS (Person <-> Institution) ---
                 {{
-                    ?collaborator_uri <https://w3id.org/OntoExhibit#collaboratesWith> ?institution .
+                     # Institution has affiliated (Institution has a person affiliated)
+                     ?institution <https://w3id.org/OntoExhibit#hasAffiliated> ?affiliation .
+                     ?affiliation <https://w3id.org/OntoExhibit#isAffiliationOf> ?collaborator_uri .
                 }}
                 UNION
                 {{
-                    ?institution <https://w3id.org/OntoExhibit#collaboratesWith> ?collaborator_uri .
+                     # Person is affiliated with (Person points to Institution) - bidirectional check
+                     ?collaborator_uri <https://w3id.org/OntoExhibit#hasAffiliation> ?affiliation .
+                     ?affiliation <https://w3id.org/OntoExhibit#isAffiliatedWith> ?institution .
                 }}
                 
                 ?collaborator_uri rdfs:label ?collaborator_label .

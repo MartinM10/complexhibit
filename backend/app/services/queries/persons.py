@@ -309,20 +309,47 @@ class PersonQueries:
 
     @staticmethod
     def get_person_collaborators(person_id: str) -> str:
-        """Get all collaborators (persons and institutions) for a person."""
+        """Get all collaborators (persons and institutions) for a person, including memberships and affiliations."""
         return f"""
             {PREFIXES}
-            SELECT DISTINCT ?collaborator_uri ?collaborator_label ?collaborator_type
+            SELECT DISTINCT ?collaborator_uri ?collaborator_label ?collaborator_type ?relationship_type
             WHERE {{
                 BIND(<https://w3id.org/OntoExhibit#human_actant/{person_id}> AS ?person)
                 
-                # Person collaborates with others (bidirectional check)
+                # --- MEMBERSHIPS (Person <-> Group) ---
                 {{
-                    ?person <https://w3id.org/OntoExhibit#collaboratesWith> ?collaborator_uri .
+                    {{
+                        # Case 1: The 'person' IS A GROUP (querying a group's members)
+                        # Pattern: Group (person_id) -> hasMember -> Membership -> isMembershipOf -> Person (collaborator)
+                        ?person <https://w3id.org/OntoExhibit#hasMember> ?membership .
+                        ?membership <https://w3id.org/OntoExhibit#isMembershipOf> ?collaborator_uri .
+                        BIND("membership" AS ?relationship_type)
+                    }}
+                    UNION
+                    {{
+                        # Case 2: The 'person' IS A PERSON (querying a person's groups)
+                        # Pattern: Person (person_id) -> hasMembership -> Membership -> isMemberOf -> Group (collaborator)
+                        ?person <https://w3id.org/OntoExhibit#hasMembership> ?membership .
+                        ?membership <https://w3id.org/OntoExhibit#isMemberOf> ?collaborator_uri .
+                        BIND("membership" AS ?relationship_type)
+                    }}
                 }}
                 UNION
+                # --- AFFILIATIONS (Person <-> Institution) ---
                 {{
-                    ?collaborator_uri <https://w3id.org/OntoExhibit#collaboratesWith> ?person .
+                    {{
+                        # Person has affiliation (Person is affiliated with an Institution)
+                        ?person <https://w3id.org/OntoExhibit#hasAffiliation> ?affiliation .
+                        ?affiliation <https://w3id.org/OntoExhibit#isAffiliatedWith> ?collaborator_uri .
+                        BIND("affiliation" AS ?relationship_type)
+                    }}
+                    UNION
+                    {{
+                         # Institution has affiliated (Institution has this person affiliated) - though query starts with person
+                         ?collaborator_uri <https://w3id.org/OntoExhibit#hasAffiliated> ?affiliation .
+                         ?affiliation <https://w3id.org/OntoExhibit#isAffiliationOf> ?person .
+                         BIND("affiliation" AS ?relationship_type)
+                    }}
                 }}
                 
                 ?collaborator_uri rdfs:label ?collaborator_label .
@@ -333,7 +360,7 @@ class PersonQueries:
                     UNION
                     {{ ?collaborator_uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E21_Person> . BIND("person" AS ?type_person) }}
                     UNION
-                    {{ ?collaborator_uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> . BIND("person" AS ?type_person) }}
+                    {{ ?collaborator_uri rdf:type <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> . BIND("group" AS ?type_group) }}
                     UNION
                     {{ ?collaborator_uri rdf:type <https://w3id.org/OntoExhibit#Institution> . BIND("institution" AS ?type_inst) }}
                     UNION
@@ -341,7 +368,7 @@ class PersonQueries:
                     UNION
                     {{ ?collaborator_uri rdf:type <https://w3id.org/OntoExhibit#Cultural_Institution> . BIND("institution" AS ?type_inst) }}
                 }}
-                BIND(COALESCE(?type_inst, ?type_person, "unknown") AS ?collaborator_type)
+                BIND(COALESCE(?type_inst, ?type_group, ?type_person, "unknown") AS ?collaborator_type)
             }}
             ORDER BY ?collaborator_label
         """
