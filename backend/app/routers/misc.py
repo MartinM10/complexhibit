@@ -113,7 +113,7 @@ async def get_object_any_type(
     elif type in ["artwork", "obra", "work", "work_manifestation"]:
         type = "work_manifestation"
 
-    query = MiscQueries.GET_OBJECT_ANY_TYPE % (type, id)
+    query = MiscQueries.GET_OBJECT_ANY_TYPE % (type, id, type, id, type, id)
     try:
         response = await client.query(query)
         flat_data = parse_sparql_response(response)
