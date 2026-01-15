@@ -213,6 +213,10 @@ export function ActorResidence({ actorData }: ActorResidenceProps) {
 }
 
 interface CollaboratorsData {
+  collaborations?: LinkedEntity[]; // Generic collaborations
+  memberships?: LinkedEntity[];    // Group memberships
+  affiliations?: LinkedEntity[];   // Institution affiliations
+  // Legacy support
   persons?: LinkedEntity[];
   institutions?: LinkedEntity[];
 }
@@ -222,27 +226,34 @@ interface ActorCollaboratorsProps {
 }
 
 export function ActorCollaborators({ collaborators }: ActorCollaboratorsProps) {
-  const hasPersons = collaborators?.persons && collaborators.persons.length > 0;
-  const hasInstitutions = collaborators?.institutions && collaborators.institutions.length > 0;
+  // Support both new and legacy structures
+  const genericCollaborations = collaborators?.collaborations || collaborators?.persons || [];
+  const memberships = collaborators?.memberships || [];
+  const affiliations = collaborators?.affiliations || collaborators?.institutions || [];
   
-  if (!hasPersons && !hasInstitutions) return null;
+  const hasCollaborations = genericCollaborations.length > 0;
+  const hasMemberships = memberships.length > 0;
+  const hasAffiliations = affiliations.length > 0;
+  
+  if (!hasCollaborations && !hasMemberships && !hasAffiliations) return null;
   
   return (
-    <SidebarCard title="Collaborators">
+    <SidebarCard title="Memberships & Affiliations">
       <DefinitionList>
-        {hasPersons && (
+        {hasMemberships && (
           <EntityList 
-            label="Persons" 
-            entities={collaborators.persons!} 
-            colorClass="text-indigo-600 hover:text-indigo-800"
+            label="Memberships" 
+            entities={memberships} 
+            colorClass="text-emerald-600 hover:text-emerald-800"
             fallbackType="actant"
           />
         )}
-        {hasInstitutions && (
+        
+        {hasAffiliations && (
           <EntityList 
-            label="Institutions" 
-            entities={collaborators.institutions!} 
-            colorClass="text-green-600 hover:text-green-800"
+            label="Affiliations" 
+            entities={affiliations} 
+            colorClass="text-indigo-600 hover:text-indigo-800"
             fallbackType="institution"
           />
         )}
