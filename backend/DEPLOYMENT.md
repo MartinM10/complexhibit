@@ -269,6 +269,21 @@ Si la institución te proporciona los certificados SSL (archivos `.crt` y `.key`
 
 Esta combinación (Docker + Portainer + NPM) es ideal porque mantiene el servidor limpio y delega todo a contenedores, facilitando las actualizaciones y migraciones.
 
+### 3. Estrategia de Auto-Reinicio (Disaster Recovery)
+
+El proyecto ya está configurado para manejar caídas y reinicios del servidor automáticamente mediante la política `restart: unless-stopped` en `docker-compose.yml`.
+
+**¿Qué significa esto?**
+1. **Si un contenedor crashea**: Docker intentará reiniciarlo automáticamente (por ejemplo, si la API falla por un error de código momentáneo).
+2. **Si el servidor se reinicia**: Cuando la máquina (VM) arranca de nuevo, el demonio de Docker se inicia y levanta automáticamente todos los contenedores que estaban corriendo antes de apagarse.
+
+**Verificación:**
+Para asegurarte de que esto funcionará en tu servidor Linux, solo debes verificar que el servicio Docker esté habilitado para iniciar con el sistema (esto es lo estándar al instalar Docker):
+```bash
+sudo systemctl enable docker
+```
+Con esto, tu aplicación es resiliente a reinicios inesperados sin necesidad de scripts adicionales.
+
 ## Lista de Verificación de Producción
 
 ### Seguridad
