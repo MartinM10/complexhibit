@@ -400,7 +400,7 @@ server {
 ## Soporte
 
 Para problemas de despliegue:
-- Revisar [GitHub Issues](https://github.com/MartinM10/ontoexhibit-api/issues)
+- Revisar [GitHub Issues](https://github.com/MartinM10/complexhibit/issues)
 - Leer [CONTRIBUTING.md](CONTRIBUTING.md)
 - Contactar a los mantenedores
 
