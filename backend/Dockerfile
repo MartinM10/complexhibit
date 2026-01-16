@@ -27,7 +27,15 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 COPY ./app ./app
 
 # Crear usuario no-root
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+RUN useradd -m -u 1000 appuser
+
+# Copiar script de entrypoint
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh && chown appuser:appuser entrypoint.sh
+
+# Establecer permisos de app
+RUN chown -R appuser:appuser /app
+
 USER appuser
 
 # Exponer puerto
@@ -36,6 +44,9 @@ EXPOSE 8000
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import httpx; httpx.get('http://localhost:8000/api/v1/')"
+
+# Entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 # Ejecutar la aplicación
 CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
