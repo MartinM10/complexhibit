@@ -243,6 +243,32 @@ git push heroku main
 3. Configurar variables de entorno en el dashboard
 4. Desplegar
 
+## Recomendaciones para Producción (On-Premises / VPS)
+
+Si vas a desplegar en una **Máquina Virtual (VM) "pelada"** (por ejemplo, proporcionada por una universidad o AWS EC2) donde tienes control total pero debes gestionar tú mismo los certificados y servicios, esta es la configuración "ligera" recomendada para complementar Docker:
+
+### 1. Gestión de Contenedores: Portainer CE
+
+Evita usar paneles de control pesados (cPanel, Plesk). Portainer te ofrece una interfaz gráfica web para gestionar tus contenedores Docker (ver logs, reiniciar servicios, monitorizar recursos) sin "ensuciar" el sistema operativo.
+
+**Instalación rápida:**
+```bash
+docker volume create portainer_data
+docker run -d -p 9000:9000 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
+```
+Accede en `http://tu-servidor:9000`.
+
+### 2. Gestión de SSL y Dominios: Nginx Proxy Manager
+
+Si la institución te proporciona los certificados SSL (archivos `.crt` y `.key`) y te da acceso a los puertos 80/443, **Nginx Proxy Manager** (NPM) es la forma más sencilla de gestionarlos.
+
+1. Añade este servicio a tu `docker-compose.yml` (o ejecútalo aparte).
+2. Sube tus certificados en la interfaz web de NPM ("Custom SSL").
+3. Crea un "Proxy Host" que apunte `tu-dominio.com` -> `complexhibit-frontend:3000`.
+4. ¡Listo! NPM gestionará las redirecciones HTTPS automáticamente.
+
+Esta combinación (Docker + Portainer + NPM) es ideal porque mantiene el servidor limpio y delega todo a contenedores, facilitando las actualizaciones y migraciones.
+
 ## Lista de Verificación de Producción
 
 ### Seguridad
