@@ -11,6 +11,7 @@ from fastapi.responses import ORJSONResponse
 
 from app.core.config import settings
 from app.dependencies import get_sparql_client
+from app.models.responses import ErrorResponseModel, StandardResponseModel
 from app.routers.pagination import paginated_query
 from app.services.queries.catalogs import CatalogQueries
 from app.services.sparql_client import SparqlClient
@@ -18,6 +19,24 @@ from app.utils.cursor import decode_cursor
 from app.utils.parsers import parse_sparql_response
 
 router = APIRouter(prefix=f"{settings.DEPLOY_PATH}", tags=["catalogs"])
+
+
+@router.get("/count_catalogs", summary="Count of individuals of class catalog")
+async def count_catalogs(client: SparqlClient = Depends(get_sparql_client)):
+    """Get total count of catalogs in the knowledge graph."""
+    try:
+        query = CatalogQueries.COUNT_CATALOGS
+        response = await client.query(query)
+        parsed = parse_sparql_response(response)
+        count = parsed[0]["count"] if parsed else 0
+        return StandardResponseModel(data={"count": count}, message="Operation successful")
+    except Exception as e:
+        error_response = ErrorResponseModel(
+            error_code="INTERNAL_SERVER_ERROR",
+            error_message="Internal Server Error",
+            error_details={"error": str(e)},
+        )
+        raise HTTPException(status_code=500, detail=error_response.dict())
 
 
 @router.get(

@@ -57,6 +57,22 @@ El script de inicialización:
 - **Usuario**: `dba`
 - **Contraseña**: `dba` (por defecto, configurable en `.env`)
 
+### Administrador de la Aplicación
+- **Email**: `martinjs@uma.es` (configurable con `ADMIN_EMAIL`)
+- **Contraseña**: `admin123` (¡CAMBIAR EN PRODUCCIÓN! configurable con `ADMIN_PASSWORD`)
+
+## 🛡️ Seguridad y Autenticación
+
+Los endpoints de **escritura** (creación de recursos) están protegidos y requieren autenticación JWT.
+
+1. **Obtener Token**:
+   `POST /api/v1/auth/login` con email y contraseña.
+2. **Usar Token**:
+   Enviar header `Authorization: Bearer <token>` en las peticiones `POST` a `/create_*`.
+
+Los endpoints de **lectura** (consultas, contadores) son públicos.
+
+
 ## 📁 Estructura del Proyecto
 
 ```
@@ -153,6 +169,9 @@ curl http://localhost:8000/api/v1/search?q=Picasso
 
 # Obtener detalles de una exposición
 curl http://localhost:8000/api/v1/exhibitions/{id}
+
+# Obtener contadores (Catálogos, etc.)
+curl http://localhost:8000/api/v1/count_catalogs
 ```
 
 ## 🛠️ Comandos Útiles

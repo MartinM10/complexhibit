@@ -39,7 +39,7 @@ def init_admin():
         admin = User(
             email=settings.ADMIN_EMAIL,
             username="admin",
-            hashed_password=hash_password("admin123"),  # Change this!
+            hashed_password=hash_password(settings.ADMIN_PASSWORD),
             full_name="Administrator",
             role=UserRole.ADMIN,
             status=UserStatus.ACTIVE

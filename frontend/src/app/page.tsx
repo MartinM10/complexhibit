@@ -1,14 +1,33 @@
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Building2, Calendar, Users, Image as ImageIcon, Briefcase } from "lucide-react";
+import { ArrowRight, BookOpen, Building2, Calendar, Users, Image as ImageIcon, Briefcase, Loader2 } from "lucide-react";
 import HashRedirect from "@/components/HashRedirect";
+import { 
+  getExhibitionsCount, 
+  getArtworksCount, 
+  getPersonsCount, 
+  getInstitutionsCount,
+  getCatalogsCount,
+  getCompaniesCount 
+} from "@/lib/api";
 
-const categories = [
+interface Category {
+  name: string;
+  description: string;
+  href: string;
+  icon: any;
+  color: string;
+  countKey: string;
+}
+
+const initialCategories: Category[] = [
   {
     name: "Exhibitions",
     description: "Explore curated exhibitions from various institutions.",
     href: "/all/exhibition",
     icon: Calendar,
     color: "bg-blue-500",
+    countKey: "exhibitions",
   },
   {
     name: "Artworks",
@@ -16,6 +35,7 @@ const categories = [
     href: "/all/artwork",
     icon: ImageIcon,
     color: "bg-purple-500",
+    countKey: "artworks",
   },
   {
     name: "Actors",
@@ -23,6 +43,7 @@ const categories = [
     href: "/all/actant",
     icon: Users,
     color: "bg-orange-500",
+    countKey: "persons",
   },
   {
     name: "Institutions",
@@ -30,6 +51,7 @@ const categories = [
     href: "/all/institution",
     icon: Building2,
     color: "bg-green-500",
+    countKey: "institutions",
   },
   {
     name: "Catalogs",
@@ -37,6 +59,7 @@ const categories = [
     href: "/all/catalog",
     icon: BookOpen,
     color: "bg-amber-500",
+    countKey: "catalogs",
   },
   {
     name: "Companies",
@@ -44,10 +67,51 @@ const categories = [
     href: "/all/company",
     icon: Briefcase,
     color: "bg-teal-500",
+    countKey: "companies",
   },
 ];
 
 export default function Home() {
+  const [counts, setCounts] = useState<Record<string, number | null>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [
+          exhibitions, 
+          artworks, 
+          persons, 
+          institutions, 
+          catalogs, 
+          companies
+        ] = await Promise.allSettled([
+          getExhibitionsCount(),
+          getArtworksCount(),
+          getPersonsCount(),
+          getInstitutionsCount(),
+          getCatalogsCount(),
+          getCompaniesCount()
+        ]);
+
+        setCounts({
+          exhibitions: exhibitions.status === 'fulfilled' ? exhibitions.value.data.count : null,
+          artworks: artworks.status === 'fulfilled' ? artworks.value.data.count : null,
+          persons: persons.status === 'fulfilled' ? persons.value.data.count : null,
+          institutions: institutions.status === 'fulfilled' ? institutions.value.data.count : null,
+          catalogs: catalogs.status === 'fulfilled' ? catalogs.value.data.count : null,
+          companies: companies.status === 'fulfilled' ? companies.value.data.count : null,
+        });
+      } catch (error) {
+        console.error("Error fetching counts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCounts();
+  }, []);
+
   return (
     <div className="bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30 min-h-screen">
       <HashRedirect />
@@ -108,8 +172,8 @@ export default function Home() {
               Explore our diverse collection organized by type
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {categories.map((category, index) => (
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {initialCategories.map((category, index) => (
               <Link 
                 key={category.name} 
                 href={category.href} 
@@ -123,6 +187,15 @@ export default function Home() {
                   {/* Decorative background blob */}
                   <div className={`absolute w-32 h-32 ${category.color} rounded-full opacity-10 blur-2xl group-hover:scale-150 transition-transform duration-700`} />
                   <category.icon className={`relative z-10 h-16 w-16 ${category.color.replace("bg-", "text-")} transition-all duration-500 group-hover:scale-110 group-hover:rotate-6`} />
+                  
+                  {/* Count Display */}
+                  <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold shadow-sm flex items-center gap-1">
+                    {loading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <span>{counts[category.countKey] !== null ? counts[category.countKey] : '-'}</span>
+                    )}
+                  </div>
                 </div>
                 <div className="relative flex flex-1 flex-col justify-between p-6">
                   <div className="flex-1">

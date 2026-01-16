@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     
     # Admin
     ADMIN_EMAIL: str = "martinjs@uma.es"
+    ADMIN_PASSWORD: str = "admin123"
     
     # SMTP Email
     SMTP_HOST: str = "smtp.gmail.com"

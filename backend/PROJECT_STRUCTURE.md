@@ -59,10 +59,20 @@ backend/
 ├── 📄 CONTRIBUTING.md                # Guías de contribución
 ├── 📄 DEPLOYMENT.md                  # Instrucciones de despliegue
 ├── 📄 LICENSE.md                     # Licencia MIT
+├── 📄 QUICK_START.md                 # Guía de inicio rápido para nuevos desarrolladores
+├── 📄 VIRTUOSO_SETUP.md              # Guía detallada para configurar y depurar Virtuoso
+
 ├── 📄 README.md                      # Resumen del proyecto
 ├── 📄 ROUTES.md                      # Referencia de rutas de API
 ├── 📄 SECURITY.md                    # Política de seguridad
+├── 📄 QUICK_START.md                 # Guía de inicio rápido
+├── 📄 VIRTUOSO_SETUP.md              # Configuración de Virtuoso
 │
+├── 📁 scripts/                       # Scripts de utilidad (carga de datos, etc.)
+│   ├── load_data.sh                  # Script de carga para Linux/Mac
+│   └── load_data.ps1                 # Script de carga para Windows
+│
+├── 📄 ontoExhibit.ttl                # Archivo de ontología Turtle
 ├── 📄 Dockerfile                     # Definición de imagen Docker
 ├── 📄 docker-compose.yml             # Configuración Docker Compose
 ├── 📄 pyproject.toml                 # Configuración del proyecto Python
@@ -120,12 +130,6 @@ backend/
 |------|---------| 
 | `Dockerfile` | Definición de imagen Docker multi-stage |
 | `docker-compose.yml` | Despliegue de stack completo (API + Virtuoso) |
-
-### Testing
-
-| Archivo | Propósito |
-|------|---------| 
-| `test_main.http` | Ejemplos de peticiones HTTP para testing manual |
 
 ### CI/CD
 

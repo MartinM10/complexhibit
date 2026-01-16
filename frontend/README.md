@@ -41,3 +41,9 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 - `src/app`: Páginas y layouts del App Router.
 - `src/components`: Componentes UI reutilizables.
 - `src/lib`: Funciones de utilidad y clientes API.
+
+## ✨ Características Principales
+
+- **Contadores en Home**: Visualización en tiempo real de la cantidad de entidades (Exposiciones, Obras, etc.) en las tarjetas de inicio.
+- **Búsqueda Semántica**: Interfaz para buscar en el grafo de conocimiento.
+- **Inserción de Datos**: Formularios protegidos (requiere login) para añadir nuevos datos.

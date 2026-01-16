@@ -59,6 +59,12 @@ docker-compose up -d --build
 - **Virtuoso SPARQL Endpoint**: [http://localhost:8890/sparql](http://localhost:8890/sparql)
 - **Virtuoso Conductor**: [http://localhost:8890/conductor](http://localhost:8890/conductor)
 
+## 🛡️ Seguridad y Características Nuevas
+
+- **Autenticación JWT**: Los endpoints de escritura del backend ahora están protegidos.
+- **Contadores en Home**: Visualización en tiempo real de estadísticas del grafo en el frontend.
+- **Configuración Automática**: Scripts de inicialización mejorados y automatizados con Docker.
+
 ## Desarrollo
 
 ### Backend

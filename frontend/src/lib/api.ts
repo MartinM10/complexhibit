@@ -158,6 +158,31 @@ export async function submitReport(report: any) {
   return response.json();
 }
 
+// Count API functions
+export async function getExhibitionsCount() {
+  return fetchFromApi("/count_exhibitions");
+}
+
+export async function getArtworksCount() {
+  return fetchFromApi("/count_artworks");
+}
+
+export async function getPersonsCount() {
+  return fetchFromApi("/count_persons");
+}
+
+export async function getInstitutionsCount() {
+  return fetchFromApi("/count_institutions");
+}
+
+export async function getCatalogsCount() {
+  return fetchFromApi("/count_catalogs");
+}
+
+export async function getCompaniesCount() {
+  return fetchFromApi("/count_companies");
+}
+
 // Catalog API functions
 export async function getCatalogDetails(id: string) {
   return fetchFromApi(`/get_catalog/${id}`);

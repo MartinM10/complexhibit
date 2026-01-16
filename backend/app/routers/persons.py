@@ -10,8 +10,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import ORJSONResponse
 
 from app.core.config import settings
-from app.dependencies import get_sparql_client
+from app.dependencies import get_sparql_client, require_user
 from app.models.domain import Persona
+from app.models.user import User
 from app.models.responses import ErrorResponseModel, StandardResponseModel
 from app.routers.pagination import paginated_query
 from app.services.queries.persons import PersonQueries
@@ -112,7 +113,8 @@ async def get_person(id: str, client: SparqlClient = Depends(get_sparql_client))
 @router.post("/create_person", status_code=status.HTTP_201_CREATED)
 async def create_person(
     persona: Persona, 
-    client: SparqlClient = Depends(get_sparql_client)
+    client: SparqlClient = Depends(get_sparql_client),
+    user: User = Depends(require_user)
 ):
     """Create a new person in the knowledge graph."""
     try:

@@ -10,7 +10,23 @@ Esta guía cubre diferentes estrategias de despliegue para la API Complexhibit.
 - [Despliegue en la Nube](#despliegue-en-la-nube)
 - [Lista de Verificación de Producción](#lista-de-verificación-de-producción)
 
+## Inicialización Automática
+
+El backend incluye un script de entrada (`entrypoint.sh`) que realiza las siguientes tareas automáticamente al iniciar el contenedor:
+1. Espera a que la base de datos PostgreSQL esté lista.
+2. Ejecuta `init_admin.py` para asegurar que existe un usuario administrador (crea uno si no existe, o actualiza sus roles).
+3. Inicia la aplicación FastAPI.
+
+### Configuración del Admin
+
+El usuario administrador se crea con las siguientes credenciales por defecto (configurables en `.env`):
+- **Email**: `martinjs@uma.es` (`ADMIN_EMAIL`)
+- **Password**: `admin123` (`ADMIN_PASSWORD`)
+
+> ⚠️ **IMPORTANTE**: En producción, DEBES cambiar `ADMIN_PASSWORD` en tu archivo `.env`.
+
 ## Desarrollo Local
+
 
 ### Inicio Rápido
 
