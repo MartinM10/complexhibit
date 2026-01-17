@@ -26,8 +26,87 @@ router = APIRouter(prefix=f"{settings.DEPLOY_PATH}", tags=["exposiciones"])
 @router.get("/count_exhibitions", summary="Count of individuals of class exhibition")
 async def count_exhibitions(client: SparqlClient = Depends(get_sparql_client)):
     """Get total count of exhibitions in the knowledge graph."""
-# ... (skipping unchanged parts) ...
+    try:
+        query = ExhibitionQueries.COUNT_EXPOSICIONES
+        response = await client.query(query)
+        parsed = parse_sparql_response(response)
+        count = parsed[0]["count"] if parsed else 0
+        return StandardResponseModel(data={"count": count}, message="Operation successful")
+    except Exception as e:
+        error_response = ErrorResponseModel(
+            error_code="INTERNAL_SERVER_ERROR",
+            error_message="Internal Server Error",
+            error_details={"error": str(e)},
+        )
+        raise HTTPException(status_code=500, detail=error_response.dict())
 
+@router.get(
+    "/all_exhibitions", 
+    summary="Individuals of class exhibition", 
+    response_class=ORJSONResponse
+)
+async def all_exhibitions(
+    cursor: Optional[str] = None,
+    page_size: int = 10, 
+    q: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    curator_name: Optional[str] = None,
+    place: Optional[str] = None,
+    organizer: Optional[str] = None,
+    sponsor: Optional[str] = None,
+    theme: Optional[str] = None,
+    exhibition_type: Optional[str] = None,
+    participating_actant: Optional[str] = None,
+    displayed_artwork: Optional[str] = None,
+    curator: Optional[str] = None,
+    organizer_uri: Optional[str] = None,
+    sponsor_uri: Optional[str] = None,
+    client: SparqlClient = Depends(get_sparql_client)
+):
+    """
+    Get paginated list of exhibitions with optional filtering.
+    
+    Uses cursor-based pagination for stable, efficient results.
+    """
+    # Decode cursor
+    last_label, last_uri = None, None
+    if cursor:
+        decoded = decode_cursor(cursor)
+        if decoded:
+            last_label, last_uri = decoded
+
+    # Build IDs query with filters
+    query_ids = ExhibitionQueries.get_exposiciones_ids(
+        limit=page_size + 1, 
+        last_label=last_label, 
+        last_uri=last_uri, 
+        text_search=q,
+        start_date=start_date,
+        end_date=end_date,
+        curator_name=curator_name,
+        place=place,
+        organizer=organizer,
+        sponsor=sponsor,
+        theme=theme,
+        exhibition_type=exhibition_type,
+        participating_actant=participating_actant,
+        displayed_artwork=displayed_artwork,
+        curator=curator,
+        organizer_uri=organizer_uri,
+        sponsor_uri=sponsor_uri
+    )
+    
+    # Use shared pagination utility
+    result = await paginated_query(
+        client=client,
+        get_ids_query=query_ids,
+        get_details_func=ExhibitionQueries.get_exposiciones_details,
+        page_size=page_size,
+        label_field="inner_label"
+    )
+    
+    return ORJSONResponse(content=result)
 @router.post("/create_exhibition", status_code=status.HTTP_201_CREATED)
 async def create_exhibition(
     exposicion: Exposicion, 
@@ -61,4 +140,21 @@ async def get_exhibition_museographers(id: str, client: SparqlClient = Depends(g
         return {"data": museographers}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/get_exhibition/{id:path}")
+async def get_exhibition(id: str, client: SparqlClient = Depends(get_sparql_client)):
+    """Get detailed information for a specific exhibition by ID."""
+    query = ExhibitionQueries.GET_EXHIBITION_BY_ID % id
+    try:
+        response = await client.query(query)
+        flat_data = parse_sparql_response(response)
+        
+        result = []
+        if flat_data:
+            result = [flat_data[0]]
+            
+        return {"data": result, "sparql": query}
+    except Exception as e:
+         raise HTTPException(status_code=500, detail=str(e))
 
