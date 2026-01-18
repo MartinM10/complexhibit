@@ -33,7 +33,7 @@ OBJECT_PROPERTIES = [
     "productionEndDate",
     "productionStartDate",
     "hasAuthor",
-    "exposicionExhibeObraDeArte",
     "exposicionExhibeArtista",
     "exposicionExhibeInstitucion",
+    "hasVenue",
 ]

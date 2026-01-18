@@ -269,63 +269,144 @@ class ExhibitionQueries:
         uri_exposicion = f"{URI_ONTOLOGIA}exhibition/{hash_sha256(data_to_hash)}"
 
         POST_EXHIBITION += f"\t\t{sujeto}> <{RDF.type}> {uri_ontologia}Exhibition> .\n"
-        POST_EXHIBITION += f'\t\t{sujeto}> <{RDFS.label}> "{exposicion.name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+        POST_EXHIBITION += f'\t\t{sujeto}> <{RDFS.label}> "{escape_sparql_string(exposicion.name.title())}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
 
+        # Title entity
         uri_title = f"{uri_ontologia}title/{hash_sha256(exposicion.name)}"
         POST_EXHIBITION += f"\t\t{uri_title}> <{RDF.type}> {uri_ontologia}Title> .\n"
-        POST_EXHIBITION += f'\t\t{uri_title}> <{RDFS.label}> "{exposicion.name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+        POST_EXHIBITION += f'\t\t{uri_title}> <{RDFS.label}> "{escape_sparql_string(exposicion.name.title())}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
         POST_EXHIBITION += f"\t\t{sujeto}> {uri_ontologia}hasTitle> {uri_title}> .\n"
         POST_EXHIBITION += f"\t\t{uri_title}> {uri_ontologia}isTitleOf> {sujeto}> .\n"
 
-        if (
+        # Exhibition Type
+        if exposicion.tipo_exposicion:
+            for tipo in (exposicion.tipo_exposicion if isinstance(exposicion.tipo_exposicion, list) else [exposicion.tipo_exposicion]):
+                if tipo:
+                    POST_EXHIBITION += f'\t\t{sujeto}> <{URI_ONTOLOGIA}type> "{escape_sparql_string(tipo)}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+
+        # Create ExhibitionMaking if any role-related data exists
+        needs_exhibition_making = (
             exposicion.fecha_inicio
             or exposicion.fecha_fin
             or exposicion.lugar_celebracion
             or exposicion.comisario
             or exposicion.organiza
             or exposicion.exposicion_patrocinada_por
-        ):
+            or exposicion.exposicion_exhibe_artista
+        )
 
+        if needs_exhibition_making:
             uri_id_exhibition_making = f'{sujeto}/{quote("exhibition making")}>'
-            POST_EXHIBITION += f"\t\t{uri_id_exhibition_making} <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> {uri_ontologia}ExhibitionMaking> .\n"
-            POST_EXHIBITION += (
-                f"\t\t{sujeto}> {uri_ontologia}hasExhibitionMaking> {uri_id_exhibition_making} .\n"
-            )
-            POST_EXHIBITION += (
-                f"\t\t{uri_id_exhibition_making} {uri_ontologia}isExhibitionMakingOf> {sujeto}> .\n"
-            )
+            POST_EXHIBITION += f"\t\t{uri_id_exhibition_making} <{RDF.type}> {uri_ontologia}ExhibitionMaking> .\n"
+            POST_EXHIBITION += f"\t\t{sujeto}> {uri_ontologia}hasExhibitionMaking> {uri_id_exhibition_making} .\n"
+            POST_EXHIBITION += f"\t\t{uri_id_exhibition_making} {uri_ontologia}isExhibitionMakingOf> {sujeto}> .\n"
 
-            # ... (Simplified logic for brevity, assuming similar structure to original but cleaner)
-            # Implementing full logic would be very long, I'll implement key parts
+            # Handle Curators
+            if exposicion.comisario:
+                for idx, curator_data in enumerate(exposicion.comisario):
+                    curator_uri = curator_data.get('uri') if isinstance(curator_data, dict) else curator_data
+                    if curator_uri:
+                        role_hash = hash_sha256(f"curator-{curator_uri}-{uri_exposicion}-{idx}")
+                        curator_role_uri = f"<{URI_ONTOLOGIA}curator/{role_hash}>"
+                        POST_EXHIBITION += f"\t\t{curator_role_uri} <{RDF.type}> <{URI_ONTOLOGIA}Curator> .\n"
+                        POST_EXHIBITION += f"\t\t{uri_id_exhibition_making} <{URI_ONTOLOGIA}hasCurator> {curator_role_uri} .\n"
+                        POST_EXHIBITION += f"\t\t{curator_role_uri} <{URI_ONTOLOGIA}isRoleOf> <{curator_uri}> .\n"
+                        POST_EXHIBITION += f"\t\t<{curator_uri}> <{URI_ONTOLOGIA}hasRole> {curator_role_uri} .\n"
 
+            # Handle Organizers
+            if exposicion.organiza:
+                for idx, org_data in enumerate(exposicion.organiza):
+                    org_uri = org_data.get('uri') if isinstance(org_data, dict) else org_data
+                    if org_uri:
+                        role_hash = hash_sha256(f"organizer-{org_uri}-{uri_exposicion}-{idx}")
+                        org_role_uri = f"<{URI_ONTOLOGIA}organizer/{role_hash}>"
+                        POST_EXHIBITION += f"\t\t{org_role_uri} <{RDF.type}> <{URI_ONTOLOGIA}Organizer> .\n"
+                        POST_EXHIBITION += f"\t\t{uri_id_exhibition_making} <{URI_ONTOLOGIA}hasOrganizer> {org_role_uri} .\n"
+                        POST_EXHIBITION += f"\t\t{org_role_uri} <{URI_ONTOLOGIA}isRoleOf> <{org_uri}> .\n"
+                        POST_EXHIBITION += f"\t\t<{org_uri}> <{URI_ONTOLOGIA}hasRole> {org_role_uri} .\n"
+
+            # Handle Funders/Sponsors
+            if exposicion.exposicion_patrocinada_por:
+                for idx, funder_data in enumerate(exposicion.exposicion_patrocinada_por):
+                    funder_uri = funder_data.get('uri') if isinstance(funder_data, dict) else funder_data
+                    if funder_uri:
+                        role_hash = hash_sha256(f"funder-{funder_uri}-{uri_exposicion}-{idx}")
+                        funder_role_uri = f"<{URI_ONTOLOGIA}funder/{role_hash}>"
+                        POST_EXHIBITION += f"\t\t{funder_role_uri} <{RDF.type}> <{URI_ONTOLOGIA}Funder> .\n"
+                        POST_EXHIBITION += f"\t\t{uri_id_exhibition_making} <{URI_ONTOLOGIA}hasFunder> {funder_role_uri} .\n"
+                        POST_EXHIBITION += f"\t\t{funder_role_uri} <{URI_ONTOLOGIA}isRoleOf> <{funder_uri}> .\n"
+                        POST_EXHIBITION += f"\t\t<{funder_uri}> <{URI_ONTOLOGIA}hasRole> {funder_role_uri} .\n"
+
+            # Handle Exhibiting Artists
+            if exposicion.exposicion_exhibe_artista:
+                for idx, exhibitor_data in enumerate(exposicion.exposicion_exhibe_artista):
+                    exhibitor_uri = exhibitor_data.get('uri') if isinstance(exhibitor_data, dict) else exhibitor_data
+                    if exhibitor_uri:
+                        role_hash = hash_sha256(f"exhibiting-actant-{exhibitor_uri}-{uri_exposicion}-{idx}")
+                        exhibitor_role_uri = f"<{URI_ONTOLOGIA}exhibitingactant/{role_hash}>"
+                        POST_EXHIBITION += f"\t\t{exhibitor_role_uri} <{RDF.type}> <{URI_ONTOLOGIA}ExhibitingActant> .\n"
+                        POST_EXHIBITION += f"\t\t{uri_id_exhibition_making} <{URI_ONTOLOGIA}hasExhibitingActant> {exhibitor_role_uri} .\n"
+                        POST_EXHIBITION += f"\t\t{exhibitor_role_uri} <{URI_ONTOLOGIA}isRoleOf> <{exhibitor_uri}> .\n"
+                        POST_EXHIBITION += f"\t\t<{exhibitor_uri}> <{URI_ONTOLOGIA}hasRole> {exhibitor_role_uri} .\n"
+
+            # Handle Location/Place
             if exposicion.lugar_celebracion:
-                # Logic for place...
-                pass
+                place_hash = hash_sha256(f"place-{exposicion.lugar_celebracion}")
+                place_uri = f"<{URI_ONTOLOGIA}place/{place_hash}>"
+                POST_EXHIBITION += f"\t\t{place_uri} <{RDF.type}> <{URI_ONTOLOGIA}Place> .\n"
+                POST_EXHIBITION += f'\t\t{place_uri} <{RDFS.label}> "{escape_sparql_string(exposicion.lugar_celebracion)}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+                POST_EXHIBITION += f"\t\t{sujeto}> <{URI_ONTOLOGIA}takesPlaceAt> {place_uri} .\n"
 
+            # Handle Opening Date
             if exposicion.fecha_inicio:
                 fecha = validar_fecha(exposicion.fecha_inicio)
                 if fecha:
                     fecha_str = fecha.strftime("%Y-%m-%d")
                     tipo_indiv = "ExactDate"
                     uri_fecha = f"<{URI_ONTOLOGIA}{tipo_indiv.lower()}/{hash_sha256(fecha_str)}>"
-                    POST_EXHIBITION += (
-                        f"\t\t{uri_fecha} <{RDF.type}> <{URI_ONTOLOGIA}{tipo_indiv}> .\n"
-                    )
+                    POST_EXHIBITION += f"\t\t{uri_fecha} <{RDF.type}> <{URI_ONTOLOGIA}{tipo_indiv}> .\n"
                     POST_EXHIBITION += f'\t\t{uri_fecha} <{RDFS.label}> "{fecha_str}"^^<http://www.w3.org/2001/XMLSchema#date> .\n'
 
                     uri_opening = f"{sujeto}/opening>"
-                    POST_EXHIBITION += (
-                        f"\t\t{uri_opening} <{RDF.type}> <{URI_ONTOLOGIA}Opening> .\n"
-                    )
-                    POST_EXHIBITION += (
-                        f"\t\t{uri_opening} <{URI_ONTOLOGIA}hasTimeSpan> {uri_fecha} .\n"
-                    )
-                    POST_EXHIBITION += (
-                        f"\t\t{sujeto}> <{URI_ONTOLOGIA}hasOpening> {uri_opening} .\n"
-                    )
+                    POST_EXHIBITION += f"\t\t{uri_opening} <{RDF.type}> <{URI_ONTOLOGIA}Opening> .\n"
+                    POST_EXHIBITION += f"\t\t{uri_opening} <{URI_ONTOLOGIA}hasTimeSpan> {uri_fecha} .\n"
+                    POST_EXHIBITION += f"\t\t{sujeto}> <{URI_ONTOLOGIA}hasOpening> {uri_opening} .\n"
+
+            # Handle Closing Date
+            if exposicion.fecha_fin:
+                fecha = validar_fecha(exposicion.fecha_fin)
+                if fecha:
+                    fecha_str = fecha.strftime("%Y-%m-%d")
+                    tipo_indiv = "ExactDate"
+                    uri_fecha_fin = f"<{URI_ONTOLOGIA}{tipo_indiv.lower()}/{hash_sha256(fecha_str)}>"
+                    POST_EXHIBITION += f"\t\t{uri_fecha_fin} <{RDF.type}> <{URI_ONTOLOGIA}{tipo_indiv}> .\n"
+                    POST_EXHIBITION += f'\t\t{uri_fecha_fin} <{RDFS.label}> "{fecha_str}"^^<http://www.w3.org/2001/XMLSchema#date> .\n'
+
+                    uri_closing = f"{sujeto}/closing>"
+                    POST_EXHIBITION += f"\t\t{uri_closing} <{RDF.type}> <{URI_ONTOLOGIA}Closing> .\n"
+                    POST_EXHIBITION += f"\t\t{uri_closing} <{URI_ONTOLOGIA}hasTimeSpan> {uri_fecha_fin} .\n"
+                    POST_EXHIBITION += f"\t\t{sujeto}> <{URI_ONTOLOGIA}hasClosing> {uri_closing} .\n"
+
+            # Handle Venue (Sede)
+            if exposicion.sede:
+                venue_hash = hash_sha256(f"venue-{exposicion.sede}")
+                venue_uri = f"<{URI_ONTOLOGIA}institution/{venue_hash}>"
+                # We treat the text venue as a rudimentary Institution if it doesn't exist, 
+                # strictly speaking we are just asserting it exists here with a label and type.
+                POST_EXHIBITION += f"\t\t{venue_uri} <{RDF.type}> <{URI_ONTOLOGIA}Institution> .\n"
+                POST_EXHIBITION += f'\t\t{venue_uri} <{RDFS.label}> "{escape_sparql_string(exposicion.sede)}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+                POST_EXHIBITION += f"\t\t{sujeto}> <{URI_ONTOLOGIA}hasVenue> {venue_uri} .\n"
+
+        # Handle displayed artworks (direct relationship, not through ExhibitionMaking)
+        if exposicion.exposicion_exhibe_obra_de_arte:
+            for artwork_data in exposicion.exposicion_exhibe_obra_de_arte:
+                artwork_uri = artwork_data.get('uri') if isinstance(artwork_data, dict) else artwork_data
+                if artwork_uri:
+                    POST_EXHIBITION += f"\t\t{sujeto}> <{URI_ONTOLOGIA}displays> <{artwork_uri}> .\n"
+                    POST_EXHIBITION += f"\t\t<{artwork_uri}> <{URI_ONTOLOGIA}isDisplayedAt> {sujeto}> .\n"
 
         POST_EXHIBITION += "\t}\n}"
-        return POST_EXHIBITION
+        return POST_EXHIBITION, uri_exposicion
 
     GET_EXHIBITION_BY_ID = f"""
         {PREFIXES}
