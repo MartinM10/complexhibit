@@ -1,12 +1,29 @@
+import re
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.core.config import settings
+from app.core.database import get_db
+from app.core.security import decode_token
 from app.dependencies import get_sparql_client
 from app.services.queries.misc import MiscQueries
 from app.services.sparql_client import SparqlClient
 from app.utils.parsers import group_by_uri, parse_sparql_response
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix=f"{settings.DEPLOY_PATH}", tags=["misc"])
+security = HTTPBearer(auto_error=False)
+
+
+def is_modifying_query(query: str) -> bool:
+    """
+    Check if SPARQL query contains INSERT, UPDATE, DELETE, or other modifying operations.
+    Returns True if the query attempts to modify data.
+    """
+    pattern = r'\b(INSERT|DELETE|UPDATE|CLEAR|DROP|CREATE|LOAD|ADD|MOVE|COPY)\b'
+    return bool(re.search(pattern, query.upper()))
 
 
 @router.get("/semantic_search")
@@ -44,6 +61,8 @@ async def get_filter_options(filter_type: str, client: SparqlClient = Depends(ge
         query = MiscQueries.GET_DISTINCT_EXHIBITION_TYPES
     elif filter_type == "exhibition_theme":
         query = MiscQueries.GET_DISTINCT_EXHIBITION_THEMES
+    elif filter_type == "institution_type":
+        query = MiscQueries.GET_INSTITUTION_TYPES
     else:
         raise HTTPException(status_code=400, detail="Invalid filter type")
 
@@ -75,17 +94,65 @@ async def all_classes(client: SparqlClient = Depends(get_sparql_client)):
 
 @router.post("/sparql")
 async def execute_sparql(
-    request: dict,  # Accepting raw dict to handle potential various formats or just use a model
-    client: SparqlClient = Depends(get_sparql_client)
+    request: dict,
+    client: SparqlClient = Depends(get_sparql_client),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    db: Session = Depends(get_db)
 ):
+    """
+    Execute a SPARQL query.
+    
+    SELECT, ASK, CONSTRUCT, DESCRIBE queries are allowed for all users.
+    INSERT, DELETE, UPDATE and other modifying queries require authentication.
+    """
     query = request.get("query")
     if not query:
         raise HTTPException(status_code=400, detail="Query is required")
     
     try:
-        response = await client.query(query)
-        data = parse_sparql_response(response)
+        # Check if this is a modifying query
+        if is_modifying_query(query):
+            # Require authentication for modifying queries
+            if not credentials:
+                raise HTTPException(
+                    status_code=401, 
+                    detail="Authentication required for INSERT/UPDATE/DELETE queries. Please log in first."
+                )
+            
+            # Validate token
+            payload = decode_token(credentials.credentials)
+            if not payload:
+                raise HTTPException(
+                    status_code=401, 
+                    detail="Invalid or expired token. Please log in again."
+                )
+            
+            # Verify user exists and is active
+            from app.models.user import User, UserStatus
+            user_id = payload.get("sub")
+            user = db.query(User).filter(User.id == int(user_id)).first()
+            
+            if not user:
+                raise HTTPException(status_code=401, detail="User not found")
+            
+            if user.status != UserStatus.ACTIVE:
+                raise HTTPException(status_code=403, detail="Account not active")
+            
+            # Use update method for modifying queries
+            response = await client.update(query)
+            # Update responses might be different format
+            if isinstance(response, dict) and "message" in response:
+                return {"data": [], "message": response.get("message", "Update successful")}
+            data = parse_sparql_response(response) if response else []
+        else:
+            # SELECT/ASK/CONSTRUCT queries allowed for everyone
+            response = await client.query(query)
+            data = parse_sparql_response(response)
+        
         return {"data": data}
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -115,9 +115,9 @@ async def create_exhibition(
 ):
     """Create a new exhibition in the knowledge graph."""
     try:
-        query = ExhibitionQueries.add_exposicion(exposicion)
+        query, uri = ExhibitionQueries.add_exposicion(exposicion)
         response = await client.update(query)
-        return response
+        return {"uri": uri, "label": exposicion.name, "message": "Exhibition created successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error adding exhibition: {str(e)}")
 

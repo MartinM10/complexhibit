@@ -213,3 +213,12 @@ export async function getExhibitionMuseographers(id: string) {
   return fetchFromApi(`/get_exhibition_museographers/${id}`);
 }
 
+// Map API functions
+export async function getMapEntities(types?: string[]) {
+  const params = new URLSearchParams();
+  if (types && types.length > 0) {
+    types.forEach(type => params.append('types', type));
+    return fetchFromApi(`/map/all?${params.toString()}`);
+  }
+  return fetchFromApi(`/map/all`);
+}

@@ -6,7 +6,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, Loader2, ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, X, Loader2, ChevronDown, PlusCircle } from "lucide-react";
 
 interface SearchableSelectProps {
   label: string;
@@ -27,6 +28,7 @@ export function SearchableSelect({
   multiple = true,
   required = false,
 }: SearchableSelectProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [options, setOptions] = useState<Array<{ uri: string; label: string }>>([]);
@@ -34,12 +36,29 @@ export function SearchableSelect({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Map entity types to API endpoints
+  // Map entity types to API endpoints (using correct English endpoints)
   const endpointMap: Record<string, string> = {
-    artwork: "/all_obras",
-    actant: "/all_personas",
-    institution: "/all_instituciones",
-    exhibition: "/all_exposiciones",
+    artwork: "/all_artworks",
+    actant: "/all_persons",
+    institution: "/all_institutions",
+    exhibition: "/all_exhibitions",
+  };
+
+  // Map entity types to form route (for "Create New" functionality)
+  const formRouteMap: Record<string, string> = {
+    artwork: "/insert?type=artwork",
+    actant: "/insert?type=actant",
+    institution: "/insert?type=institution",
+    exhibition: "/insert?type=exhibition",
+  };
+
+  // Handle creating a new entity when not found
+  const handleCreateNew = () => {
+    const route = formRouteMap[entityType];
+    if (route) {
+      // Navigate to the insert form for this entity type
+      router.push(route);
+    }
   };
 
   // Debounced search
@@ -169,8 +188,18 @@ export function SearchableSelect({
               <Loader2 className="h-4 w-4 animate-spin" /> Searching...
             </div>
           ) : options.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500">
-              No results found for &quot;{searchQuery}&quot;
+            <div className="px-4 py-3">
+              <div className="text-sm text-gray-500 mb-2">
+                No results found for &quot;{searchQuery}&quot;
+              </div>
+              <button
+                type="button"
+                onClick={handleCreateNew}
+                className="flex items-center gap-1 text-sm text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Create new {entityType}
+              </button>
             </div>
           ) : (
             options.map((item) => {

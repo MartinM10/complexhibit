@@ -6,13 +6,14 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Menu, X, Home, Search, Code, FileText, Users, LogIn, LogOut, Shield, User, PlusCircle } from "lucide-react";
+import { Menu, X, Home, Search, Code, FileText, Users, LogIn, LogOut, Shield, User, PlusCircle, Map as MapIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "Search", href: "/search", icon: Search },
+  { name: "Map", href: "/map", icon: MapIcon },
   { name: "SPARQL", href: "/sparql", icon: Code },
   { name: "Reports", href: "/reports", icon: FileText },
   { name: "About", href: "/about", icon: Users },

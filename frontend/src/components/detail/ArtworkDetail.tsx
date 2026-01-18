@@ -137,10 +137,14 @@ export function ArtworkDetails({ artworkData }: ArtworkDetailsProps) {
             )}
             
             {/* Creation Date */}
-            {artwork?.label_starting_date && (
+            {(artwork?.label_starting_date || artwork?.label_ending_date) && (
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-gray-500 uppercase">Creation Date</span>
-                <span className="text-gray-900">{artwork.label_starting_date}</span>
+                <span className="text-gray-900">
+                  {artwork.label_starting_date}
+                  {artwork.label_starting_date && artwork.label_ending_date && " - "}
+                  {artwork.label_ending_date}
+                </span>
               </div>
             )}
             
