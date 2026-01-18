@@ -12,6 +12,7 @@ import Link from "next/link";
 import { ArrowLeft, PlusCircle, Loader2, AlertCircle, CheckCircle, Database } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SearchableSelect } from "@/components/SearchableSelect";
+import { DuplicateCheckInput } from "@/components/Insert/DuplicateCheckInput";
 
 type EntityType = "exhibition" | "artwork" | "actant" | "institution";
 
@@ -35,7 +36,7 @@ const entityFields: Record<EntityType, FormField[]> = {
     { name: "fecha_fin", label: "Closing Date", type: "date", required: true },
     { name: "sede", label: "Venue", type: "text", placeholder: "e.g., Museum of Modern Art" },
     { name: "lugar_celebracion", label: "Location", type: "text", placeholder: "e.g., New York, USA" },
-    { name: "tipo_exposicion", label: "Exhibition Type", type: "select", options: ["Permanent", "Temporary", "Travelling"] },
+    { name: "tipo_exposicion", label: "Exhibition Type", type: "select", fetchOptions: "/filter_options/exhibition_type" },
     { name: "comisario", label: "Curators", type: "searchable", searchEntityType: "actant", multiple: true, placeholder: "Search for curators..." },
     { name: "organiza", label: "Organizers", type: "searchable", searchEntityType: "actant", multiple: true, placeholder: "Search for organizers..." },
     { name: "exposicion_patrocinada_por", label: "Funders/Sponsors", type: "searchable", searchEntityType: "actant", multiple: true, placeholder: "Search for funders..." },
@@ -45,10 +46,11 @@ const entityFields: Record<EntityType, FormField[]> = {
   artwork: [
     { name: "name", label: "Artwork Title", type: "text", required: true, placeholder: "e.g., Starry Night" },
     { name: "apelation", label: "Alternative Name", type: "text", placeholder: "Optional alternative name" },
-    { name: "author_name", label: "Author/Artist Name", type: "text", placeholder: "e.g., Vincent van Gogh" },
-    { name: "production_start_date", label: "Creation Date", type: "text", placeholder: "e.g., 1889 or 1889-06-01" },
+    { name: "author", label: "Author/Artist", type: "searchable", searchEntityType: "actant", placeholder: "Search for author..." },
+    { name: "production_start_date", label: "Creation Start Date", type: "date", placeholder: "e.g., 1889-06-01" },
+    { name: "production_end_date", label: "Creation End Date", type: "date", placeholder: "e.g., 1890-01-01" },
     { name: "production_place", label: "Place of Creation", type: "text", placeholder: "e.g., Saint-Rémy-de-Provence, France" },
-    { name: "type", label: "Artwork Type", type: "select", options: ["Painting", "Sculpture", "Installation", "Photography", "Drawing", "Print", "Mixed Media", "Other"] },
+    { name: "type", label: "Artwork Type", type: "select", fetchOptions: "/filter_options/artwork_type" },
   ],
   actant: [
     { name: "name", label: "Full Name", type: "text", required: true, placeholder: "e.g., Pablo Picasso" },
@@ -62,7 +64,7 @@ const entityFields: Record<EntityType, FormField[]> = {
   institution: [
     { name: "nombre", label: "Institution Name", type: "text", required: true, placeholder: "e.g., Museo del Prado" },
     { name: "nombre_alternativo", label: "Alternative Name", type: "text", placeholder: "Optional" },
-    { name: "tipo_institucion", label: "Institution Type", type: "select", options: ["Museum", "Art Center", "Cultural Center", "Gallery", "University", "Foundation", "Library", "Exhibition Space", "Other"] },
+    { name: "tipo_institucion", label: "Institution Type", type: "select", fetchOptions: "/filter_options/institution_type" },
     { name: "lugar_sede", label: "Location/City", type: "text", placeholder: "e.g., Madrid, Spain" },
     { name: "direccion_postal", label: "Address", type: "text", placeholder: "Full postal address" },
     { name: "pagina_web", label: "Website", type: "text", placeholder: "e.g., https://www.museodelprado.es" },
@@ -144,9 +146,13 @@ export default function InsertDataPage() {
     const result: Record<string, any> = { ...data };
 
     // Handle special transformations based on entity type
-    if (type === "artwork" && data.author_name) {
-      result.author = { name: data.author_name };
-      delete result.author_name;
+    if (type === "artwork") {
+      if (searchable.author?.length > 0) {
+        // Backend expects 'author' object with name. 
+        // We prioritizing sending the selected name. 
+        // Ideally backend should handle URI, but for now we follow the name pattern.
+        result.author = { name: searchable.author[0].label }; 
+      }
     }
 
     if (type === "exhibition") {
@@ -361,6 +367,16 @@ export default function InsertDataPage() {
                           <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-gray-400" />
                         )}
                       </div>
+                    ) : (field.name === "name" || field.name === "nombre") ? (
+                      <DuplicateCheckInput
+                        type={entityType}
+                        name={field.name}
+                        value={formData[field.name] || ""}
+                        onChange={handleChange}
+                        required={field.required}
+                        placeholder={field.placeholder}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      />
                     ) : (
                       <input
                         type={field.type}
