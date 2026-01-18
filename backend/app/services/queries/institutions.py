@@ -1,8 +1,11 @@
+from urllib.parse import quote
+
+from rdflib import RDF, RDFS
 from app.core.config import settings
 from app.models.domain import Institucion
-from app.services.queries.base import PREFIXES
+from app.services.queries.base import OBJECT_PROPERTIES, PREFIXES, URI_ONTOLOGIA, uri_ontologia
 from app.services.queries.utils import add_any_type, escape_sparql_string
-from app.utils.helpers import generate_hashed_id
+from app.utils.helpers import generate_hashed_id, hash_sha256
 
 
 class InstitutionQueries:
@@ -103,13 +106,17 @@ class InstitutionQueries:
                 ?uri rdfs:label ?label
             }}
             UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Cultural_Institution> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Academy_Of_Fine_Arts> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Archive> . ?uri rdfs:label ?label }}
             UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Art_Center> . ?uri rdfs:label ?label }}
             UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Cultural_Center> . ?uri rdfs:label ?label }}
             UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#ExhibitionSpace> . ?uri rdfs:label ?label }}
             UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Interpretation_Center> . ?uri rdfs:label ?label }}
             UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Library> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Museographic_Collection> . ?uri rdfs:label ?label }}
             UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Museum> . ?uri rdfs:label ?label }}
             UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Educational_Institution> . ?uri rdfs:label ?label }}
+            UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Art_School> . ?uri rdfs:label ?label }}
             UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#University> . ?uri rdfs:label ?label }}
             UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Foundation_(Institution)> . ?uri rdfs:label ?label }}
             
@@ -319,11 +326,94 @@ class InstitutionQueries:
 
     @staticmethod
     def add_institucion(entidad: Institucion) -> str:
-        id_generated = generate_hashed_id()
-        entidad.id = id_generated
-
-        triples = add_any_type(entidad, "institution")
+        # Generate ID
+        if not entidad.id:
+            data_to_hash = f"{entidad.nombre} - institution"
+            entidad.id = hash_sha256(data_to_hash)
+            
+        # Base URI
+        sujeto = f"<{URI_ONTOLOGIA}institution/{entidad.id}>"
         
+        triples = []
+        
+        # 1. Type
+        # If specific type provided, use it, otherwise default to Institution
+        has_specific_type = False
+        if entidad.tipo_institucion:
+            types = entidad.tipo_institucion if isinstance(entidad.tipo_institucion, list) else [entidad.tipo_institucion]
+            for t in types:
+                if t:
+                    # Map common frontend types to ontology classes if needed, or use as is if they match
+                    # Assuming basic mapping or direct usage
+                    clean_type = t.strip()
+                    if clean_type == "Museum":
+                        triples.append(f"{sujeto} <{RDF.type}> <https://w3id.org/OntoExhibit#Museum> .")
+                        has_specific_type = True
+                    elif clean_type == "Foundation (Institution)": # Handle special case from select
+                        triples.append(f"{sujeto} <{RDF.type}> <https://w3id.org/OntoExhibit#Foundation_(Institution)> .")
+                        has_specific_type = True
+                    else:
+                        # Try to use as class if valid, otherwise generic + property
+                        # For now, let's assume valid subclasses or just add as explicit type
+                        # Use quote to be safe for URI construction
+                        triples.append(f"{sujeto} <{RDF.type}> <{URI_ONTOLOGIA}{quote(clean_type.replace(' ', '_'))}> .")
+                        has_specific_type = True
+
+        if not has_specific_type:
+            triples.append(f"{sujeto} <{RDF.type}> <https://w3id.org/OntoExhibit#Institution> .")
+            
+        # 2. Label / Name
+        triples.append(f'{sujeto} <{RDFS.label}> "{escape_sparql_string(entidad.nombre.title())}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+        
+        # 3. Alternative Name (Apelation)
+        if entidad.nombre_alternativo:
+             triples.append(f'{sujeto} <https://w3id.org/OntoExhibit#apelation> "{escape_sparql_string(entidad.nombre_alternativo)}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+
+        # 4. Website
+        if entidad.pagina_web:
+             triples.append(f'{sujeto} <https://w3id.org/OntoExhibit#webPage> "{escape_sparql_string(entidad.pagina_web)}"^^<http://www.w3.org/2001/XMLSchema#anyURI> .')
+             
+        # 5. Location (City/Place)
+        # Pattern: Institution -> hasLocation -> Place (TerritorialEntity) -> isLocatedAt -> Institution
+        if entidad.lugar_sede:
+            place_hash = hash_sha256(entidad.lugar_sede)
+            uri_place = f"<{URI_ONTOLOGIA}territorialEntity/{place_hash}>"
+            
+            triples.append(f"{uri_place} <{RDF.type}> <{URI_ONTOLOGIA}TerritorialEntity> .")
+            triples.append(f'{uri_place} <{RDFS.label}> "{escape_sparql_string(entidad.lugar_sede.title())}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+            
+            # Create Location node to link them? 
+            # Ontology typically uses: Institution -> hasLocation -> Location -> isLocatedAt -> Place
+            # Or simplified: Institution -> hasLocation -> Place (if range is place)
+            # Based on GET query: ?uri <...#hasLocation> ?location . ?location <...#isLocatedAt> ?place
+            
+            loc_hash = hash_sha256(f"location-{entidad.id}")
+            uri_location = f"<{URI_ONTOLOGIA}location/{loc_hash}>"
+            
+            triples.append(f"{uri_location} <{RDF.type}> <{URI_ONTOLOGIA}Location> .")
+            triples.append(f"{sujeto} <{URI_ONTOLOGIA}hasLocation> {uri_location} .")
+            triples.append(f"{uri_location} <{URI_ONTOLOGIA}isLocationOf> {sujeto} .")
+            
+            triples.append(f"{uri_location} <{URI_ONTOLOGIA}isLocatedAt> {uri_place} .")
+            
+        # 6. Address / Headquarters
+        if entidad.direccion_postal:
+            # Based on GET query: ?uri hasHeadquarters ?hq . ?hq isHeadquarteredAt ?site . ?site label "Address"
+            hq_hash = hash_sha256(f"hq-{entidad.id}")
+            uri_hq = f"<{URI_ONTOLOGIA}headquarter/{hq_hash}>"
+            
+            triples.append(f"{uri_hq} <{RDF.type}> <{URI_ONTOLOGIA}Headquarter> .")
+            triples.append(f"{sujeto} <{URI_ONTOLOGIA}hasHeadquarters> {uri_hq} .")
+            
+            # The literal address
+            site_hash = hash_sha256(entidad.direccion_postal)
+            uri_site = f"<{URI_ONTOLOGIA}site/{site_hash}>"
+            
+            triples.append(f"{uri_site} <{RDF.type}> <{URI_ONTOLOGIA}Site> .")
+            triples.append(f'{uri_site} <{RDFS.label}> "{escape_sparql_string(entidad.direccion_postal)}"^^<http://www.w3.org/2001/XMLSchema#string> .')
+            
+            triples.append(f"{uri_hq} <{URI_ONTOLOGIA}isHeadquarteredAt> {uri_site} .")
+
         # Build final query
         query = f"INSERT DATA\n{{\n\tGRAPH <{settings.DEFAULT_GRAPH_URL}> {{\n"
         for triple in triples:

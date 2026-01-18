@@ -93,3 +93,35 @@ class MiscQueries:
             ?t rdfs:label ?value .
         }} ORDER BY ?value
     """
+
+    # Institution types based on rdf:type subclass hierarchy
+    GET_INSTITUTION_TYPES = f"""
+        {PREFIXES}
+        SELECT DISTINCT ?value WHERE {{
+            {{
+                ?type_class rdfs:subClassOf* <https://w3id.org/OntoExhibit#Institution> .
+            }}
+            UNION
+            {{
+                VALUES ?type_class {{
+                    <https://w3id.org/OntoExhibit#Cultural_Institution>
+                    <https://w3id.org/OntoExhibit#Academy_Of_Fine_Arts>
+                    <https://w3id.org/OntoExhibit#Archive>
+                    <https://w3id.org/OntoExhibit#Art_Center>
+                    <https://w3id.org/OntoExhibit#Cultural_Center>
+                    <https://w3id.org/OntoExhibit#Foundation_(Institution)>
+                    <https://w3id.org/OntoExhibit#Interpretation_Center>
+                    <https://w3id.org/OntoExhibit#Library>
+                    <https://w3id.org/OntoExhibit#Museographic_Collection>
+                    <https://w3id.org/OntoExhibit#Museum>
+                    <https://w3id.org/OntoExhibit#Educational_Institution>
+                    <https://w3id.org/OntoExhibit#Art_School>
+                    <https://w3id.org/OntoExhibit#University>
+                }}
+            }}
+            ?type_class rdfs:label ?value .
+            FILTER(lang(?value) = "en" || lang(?value) = "")
+            FILTER(?type_class != <https://w3id.org/OntoExhibit#Institution>) 
+        }} ORDER BY ?value
+    """
+

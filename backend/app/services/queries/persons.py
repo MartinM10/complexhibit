@@ -534,7 +534,7 @@ class PersonQueries:
                     f"\t\t{uri_lugar}> <{RDF.type}> {uri_ontologia}TerritorialEntity> .\n"
                 )
                 POST_PERSONA += f'\t\t{uri_lugar}> <{RDFS.label}> "{persona.country.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
-                POST_PERSONA += f"\t\t{sujeto}/birth> <https://w3id.org/OntoExhibit#takesPlaceAt> {uri_lugar}> .\n"
+                POST_PERSONA += f"\t\t{sujeto}/birth> <https://w3id.org/OntoExhibit#hasPlaceOfBirth> {uri_lugar}> .\n"
                 POST_PERSONA += f"\t\t{uri_lugar}> <https://w3id.org/OntoExhibit#isPlaceOfBirthOf> {sujeto}/birth> .\n"
 
             if persona.birth_date:
