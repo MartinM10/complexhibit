@@ -50,3 +50,19 @@ backend/virtuoso.pxa
 
 # Virtuoso Data
 virtuoso-data/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+
+# RDF data files (large datasets)
+*.nt
+*.ttl
+*.rdf
+*.owl
+result.nt
