@@ -1,14 +1,44 @@
+# Build multi-stage para imagen más pequeña
+# Proxy handling updated for strict protocol requirements
 FROM node:20-alpine AS base
 
 # Instalar dependencias solo cuando sea necesario
 FROM base AS deps
+
+ARG HTTP_PROXY
+ARG HTTPS_PROXY
+
+ENV HTTP_PROXY=$HTTP_PROXY
+ENV HTTPS_PROXY=$HTTPS_PROXY
+ENV http_proxy=$HTTP_PROXY
+ENV https_proxy=$HTTPS_PROXY
+
 # Ver https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine para entender por qué podría necesitarse libc6-compat.
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Instalar dependencias basándose en el gestor de paquetes preferido
 COPY package.json package-lock.json* ./
-RUN npm ci
+
+# Configurar Proxy de forma robusta (asegurando http://)
+RUN set -e; \
+    # Función para normalizar URL del proxy
+    normalize_proxy() { \
+        if [ -n "$1" ]; then \
+            echo "$1" | sed -E 's|^([^:/]+:[0-9]+)$|http://\1|'; \
+        fi \
+    }; \
+    FIXED_HTTP=$(normalize_proxy "$HTTP_PROXY"); \
+    FIXED_HTTPS=$(normalize_proxy "$HTTPS_PROXY"); \
+    echo "--- Proxy Configuration ---"; \
+    echo "Original: $HTTP_PROXY"; \
+    echo "Fixed:    $FIXED_HTTP"; \
+    if [ -n "$FIXED_HTTP" ]; then \
+        npm config set proxy "$FIXED_HTTP"; \
+        npm config set https-proxy "$FIXED_HTTPS"; \
+        npm config set strict-ssl false; \
+    fi; \
+    npm ci
 
 # Reconstruir el código fuente solo cuando sea necesario
 FROM base AS builder

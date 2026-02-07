@@ -11,6 +11,21 @@ services:
       - VIRTUOSO_URL=http://virtuoso:8890/sparql
       - DATABASE_URL=postgresql://${POSTGRES_USER:-complexhibit}:${POSTGRES_PASSWORD:-complexhibit}@postgres:5432/${POSTGRES_DB:-complexhibit_auth}
       - DEPLOY_PATH=/api/v1
+      - PYTHONUNBUFFERED=1
+      # Force SMTP config from env file
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+      # Admin
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      # JWT
+      - JWT_SECRET=${JWT_SECRET}
+      # URLs & Ontology
+      - FRONTEND_URL=${FRONTEND_URL}
+      - URI_ONTOLOGIA=${URI_ONTOLOGIA}
     volumes:
       - ./backend/app:/app/app
     depends_on:

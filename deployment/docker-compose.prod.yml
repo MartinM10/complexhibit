@@ -8,7 +8,9 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certs:/etc/nginx/certs:ro
+      # Map the host's certificate directory to the container
+      # IMPORTANT: Ensure 'fullchain.cer' exists (cat complexhibit_uma_es_cert.cer complexhibit_uma_es_interm.cer > fullchain.cer)
+      - /root/certificados/2025:/etc/nginx/certs:ro
     depends_on:
       - frontend
       - backend
@@ -31,16 +33,40 @@ services:
 
   # Application Backend
   backend:
-    build: ../backend
+    build:
+      context: ../backend
+      network: host
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
     container_name: complexhibit-api
     expose:
-      - "8000" # Only expose to internal network, not host
+      - "8000"
     env_file:
       - ./.env
     environment:
       - VIRTUOSO_URL=http://virtuoso:8890/sparql
       - DATABASE_URL=postgresql://${POSTGRES_USER:-complexhibit}:${POSTGRES_PASSWORD:-complexhibit}@postgres:5432/${POSTGRES_DB:-complexhibit_auth}
       - DEPLOY_PATH=/api/v1
+      # Force SMTP config explicitly
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+      # Admin
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      # JWT
+      - JWT_SECRET=${JWT_SECRET}
+      # URLs & Ontology
+      - FRONTEND_URL=${FRONTEND_URL}
+      - URI_ONTOLOGIA=${URI_ONTOLOGIA}
+      
+      # Proxies
+      - HTTP_PROXY=${HTTP_PROXY}
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - NO_PROXY=virtuoso,postgres,localhost,127.0.0.1
     volumes:
       - ../backend/app:/app/app
     depends_on:
@@ -60,8 +86,11 @@ services:
   frontend:
     build:
       context: ../frontend
+      network: host
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
     container_name: complexhibit-frontend
     expose:
       - "3000" # Only expose to internal network
