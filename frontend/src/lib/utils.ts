@@ -31,7 +31,7 @@ export function obtainTranslatedType(str: string): string | null {
   return null;
 }
 
-export function cleanLabel(label: any): string {
+export function cleanLabel(label: unknown): string {
   // Handle null, undefined, or empty values
   if (!label) return "";
   

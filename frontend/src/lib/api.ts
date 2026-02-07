@@ -137,13 +137,13 @@ export async function executeSparql(query: string) {
     body: JSON.stringify({ query })
   });
   if (!response.ok) {
-     const errorData = await response.json().catch(() => ({}));
-     throw new Error(errorData.detail || `API Error: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error((errorData as { detail?: string }).detail || `API Error: ${response.statusText}`);
   }
   return response.json();
 }
 
-export async function submitReport(report: any) {
+export async function submitReport(report: Record<string, unknown>) {
   const url = new URL(`${API_URL}/report`);
   const response = await fetch(url.toString(), {
     method: 'POST',
@@ -221,4 +221,8 @@ export async function getMapEntities(types?: string[]) {
     return fetchFromApi(`/map/all?${params.toString()}`);
   }
   return fetchFromApi(`/map/all`);
+}
+
+export async function getMapMeta() {
+  return fetchFromApi(`/map/meta`);
 }

@@ -12,6 +12,12 @@
 export interface Entity {
   uri: string;
   label: string;
+  description?: string;
+  abstract?: string;
+  image?: string;
+  img?: string;
+  title?: string;
+  entity_type?: string;
 }
 
 /** Linked entity from GROUP_CONCAT fields */
