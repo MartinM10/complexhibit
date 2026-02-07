@@ -47,64 +47,62 @@ const typeIcons: Record<string, typeof MapPin> = {
 
 export default function MapPage() {
   const [entities, setEntities] = useState<MapEntity[]>([]);
-  const [loading, setLoading] = useState(true);
+  // loading state removed as we load on demand
   const [error, setError] = useState<string | null>(null);
   
   // Filters
   const [showFilters, setShowFilters] = useState(true);
-  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(
-    new Set(['exhibition', 'institution', 'person', 'artwork'])
-  );
+  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set([])); // Start with no filters applied
+  const [loadedTypes, setLoadedTypes] = useState<Set<string>>(new Set([])); // Track what we have already fetched
+  const [isFetching, setIsFetching] = useState(false);
+  
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   
   // Popup state
   const [selectedEntity, setSelectedEntity] = useState<MapEntity | null>(null);
 
-  useEffect(() => {
-    async function loadData() {
-      // Incremental loading for better perceived performance
-      setLoading(true);
-      
-      const fetchAndAppend = async (type: string) => {
-        try {
-          const res = await getMapEntities([type]);
-          const newEntities = res.data || [];
-          if (newEntities.length > 0) {
-             setEntities(prev => [...prev, ...newEntities]);
-          }
-        } catch (e) {
-          console.error(`Failed to load ${type}`, e);
-        }
-      };
+  // Fetch data for a specific type
+  const fetchTypeData = async (type: string) => {
+    if (loadedTypes.has(type)) return; // Already loaded
 
-      try {
-        // 1. Load fast/important entities first to show map immediately
-        // Institutions are usually fast and form the 'base'
-        await fetchAndAppend('institution');
-        setLoading(false); // Enable UI interaction immediately after base layer
-
-        // 2. Load others in background sequences
-        // Artworks (medium) -> Exhibitions (large) -> Persons (large)
-        await fetchAndAppend('artwork');
-        await fetchAndAppend('exhibition');
-        await fetchAndAppend('person');
-
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load map data');
-        setLoading(false);
+    setIsFetching(true);
+    try {
+      const res = await getMapEntities([type]);
+      const newEntities = res.data || [];
+      if (newEntities.length > 0) {
+        setEntities(prev => [...prev, ...newEntities]);
       }
+      setLoadedTypes(prev => new Set(prev).add(type));
+    } catch (e) {
+      console.error(`Failed to load ${type}`, e);
+      setError(`Failed to load ${type}`);
+    } finally {
+      setIsFetching(false);
     }
-    loadData();
-  }, []);
+  };
 
+  const toggleType = async (type: string) => {
+    const newTypes = new Set(selectedTypes);
+    const isSelecting = !newTypes.has(type);
+
+    if (isSelecting) {
+      newTypes.add(type);
+      // Fetch if not already loaded
+      if (!loadedTypes.has(type)) {
+         await fetchTypeData(type);
+      }
+    } else {
+      newTypes.delete(type);
+    }
+    setSelectedTypes(newTypes);
+  };
+    
   // Filter entities
   const filteredEntities = useMemo(() => {
     return entities.filter(entity => {
       // Type filter
       if (!selectedTypes.has(entity.type)) return false;
-      
-      // Date filter (simple year-based for now)
       
       // Date filter (simple year-based)
       const fromYear = dateFrom ? parseInt(dateFrom) : null;
@@ -153,16 +151,6 @@ export default function MapPage() {
     })),
   }), [filteredEntities]);
 
-  const toggleType = (type: string) => {
-    const newTypes = new Set(selectedTypes);
-    if (newTypes.has(type)) {
-      newTypes.delete(type);
-    } else {
-      newTypes.add(type);
-    }
-    setSelectedTypes(newTypes);
-  };
-
   const handlePointClick = (
     feature: GeoJSON.Feature<GeoJSON.Point, MapEntity>,
     coordinates: [number, number]
@@ -190,22 +178,14 @@ export default function MapPage() {
     return `/detail/${type}/${cleanId}`;
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading map data...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center text-red-600">
           <p>Error: {error}</p>
+          <button onClick={() => setError(null)} className="mt-4 text-indigo-600 hover:underline">
+            Dismiss
+          </button>
         </div>
       </div>
     );
@@ -234,7 +214,11 @@ export default function MapPage() {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
-              <Filter className="h-4 w-4" />
+              {isFetching ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+              ) : (
+                <Filter className="h-4 w-4" />
+              )}
               Filters
             </button>
           </div>
