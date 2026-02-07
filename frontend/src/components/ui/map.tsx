@@ -31,9 +31,8 @@ function getDocumentTheme(): Theme | null {
 // Get system preference
 function getSystemTheme(): Theme {
   if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  const mediaQuery: MediaQueryList = window.matchMedia("(prefers-color-scheme: dark)");
+  return mediaQuery.matches ? "dark" : "light";
 }
 
 function useResolvedTheme(themeProp?: "light" | "dark"): "light" | "dark" {
@@ -1050,7 +1049,7 @@ function MapRoute({
 }
 
 type MapClusterLayerProps<
-  P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties
+  P extends GeoJSON.GeoJsonProperties = Record<string, unknown> | null
 > = {
   /** GeoJSON FeatureCollection data or URL to fetch GeoJSON from */
   data: string | GeoJSON.FeatureCollection<GeoJSON.Point, P>;
@@ -1078,7 +1077,7 @@ type MapClusterLayerProps<
 };
 
 function MapClusterLayer<
-  P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonProperties
+  P extends GeoJSON.GeoJsonProperties = Record<string, unknown> | null
 >({
   data,
   clusterMaxZoom = 14,
@@ -1165,7 +1164,7 @@ function MapClusterLayer<
       source: sourceId,
       filter: ["!", ["has", "point_count"]],
       paint: {
-        "circle-color": pointColor as any,
+        "circle-color": pointColor as string,
         "circle-radius": 6,
       },
     });
@@ -1228,7 +1227,7 @@ function MapClusterLayer<
 
     // Update unclustered point layer color
     if (map.getLayer(unclusteredLayerId) && prev.pointColor !== pointColor) {
-      map.setPaintProperty(unclusteredLayerId, "circle-color", pointColor as any);
+      map.setPaintProperty(unclusteredLayerId, "circle-color", pointColor as string);
     }
 
     stylePropsRef.current = { clusterColors, clusterThresholds, pointColor };

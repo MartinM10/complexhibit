@@ -9,9 +9,13 @@ interface InteractiveMapProps {
   label?: string;
 }
 
+interface MapInstance {
+  remove: () => void;
+}
+
 export default function InteractiveMap({ lat, long, label }: InteractiveMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<any>(null);
+  const mapInstanceRef = useRef<MapInstance | null>(null);
 
   useEffect(() => {
     // Dynamically import Leaflet to avoid SSR issues
@@ -29,7 +33,7 @@ export default function InteractiveMap({ lat, long, label }: InteractiveMapProps
       }
 
       // Fix for default marker icon issue in webpack
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      delete (L.Icon.Default.prototype as unknown as { _getIconUrl: unknown })._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
         iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
