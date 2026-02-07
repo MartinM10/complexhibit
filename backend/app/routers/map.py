@@ -245,3 +245,95 @@ async def get_all_geolocated_entities(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+GET_MAP_META = f"""
+    {PREFIXES}
+    SELECT (MIN(?min_date) as ?min_year) (MAX(?max_date) as ?max_year)
+    WHERE {{
+        {{
+            SELECT (MIN(?date) as ?min_date) (MAX(?date) as ?max_date)
+            WHERE {{
+                {{
+                    ?s <https://w3id.org/OntoExhibit#hasTimeSpan> ?ts .
+                    ?ts rdfs:label ?date .
+                }} UNION {{
+                     # Fallback for direct dates if any
+                    ?s <https://w3id.org/OntoExhibit#date> ?date .
+                }}
+                FILTER (REGEX(?date, "^\\\\d{{4}}"))
+            }}
+        }}
+    }}
+"""
+
+@router.get("/meta")
+async def get_map_metadata(client: SparqlClient = Depends(get_sparql_client)):
+    """
+    Get metadata for the map, specifically the global min and max years for the time slider.
+    """
+    try:
+        # Optimized query to just get min/max years from likely candidates
+        # We focus on the range that actually matters for the entities shown
+        query = f"""
+            {PREFIXES}
+            SELECT (MIN(?year) as ?min_year) (MAX(?year) as ?max_year)
+            WHERE {{
+                {{
+                    SELECT ?val WHERE {{
+                        ?s <https://w3id.org/OntoExhibit#hasTimeSpan> ?ts .
+                        ?ts rdfs:label ?val .
+                    }} LIMIT 10000
+                }}
+                BIND(STR(?val) AS ?date_str)
+                BIND(STRDT(SUBSTR(?date_str, 1, 4), xsd:integer) AS ?year)
+                FILTER(?year > 1000 && ?year < 3000) 
+            }}
+        """
+        # Note: The above generic query is a bit heavy. Let's try a lighter path specific to our entities.
+        # Actually, let's just grab the min/max from the main entities we display.
+        
+        query = f"""
+            {PREFIXES}
+            SELECT (MIN(?year) as ?min_year) (MAX(?year) as ?max_year)
+            WHERE {{
+                {{
+                    # Exhibition dates
+                    ?uri rdf:type <https://w3id.org/OntoExhibit#Exhibition> .
+                    ?uri <https://w3id.org/OntoExhibit#hasOpening>|<https://w3id.org/OntoExhibit#hasClosing> ?evt .
+                    ?evt <https://w3id.org/OntoExhibit#hasTimeSpan> ?ts .
+                    ?ts rdfs:label ?label .
+                    BIND(xsd:integer(SUBSTR(STR(?label), 1, 4)) AS ?year)
+                }} UNION {{
+                    # Person dates (birth/death)
+                    {{ ?p rdf:type <https://w3id.org/OntoExhibit#Person> }} UNION {{ ?p rdf:type <https://w3id.org/OntoExhibit#Group> }}
+                    ?p <https://w3id.org/OntoExhibit#hasBirth>|<https://w3id.org/OntoExhibit#hasDeath>|<https://w3id.org/OntoExhibit#hasFoundation>|<https://w3id.org/OntoExhibit#hasDissolution> ?evt .
+                    ?evt <https://w3id.org/OntoExhibit#hasTimeSpan> ?ts .
+                    ?ts rdfs:label ?label .
+                    BIND(xsd:integer(SUBSTR(STR(?label), 1, 4)) AS ?year)
+                }} UNION {{
+                     # Artwork dates
+                     ?w rdf:type <https://w3id.org/OntoExhibit#Work_Manifestation> .
+                     ?w <https://w3id.org/OntoExhibit#hasProduction> ?prod .
+                     ?prod <https://w3id.org/OntoExhibit#hasTimeSpan> ?ts .
+                     ?ts <https://w3id.org/OntoExhibit#hasStartingDate>|<https://w3id.org/OntoExhibit#hasEndingDate> ?d .
+                     ?d rdfs:label ?label .
+                     BIND(xsd:integer(SUBSTR(STR(?label), 1, 4)) AS ?year)
+                }}
+                FILTER(?year > 1000 && ?year <= year(now()))
+            }}
+        """
+        
+        resp = await client.query(query)
+        data = parse_sparql_response(resp)
+        
+        if data:
+            return {
+                "min_year": int(data[0].get("min_year", 1900)),
+                "max_year": int(data[0].get("max_year", 2025))
+            }
+        return {"min_year": 1900, "max_year": 2025}
+        
+    except Exception as e:
+        print(f"Error fetching map metadata: {e}")
+        # Return safe defaults if DB fails
+        return {"min_year": 1900, "max_year": 2025}
