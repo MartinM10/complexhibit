@@ -66,3 +66,6 @@ virtuoso-data/
 *.rdf
 *.owl
 result.nt
+# Agent
+.agent/
+.agents/
