@@ -1,6 +1,7 @@
 import { getFromType } from "@/lib/api";
 import InfiniteList from "@/components/InfiniteList";
 import { unCamel } from "@/lib/utils";
+import { Entity } from "@/lib/types";
 
 interface PageProps {
   params: Promise<{ type: string }>;
@@ -13,7 +14,7 @@ export default async function ListPage({ params, searchParams }: PageProps) {
   const decodedType = decodeURIComponent(type);
   const query = typeof q === 'string' ? q : undefined;
   
-  let initialData: any[] = [];
+  let initialData: Entity[] = [];
   let initialCursor: string | null = null;
 
   try {
@@ -27,7 +28,7 @@ export default async function ListPage({ params, searchParams }: PageProps) {
                 initialData = response.data;
             } else {
                  // Try to convert object values to array if needed, though backend seems to return list now
-                initialData = Object.values(response.data).flat(); 
+                initialData = (Object.values(response.data).flat() as Entity[]); 
             }
         }
         initialCursor = response.next_cursor || null;

@@ -39,7 +39,7 @@ export function ActorRolesSidebar({ roleData }: ActorRolesSidebarProps) {
 
   return (
     <>
-      {validRoles.map(([role, items]: [string, any]) => (
+      {validRoles.map(([role, items]: [string, RoleItem[]]) => (
         <SidebarCard key={role} title={unCamel(role)}>
           <DefinitionList>
             <EntityList 
@@ -190,10 +190,9 @@ export function ActorResidence({ actorData }: ActorResidenceProps) {
   
   const actor = actorData[0];
   const address = actor?.residence_address;
-  const lat = actor?.residence_lat;
-  const long = actor?.residence_long;
+
   
-  if (!address && !lat) return null;
+  if (!address) return null;
   
   return (
     <section>

@@ -1,8 +1,5 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, Building2, Calendar, Users, Image as ImageIcon, Briefcase, Loader2 } from "lucide-react";
+import { ArrowRight, BookOpen, Building2, Calendar, Users, Image as ImageIcon, Briefcase } from "lucide-react";
 import HashRedirect from "@/components/HashRedirect";
 import { 
   getExhibitionsCount, 
@@ -17,7 +14,7 @@ interface Category {
   name: string;
   description: string;
   href: string;
-  icon: any;
+  icon: React.ElementType;
   color: string;
   countKey: string;
 }
@@ -73,46 +70,32 @@ const initialCategories: Category[] = [
   },
 ];
 
-export default function Home() {
-  const [counts, setCounts] = useState<Record<string, number | null>>({});
-  const [loading, setLoading] = useState(true);
+export default async function Home() {
+  // Server-side data fetching
+  const [
+    exhibitions, 
+    artworks, 
+    persons, 
+    institutions, 
+    catalogs, 
+    companies
+  ] = await Promise.allSettled([
+    getExhibitionsCount(),
+    getArtworksCount(),
+    getPersonsCount(),
+    getInstitutionsCount(),
+    getCatalogsCount(),
+    getCompaniesCount()
+  ]);
 
-  useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const [
-          exhibitions, 
-          artworks, 
-          persons, 
-          institutions, 
-          catalogs, 
-          companies
-        ] = await Promise.allSettled([
-          getExhibitionsCount(),
-          getArtworksCount(),
-          getPersonsCount(),
-          getInstitutionsCount(),
-          getCatalogsCount(),
-          getCompaniesCount()
-        ]);
-
-        setCounts({
-          exhibitions: exhibitions.status === 'fulfilled' ? exhibitions.value.data.count : null,
-          artworks: artworks.status === 'fulfilled' ? artworks.value.data.count : null,
-          persons: persons.status === 'fulfilled' ? persons.value.data.count : null,
-          institutions: institutions.status === 'fulfilled' ? institutions.value.data.count : null,
-          catalogs: catalogs.status === 'fulfilled' ? catalogs.value.data.count : null,
-          companies: companies.status === 'fulfilled' ? companies.value.data.count : null,
-        });
-      } catch (error) {
-        console.error("Error fetching counts:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCounts();
-  }, []);
+  const counts: Record<string, number | null> = {
+    exhibitions: exhibitions.status === 'fulfilled' ? exhibitions.value.data.count : null,
+    artworks: artworks.status === 'fulfilled' ? artworks.value.data.count : null,
+    persons: persons.status === 'fulfilled' ? persons.value.data.count : null,
+    institutions: institutions.status === 'fulfilled' ? institutions.value.data.count : null,
+    catalogs: catalogs.status === 'fulfilled' ? catalogs.value.data.count : null,
+    companies: companies.status === 'fulfilled' ? companies.value.data.count : null,
+  };
 
   return (
     <div className="bg-gradient-to-br from-white via-indigo-50/30 to-purple-50/30 min-h-screen">
@@ -192,11 +175,7 @@ export default function Home() {
                   
                   {/* Count Display */}
                   <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold shadow-sm flex items-center gap-1">
-                    {loading ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <span>{counts[category.countKey] !== null ? counts[category.countKey] : '-'}</span>
-                    )}
+                    <span>{counts[category.countKey] !== null ? counts[category.countKey] : '-'}</span>
                   </div>
                 </div>
                 <div className="relative flex flex-1 flex-col justify-between p-6">

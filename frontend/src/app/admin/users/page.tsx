@@ -61,8 +61,8 @@ export default function AdminUsersPage() {
 
       const data = await response.json();
       setUsers(data);
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -86,8 +86,8 @@ export default function AdminUsersPage() {
 
       // Refresh list
       await fetchUsers();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setActionLoading(null);
     }
@@ -108,8 +108,8 @@ export default function AdminUsersPage() {
       }
 
       await fetchUsers();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setActionLoading(null);
     }

@@ -7,6 +7,13 @@ import { SidebarCard, DefinitionList, SectionWrapper, SectionHeader, PropertyRow
 import EntityLink from "@/components/EntityLink";
 import type { LinkedEntity } from "@/lib/types";
 
+interface ExhibitionItem {
+  uri: string;
+  label?: string;
+  start_date?: string;
+  type?: string;
+}
+
 interface InstitutionData {
   label?: string;
   apelation?: string;
@@ -149,12 +156,12 @@ export function InstitutionDetails({
 
 interface InstitutionSidebarProps {
   exhibitions?: {
-    venue?: any[];
-    organizer?: any[];
-    funder?: any[];
+    venue?: ExhibitionItem[];
+    organizer?: ExhibitionItem[];
+    funder?: ExhibitionItem[];
   };
-  lenderExhibitions?: any[];
-  ownedArtworks?: any[];
+  lenderExhibitions?: ExhibitionItem[];
+  ownedArtworks?: ExhibitionItem[];
 }
 
 export function InstitutionSidebar({ exhibitions = {}, lenderExhibitions = [], ownedArtworks = [] }: InstitutionSidebarProps) {
@@ -171,7 +178,7 @@ export function InstitutionSidebar({ exhibitions = {}, lenderExhibitions = [], o
   if (!hasVenue && !hasOrganizer && !hasFunder && !hasLender && !hasArtworks) return null;
   
   // Transform exhibitions to LinkedEntity format
-  const toEntities = (items: any[]) => items.map(exh => ({
+  const toEntities = (items: ExhibitionItem[]) => items.map(exh => ({
     label: `${exh.label || "Untitled Exhibition"}${exh.start_date ? ` - ${exh.start_date}` : ""}`,
     uri: exh.uri
   }));

@@ -251,12 +251,12 @@ export default async function DetailPage({ params }: PageProps) {
   const producedCatalogsData = producedCatalogs?.data || [];
   
   // Parse catalogs to LinkedEntity format
-  const catalogEntities = exhibitionCatalogsData.map((c: any) => ({
+  const catalogEntities = exhibitionCatalogsData.map((c: { catalog_uri: string; catalog_label?: string }) => ({
     uri: c.catalog_uri,
     label: c.catalog_label
   }));
   
-  const producedCatalogEntities = producedCatalogsData.map((c: any) => ({
+  const producedCatalogEntities = producedCatalogsData.map((c: { catalog_uri: string; catalog_label?: string }) => ({
     uri: c.catalog_uri,
     label: c.catalog_label
   }));
@@ -271,7 +271,7 @@ export default async function DetailPage({ params }: PageProps) {
   
   // Parse catalog exhibitions
   const catalogExhibitionsData = catalogExhibitions?.data || [];
-  const catalogExhibitionEntities = catalogExhibitionsData.map((e: any) => ({
+  const catalogExhibitionEntities = catalogExhibitionsData.map((e: { exhibition_uri: string; exhibition_label?: string }) => ({
     uri: e.exhibition_uri,
     label: e.exhibition_label
   }));
@@ -280,14 +280,14 @@ export default async function DetailPage({ params }: PageProps) {
   const companyData = companyDetails?.data || [];
   const companyItem = Array.isArray(companyData) && companyData.length > 0 ? companyData[0] : companyData;
   const companyMuseographerExhibitionsData = companyMuseographerExhibitions?.data || [];
-  const museographerExhibitionEntities = companyMuseographerExhibitionsData.map((e: any) => ({
+  const museographerExhibitionEntities = companyMuseographerExhibitionsData.map((e: { uri: string; label?: string }) => ({
     uri: e.uri,
     label: e.label
   }));
   
   // Museographers for exhibitions
   const exhibitionMuseographersData = exhibitionMuseographers?.data || [];
-  const museographerEntities = exhibitionMuseographersData.map((m: any) => ({
+  const museographerEntities = exhibitionMuseographersData.map((m: { uri: string; label?: string }) => ({
     uri: m.uri,
     label: m.label
   }));
@@ -305,7 +305,7 @@ export default async function DetailPage({ params }: PageProps) {
 
   // For exhibitions, find matching data
   const exhibitionData = decodedType === 'exhibition' && datesAndPlaceData.length > 0 
-    ? (datesAndPlaceData.find((item: any) => item.uri?.includes(id)) || datesAndPlaceData[0])
+    ? (datesAndPlaceData.find((item: { uri?: string; [key: string]: any }) => item.uri?.includes(id)) || datesAndPlaceData[0])
     : null;
   
   // Properties with fallback

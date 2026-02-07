@@ -5,7 +5,7 @@ import { executeSparql } from "@/lib/api";
 
 export default function SparqlPage() {
   const [query, setQuery] = useState("SELECT * WHERE { ?s ?p ?o } LIMIT 10");
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<Record<string, unknown>[] | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -16,8 +16,8 @@ export default function SparqlPage() {
     try {
       const resp = await executeSparql(query);
       setResults(resp.data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -67,11 +67,11 @@ export default function SparqlPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {results.map((row: any, i: number) => (
+              {results.map((row: Record<string, unknown>, i: number) => (
                 <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  {Object.values(row).map((val: any, j: number) => (
-                    <td key={j} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {val?.value || val}
+                  {Object.values(row).map((val: unknown, j: number) => (
+                      <td key={j} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {(val as { value: string })?.value || String(val)}
                     </td>
                   ))}
                 </tr>

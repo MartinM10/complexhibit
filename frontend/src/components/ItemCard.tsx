@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
+
 
 interface ItemCardProps {
   uri: string;
@@ -10,6 +12,10 @@ interface ItemCardProps {
   description?: string;
   type: string;
   imageUrl?: string;
+  subtitle?: string;
+  extra?: Record<string, any>;
+  icon?: React.ElementType;
+  color?: string;
 }
 
 // Client component wrapper for the expandable part
@@ -52,9 +58,9 @@ function ExpandableExtra({ extra }: { extra: Record<string, any> }) {
                 <span className="font-bold text-gray-800 text-xs uppercase tracking-wide">{k}:</span>
                 {isArray ? (
                   <div className="flex flex-wrap gap-1.5">
-                    {visibleItems.map((val: any, i: number) => (
+                    {visibleItems.map((val: React.ReactNode, i: number) => (
                       <span key={i} className="bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-1.5 rounded-lg text-indigo-700 border border-indigo-200/50 text-xs font-medium shadow-sm hover:shadow-md transition-shadow">
-                        {val}
+                        {String(val)}
                       </span>
                     ))}
                     {hiddenCount > 0 && (
@@ -87,7 +93,7 @@ function ExpandableExtra({ extra }: { extra: Record<string, any> }) {
   );
 }
 
-export default function ItemCard({ uri, label, description, type, imageUrl, subtitle, extra, icon: Icon, color }: any) {
+export default function ItemCard({ uri, label, description, type, imageUrl, subtitle, extra, icon: Icon, color }: ItemCardProps) {
   // Extract ID from URI or use a safe fallback
   const id = uri.split("/").pop() || "";
   
@@ -101,10 +107,12 @@ export default function ItemCard({ uri, label, description, type, imageUrl, subt
       
       {imageUrl ? (
         <div className="aspect-h-3 aspect-w-4 bg-gradient-to-br from-gray-100 to-gray-200 sm:aspect-none sm:h-48 relative overflow-hidden">
-           <img
+           <Image
             src={imageUrl}
             alt={label}
-            className="h-full w-full object-cover object-center sm:h-full sm:w-full transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
+            fill
+            unoptimized
+            className="object-cover object-center transition-all duration-700 group-hover:scale-110 group-hover:rotate-1"
           />
            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
            <div className="absolute top-3 right-3 glass text-gray-800 text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg backdrop-blur-md shadow-lg border border-white/40">
@@ -124,10 +132,12 @@ export default function ItemCard({ uri, label, description, type, imageUrl, subt
           </div>
         ) : (
           <div className="aspect-h-3 aspect-w-4 bg-gradient-to-br from-gray-50 to-gray-100 sm:aspect-none sm:h-48 relative overflow-hidden">
-               <img 
+               <Image 
                   src={`https://placehold.co/600x400/f1f5f9/475569?text=${type.charAt(0).toUpperCase() + type.slice(1)}`}
                   alt="Placeholder"
-                  className="h-full w-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105"
+                  fill
+                  unoptimized
+                  className="object-cover opacity-70 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105"
                />
                <div className="absolute top-3 right-3 glass text-gray-800 text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg backdrop-blur-md shadow-lg border border-white/40">
                  {type}

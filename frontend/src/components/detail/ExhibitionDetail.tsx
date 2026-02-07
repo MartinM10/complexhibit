@@ -16,6 +16,17 @@ import {
 import EntityLink from "@/components/EntityLink";
 import type { LinkedEntity } from "@/lib/types";
 
+interface ExhibitionData {
+  label_starting_date?: string;
+  label_ending_date?: string;
+  label_place?: string;
+  place_uri?: string;
+  venue_label?: string;
+  venue_uri?: string;
+  theme_label?: string;
+  type_label?: string;
+}
+
 interface ExhibitionSidebarProps {
   curators: LinkedEntity[];
   organizers: LinkedEntity[];
@@ -111,7 +122,7 @@ export function ExhibitionSidebar({
 }
 
 interface ExhibitionDetailsProps {
-  data: any[];
+  data: ExhibitionData[];
 }
 
 export function ExhibitionDetails({ data }: ExhibitionDetailsProps) {
@@ -200,7 +211,7 @@ export function ExhibitionDetails({ data }: ExhibitionDetailsProps) {
 }
 
 interface ParticipantsSectionProps {
-  data: Record<string, any[]>;
+  data: Record<string, LinkedEntity[]>;
   title: string;
   colorClass: string;
   linkColorClass: string;
@@ -213,13 +224,13 @@ export function ParticipantsSection({ data, title, colorClass, linkColorClass }:
     <section>
       <SectionHeader title={title} colorClass={colorClass} />
       <div className="grid gap-6 sm:grid-cols-2">
-        {Object.entries(data).map(([role, items]: [string, any]) => (
+        {Object.entries(data).map(([role, items]: [string, LinkedEntity[]]) => (
           <div key={role} className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow p-5">
             <h4 className={`font-semibold ${linkColorClass.replace('hover:', '')} mb-3 text-lg border-b border-gray-100 pb-2`}>
               {unCamel(role)}
             </h4>
             <ul className="space-y-2">
-              {Array.isArray(items) && items.map((item: any, idx: number) => (
+              {Array.isArray(items) && items.map((item: LinkedEntity, idx: number) => (
                 <li key={idx}>
                   <Link 
                     href={`/detail/actant/${item.uri?.split('/').pop()}`} 

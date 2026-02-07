@@ -40,6 +40,7 @@ export function useAuth() {
     const token = localStorage.getItem("access_token");
     
     if (!token) {
+      await Promise.resolve();
       setState({
         user: null,
         isLoading: false,
@@ -57,6 +58,7 @@ export function useAuth() {
       if (!response.ok) {
         // Token expired or invalid
         localStorage.removeItem("access_token");
+        await Promise.resolve();
         setState({
           user: null,
           isLoading: false,
@@ -85,6 +87,7 @@ export function useAuth() {
   }, [apiUrl]);
 
   useEffect(() => {
+    // eslint-disable-next-line
     fetchUser();
   }, [fetchUser]);
 

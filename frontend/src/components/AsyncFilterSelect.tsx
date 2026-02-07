@@ -59,7 +59,7 @@ export default function AsyncFilterSelect({
       if (response.ok) {
         const result = await response.json();
         const items = result.data || result.items || [];
-        setOptions(items.map((item: any) => ({
+        setOptions(items.map((item: { uri: string; label?: string; name?: string }) => ({
           uri: item.uri,
           label: item.label || item.name || item.uri,
         })));

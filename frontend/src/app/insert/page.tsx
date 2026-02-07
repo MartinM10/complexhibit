@@ -143,7 +143,7 @@ export default function InsertDataPage() {
 
   // Transform form data to match backend model structure
   const transformFormData = (type: EntityType, data: Record<string, string>, searchable: Record<string, Array<{ uri: string; label: string }>>) => {
-    const result: Record<string, any> = { ...data };
+    const result: Record<string, unknown> = { ...data };
 
     // Handle special transformations based on entity type
     if (type === "artwork") {
@@ -227,9 +227,9 @@ export default function InsertDataPage() {
       setCreatedUri(result.uri || result.label || "");
       setFormData({});
       setSearchableData({});
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error:", err);
-      setError(err.message || "An error occurred");
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsSubmitting(false);
     }

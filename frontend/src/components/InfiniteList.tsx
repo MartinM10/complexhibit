@@ -14,9 +14,10 @@ import EntityFilters, { FILTER_OPTION_ENDPOINTS } from "@/components/EntityFilte
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
 import { unCamel, cleanLabel } from "@/lib/utils";
 import { Search, Loader2, Calendar, Building2, Users, Image as ImageIcon, BookOpen, Briefcase } from "lucide-react";
-import type { FilterOptions } from "@/lib/types";
+import type { FilterOptions, Entity } from "@/lib/types";
+import { getCardExtra } from "@/lib/entity-helpers";
 
-const TYPE_CONFIG: Record<string, { icon: any, color: string }> = {
+const TYPE_CONFIG: Record<string, { icon: React.ElementType, color: string }> = {
   exhibition: { icon: Calendar, color: "bg-blue-500" },
   artwork: { icon: ImageIcon, color: "bg-purple-500" },
   institution: { icon: Building2, color: "bg-green-500" },
@@ -30,13 +31,13 @@ const TYPE_CONFIG: Record<string, { icon: any, color: string }> = {
 
 
 interface InfiniteListProps {
-  initialData: any[];
+  initialData: Entity[];
   initialCursor: string | null;
   type: string;
 }
 
 export default function InfiniteList({ initialData, initialCursor, type }: InfiniteListProps) {
-  const [items, setItems] = useState<any[]>(initialData);
+  const [items, setItems] = useState<Entity[]>(initialData);
   const [cursor, setCursor] = useState<string | null>(initialCursor);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -142,90 +143,9 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
     });
   }, [type]);
 
-  // Helper to parse "Name:::URI|Name2:::URI2" format
-  const parseComplexField = (value: string | undefined): string[] | null => {
-    if (!value) return null;
-    const parts = value.split('|')
-      .map(part => part.split(':::')[0])
-      .filter(Boolean);
-    return parts.length > 0 ? parts : null;
-  };
-
-  // Helper to parse simple piped strings
-  const parseSimpleList = (value: string | undefined): string[] | null => {
-    if (!value) return null;
-    const parts = value.split('|').filter(Boolean);
-    return parts.length > 0 ? parts : null;
-  };
-
-  // Build extra info for cards based on entity type
-  const getCardExtra = (item: any): Record<string, string | string[]> => {
-    const extra: Record<string, string | string[]> = {};
-    
-    if (type === 'person' || type === 'actant' || type === 'human_actant' || type === 'actor') {
-      // Use arrays for consistent tag styling with exhibitions/artworks
-      if (item.birth_place_label) extra["Born in"] = [item.birth_place_label];
-      if (item.birth_date_label) extra["Born"] = [item.birth_date_label];
-      if (item.death_date_label) extra["Died"] = [item.death_date_label];
-      if (item.foundation_date_label) extra["Founded"] = [item.foundation_date_label];
-      if (item.foundation_place_label) extra["Founded in"] = [item.foundation_place_label];
-      if (item.dissolution_date_label) extra["Dissolved"] = [item.dissolution_date_label];
-      if (item.gender) extra["Gender"] = [item.gender];
-      // Activity is pipe-separated, so parse it as a list
-      const activities = parseSimpleList(item.activity);
-      if (activities) extra["Activity"] = activities;
-      // Show entity type as a tag
-      if (item.entity_type) extra["Type"] = [item.entity_type === 'group' ? 'Group' : 'Person'];
-    } else if (type === 'exhibition') {
-      if (item.label_starting_date) extra["Opening"] = item.label_starting_date;
-      if (item.label_ending_date) extra["Closing"] = item.label_ending_date;
-      
-      const curators = parseComplexField(item.curators);
-      if (curators) extra["Curator"] = curators;
-
-      const organizers = parseComplexField(item.organizers);
-      if (organizers) extra["Organizer"] = organizers;
-
-      const funders = parseComplexField(item.funders);
-      if (funders) extra["Sponsor"] = funders;
-
-      const themes = parseSimpleList(item.theme_label);
-      if (themes) extra["Theme"] = themes;
-
-      const types = parseSimpleList(item.type_label);
-      if (types) extra["Type"] = types;
-
-      if (item.label_place) extra["Place"] = item.label_place;
-
-      // New fields
-      const actants = parseComplexField(item.participating_actants);
-      const artworks = parseComplexField(item.exhibited_artworks);
-      
-      if (actants) extra["Participants"] = actants;
-      if (artworks) extra["Artworks"] = artworks;
-    } else if (type === 'artwork') {
-      // Backend returns plural fields with "Name:::URI" format
-      const authors = parseComplexField(item.authors);
-      const owners = parseComplexField(item.owners);
-      const exhibitions = parseComplexField(item.exhibitions);
-
-      if (authors) extra["Artist"] = authors;
-      if (item.label_starting_date) extra["Date"] = item.label_starting_date;
-      if (item.production_place) extra["Place"] = item.production_place;
-      
-      const types = parseSimpleList(item.type);
-      if (types) extra["Type"] = types;
-      
-      if (owners) extra["Owner"] = owners;
-      
-      const topics = parseSimpleList(item.topic);
-      if (topics) extra["Topic"] = topics;
-      
-      if (exhibitions) extra["Shown in"] = exhibitions; 
-    }
-    
-    return extra;
-  };
+  // Helper to parse "Name:::URI|Name2:::URI2" format - MOVED TO HELPER
+  // Helper to parse simple piped strings - MOVED TO HELPER
+  // Build extra info for cards based on entity type - MOVED TO HELPER
 
   return (
     <div className="space-y-8">
@@ -266,7 +186,7 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {items.map((item: any, index: number) => (
+          {items.map((item: Entity, index: number) => (
             <ItemCard
               key={`${item.uri}-${index}`}
               uri={item.uri}
@@ -275,7 +195,7 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
               description={item.description || item.abstract}
               imageUrl={item.image || item.img}
               subtitle=""
-              extra={getCardExtra(item)}
+              extra={getCardExtra(item, type)}
               icon={TYPE_CONFIG[type]?.icon || ImageIcon}
               color={TYPE_CONFIG[type]?.color || "bg-gray-500"}
             />
@@ -293,7 +213,7 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
         )}
         {!hasMore && items.length > 0 && (
           <div className="text-gray-400 text-sm italic">
-            You've reached the end of the list.
+            You&apos;ve reached the end of the list.
           </div>
         )}
       </div>

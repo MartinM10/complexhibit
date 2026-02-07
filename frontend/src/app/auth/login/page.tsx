@@ -40,8 +40,8 @@ export default function LoginPage() {
       
       // Force full page reload to update auth state in all components
       window.location.href = "/";
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setIsLoading(false);
     }

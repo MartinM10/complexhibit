@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from "react";
+import { Entity } from "@/lib/types";
 import { Loader2, AlertTriangle, ExternalLink } from "lucide-react";
 import { getFromType } from "@/lib/api";
 
@@ -21,7 +23,7 @@ export function DuplicateCheckInput({
   placeholder,
   className,
 }: DuplicateCheckInputProps) {
-  const [matches, setMatches] = useState<any[]>([]);
+  const [matches, setMatches] = useState<Entity[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -118,10 +120,10 @@ export function DuplicateCheckInput({
             <span>Possible duplicates found ({matches.length}):</span>
           </div>
           <ul className="space-y-1 ml-6">
-            {matches.map((match: any, index: number) => (
+            {matches.map((match: Entity, index: number) => (
               <li key={match.uri || index} className="text-amber-700 flex items-center gap-1">
-                <span className="truncate max-w-[200px] inline-block" title={match.name || match.label}>
-                  {match.name || match.label}
+                <span className="truncate max-w-[200px] inline-block" title={match.label}>
+                  {match.label}
                 </span>
                 <a 
                   href={getDetailLink(match.uri)}

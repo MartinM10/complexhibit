@@ -88,7 +88,7 @@ function FilterInput({ config, value, onChange, options }: FilterInputProps) {
        <AsyncFilterSelect 
          label={config.placeholder}
          placeholder={config.placeholder}
-         entityType={config.entityType as any}
+         entityType={config.entityType as "artwork" | "actant" | "institution" | "exhibition"}
          value={value}
          onChange={onChange}
          filterKey={config.key}
