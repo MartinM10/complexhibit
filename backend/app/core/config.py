@@ -10,17 +10,13 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # Ontology settings
-    URI_ONTOLOGIA: str
-    DATABASE_STARDOG: str = ""
-    ENDPOINT_STARDOG: str = ""
-    USERNAME_STARDOG: str = ""
-    PASSWORD_STARDOG: str = ""
+    URI_ONTOLOGIA: str = "https://w3id.org/OntoExhibit#" # kept as sensible default
     
     # Virtuoso settings
     VIRTUOSO_URL: str
     DEFAULT_GRAPH_URL: str = ""
     VIRTUOSO_USER: str = "dba"
-    VIRTUOSO_PASSWORD: str = "dba"
+    VIRTUOSO_PASSWORD: str = ""  # Must be provided by env
     
     # App config
     PROJECT_NAME: str = "Complexhibit API"
@@ -32,26 +28,26 @@ class Settings(BaseSettings):
     USER_SERVICE_URL: str = ""
     
     # Database (PostgreSQL for auth)
-    DATABASE_URL: str = "postgresql://complexhibit:complexhibit@localhost:5432/complexhibit_auth"
+    DATABASE_URL: str = ""  # Must be provided by env
     
     # JWT Auth
-    JWT_SECRET: str = "change_this_in_production"
+    JWT_SECRET: str = ""    # Must be provided by env
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60
     
     # Admin
-    ADMIN_EMAIL: str = "martinjs@uma.es"
-    ADMIN_PASSWORD: str = "admin123"
+    ADMIN_EMAIL: str = ""    # Must be provided by env
+    ADMIN_PASSWORD: str = "" # Must be provided by env
     
     # SMTP Email
-    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_HOST: str = ""      # Must be provided by env
     SMTP_PORT: int = 587
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    SMTP_FROM: str = "noreply@complexhibit.org"
+    SMTP_USER: str = ""      # Must be provided by env
+    SMTP_PASSWORD: str = ""  # Must be provided by env
+    SMTP_FROM: str = ""      # Must be provided by env
     
     # Frontend URL (for email links)
-    FRONTEND_URL: str = "http://localhost:3000"
+    FRONTEND_URL: str = ""   # Must be provided by env
 
     class Config:
         env_file = ".env"

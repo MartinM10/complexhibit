@@ -2,12 +2,22 @@
 Email service for sending notifications.
 
 Uses SMTP for sending emails to admins and users.
+Supports HTTP proxy tunneling for restricted network environments.
 """
 
+import os
 import smtplib
+import socket
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
+from urllib.parse import urlparse
+
+try:
+    import socks
+    SOCKS_AVAILABLE = True
+except ImportError:
+    SOCKS_AVAILABLE = False
 
 from app.core.config import settings
 
@@ -34,9 +44,10 @@ def send_email(
     Returns:
         True if sent successfully, False otherwise
     """
-    # Skip if SMTP is not configured
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+    # Skip if SMTP is not configured (no host)
+    if not settings.SMTP_HOST:
         print(f"[EMAIL DISABLED] Would send to {to_email}: {subject}")
+        # Return True so we don't warn the user if email is intentionally disabled
         return True
     
     try:
@@ -50,17 +61,108 @@ def send_email(
             msg.attach(MIMEText(body_text, "plain"))
         msg.attach(MIMEText(body_html, "html"))
         
-        # Connect and send
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.starttls()
-            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+        # Sanitize password (remove spaces often found in App Passwords)
+        smtp_password = settings.SMTP_PASSWORD
+        if smtp_password:
+            smtp_password = smtp_password.replace(" ", "")
+
+        # Configure proxy if needed
+        proxy_configured = False
+        http_proxy = os.environ.get('HTTP_PROXY') or os.environ.get('http_proxy')
+        smtp_host = settings.SMTP_HOST
         
-        print(f"[EMAIL SENT] To: {to_email}, Subject: {subject}")
-        return True
+        if http_proxy and SOCKS_AVAILABLE:
+            try:
+                # Parse proxy URL (e.g., http://jano8.sci.uma.es:3128)
+                parsed = urlparse(http_proxy if '://' in http_proxy else f'http://{http_proxy}')
+                proxy_host = parsed.hostname
+                proxy_port = parsed.port or 3128
+                
+                # If running in Docker, the proxy might not be reachable by hostname
+                # Try to use the Docker host gateway instead
+                try:
+                    # Try to resolve the proxy hostname first
+                    proxy_ip = socket.gethostbyname(proxy_host)
+                    print(f"[EMAIL] Resolved proxy {proxy_host} to {proxy_ip}")
+                    proxy_host = proxy_ip
+                except socket.gaierror:
+                    # If proxy hostname doesn't resolve, we might be in Docker
+                    # Try using the default gateway (host machine)
+                    print(f"[EMAIL] Could not resolve proxy hostname, checking for Docker environment...")
+                    try:
+                        # Get default gateway (Docker host)
+                        with open('/proc/net/route') as f:
+                            for line in f:
+                                fields = line.strip().split()
+                                if fields[1] == '00000000':  # Default route
+                                    gateway_hex = fields[2]
+                                    gateway_ip = '.'.join([str(int(gateway_hex[i:i+2], 16)) for i in range(6, -1, -2)])
+                                    print(f"[EMAIL] Using Docker gateway as proxy: {gateway_ip}:{proxy_port}")
+                                    proxy_host = gateway_ip
+                                    break
+                    except Exception as e:
+                        print(f"[EMAIL WARNING] Failed to detect Docker gateway: {e}")
+                
+                print(f"[EMAIL] Configuring HTTP proxy: {proxy_host}:{proxy_port}")
+                
+                # Resolve SMTP host to IPv4 only (PySocks doesn't support IPv6)
+                try:
+                    # Get all addresses and filter for IPv4
+                    addr_info = socket.getaddrinfo(smtp_host, settings.SMTP_PORT, socket.AF_INET, socket.SOCK_STREAM)
+                    if addr_info:
+                        smtp_host = addr_info[0][4][0]  # Get first IPv4 address
+                        print(f"[EMAIL] Resolved {settings.SMTP_HOST} to IPv4: {smtp_host}")
+                except Exception as e:
+                    print(f"[EMAIL WARNING] Failed to resolve IPv4 address: {e}")
+                
+                # Set up SOCKS to use HTTP proxy for all socket connections
+                socks.set_default_proxy(socks.HTTP, proxy_host, proxy_port)
+                socket.socket = socks.socksocket
+                proxy_configured = True
+                print("[EMAIL] Proxy configured successfully")
+            except Exception as e:
+                print(f"[EMAIL WARNING] Failed to configure proxy: {e}. Attempting direct connection...")
+        elif http_proxy and not SOCKS_AVAILABLE:
+            print("[EMAIL WARNING] HTTP_PROXY set but PySocks not available. Install PySocks for proxy support.")
+
+        try:
+            if settings.SMTP_PORT == 465:
+                # Use implicit SSL for port 465
+                print(f"[EMAIL] Connecting with SSL to {smtp_host}:{settings.SMTP_PORT}...")
+                with smtplib.SMTP_SSL(smtp_host, settings.SMTP_PORT, timeout=30) as server:
+                    if settings.SMTP_USER and smtp_password:
+                        server.login(settings.SMTP_USER, smtp_password)
+                    server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+            else:
+                # Use STARTTLS for 587 or others
+                print(f"[EMAIL] Connecting with STARTTLS to {smtp_host}:{settings.SMTP_PORT}...")
+                with smtplib.SMTP(smtp_host, settings.SMTP_PORT, timeout=30) as server:
+                    # Only use STARTTLS if not connecting to a local relay
+                    if settings.SMTP_PORT != 1025:
+                        server.starttls()
+                    
+                    # Only authenticate if credentials are provided
+                    if settings.SMTP_USER and smtp_password:
+                        server.login(settings.SMTP_USER, smtp_password)
+                    
+                    server.sendmail(settings.SMTP_FROM, to_email, msg.as_string())
+            
+            print(f"[EMAIL SENT] To: {to_email}, Subject: {subject}")
+            return True
+        finally:
+            # Restore original socket if we modified it
+            if proxy_configured:
+                import importlib
+                importlib.reload(socket)
         
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"[EMAIL ERROR] Authentication failed. Check SMTP_USER and SMTP_PASSWORD. Error: {e}")
+        return False
+    except (smtplib.SMTPConnectError, TimeoutError, ConnectionRefusedError) as e:
+        print(f"[EMAIL ERROR] Connection failed. Check SMTP_HOST/PORT and Firewall/Proxy settings. Error: {e}")
+        return False
     except Exception as e:
-        print(f"[EMAIL ERROR] Failed to send to {to_email}: {e}")
+        print(f"[EMAIL ERROR] Failed to send to {to_email}. Error type: {type(e).__name__}, Detail: {e}")
         return False
 
 

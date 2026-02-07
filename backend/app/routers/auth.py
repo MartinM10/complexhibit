@@ -71,13 +71,17 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     db.refresh(user)
     
     # Send confirmation email to user
-    send_registration_confirmation(user.email, user.full_name or user.username)
+    email_success = send_registration_confirmation(user.email, user.full_name or user.username)
     
     # Notify admin about new registration
     send_admin_notification(user.email, user.full_name or user.username)
     
+    msg = "Registration successful. Please wait for admin approval."
+    if not email_success:
+        msg += " (Note: Confirmation email failed to send. Please check your spam folder or contact admin.)"
+
     return MessageResponse(
-        message="Registration successful. Please wait for admin approval.",
+        message=msg,
         success=True
     )
 
