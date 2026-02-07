@@ -23,7 +23,7 @@ class SparqlClient:
         """
         params = {"query": query, "format": "json", "default-graph-uri": self.default_graph}
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, trust_env=False) as client:
             try:
                 response = await client.get(self.endpoint_url, params=params)
                 response.raise_for_status()
@@ -56,7 +56,7 @@ class SparqlClient:
         if url.endswith("/sparql"):
             url = url.replace("/sparql", "/sparql-auth")
 
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, trust_env=False) as client:
             try:
                 # Using POST for updates with Digest Authentication
                 auth = httpx.DigestAuth(settings.VIRTUOSO_USER, settings.VIRTUOSO_PASSWORD)

@@ -21,6 +21,12 @@ async def lifespan(app: FastAPI):
     try:
         create_tables()
         print("Database tables created successfully")
+        
+        # Debug SMTP Config
+        print("----------------------------------------------------------------")
+        print(f"SMTP CONFIG: Host={settings.SMTP_HOST}, Port={settings.SMTP_PORT}")
+        print(f"SMTP USER: {settings.SMTP_USER}")
+        print("----------------------------------------------------------------")
     except Exception as e:
         print(f"Database initialization error (may be expected if DB not ready): {e}")
     yield
