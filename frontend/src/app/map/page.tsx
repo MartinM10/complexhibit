@@ -259,21 +259,17 @@ export default function MapPage() {
           </div>
           
           <div className="flex items-center gap-4">
-             {isFetching ? (
-                <div className="flex items-center gap-2 text-sm text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full animate-pulse">
-                    <Loader2 className="h-3 w-3 animate-spin"/> Loading data...
+             {!isFetching && (
+                <div className="hidden sm:flex items-center gap-2 text-sm font-medium text-gray-600 bg-white/50 px-3 py-1.5 rounded-full border border-gray-200/50 backdrop-blur-sm shadow-sm transition-all animate-in fade-in zoom-in duration-300">
+                  <span className="font-bold text-indigo-600">{filteredEntities.length}</span> entities loaded
                 </div>
-             ) : (
-                <span className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full">
-                {filteredEntities.length} entities
-                </span>
              )}
             
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-sm shadow-sm ${
                 showFilters 
-                  ? 'bg-indigo-600 text-white shadow-indigo-200' 
+                  ? 'bg-indigo-600 text-white shadow-indigo-200 hover:bg-indigo-700' 
                   : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               }`}
             >
@@ -449,8 +445,26 @@ export default function MapPage() {
         </Map>
       </div>
 
+      {/* Central Loading Overlay */}
+      {isFetching && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/40 backdrop-blur-sm transition-all duration-300 animate-in fade-in">
+          <div className="bg-white/90 px-6 py-4 rounded-2xl shadow-xl border border-white/50 flex flex-col items-center gap-3 animate-bounce-slight">
+            <div className="relative">
+              <div className="h-12 w-12 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-2 w-2 bg-indigo-600 rounded-full animate-pulse"></div>
+              </div>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-bold text-gray-800">Loading Map Data</span>
+              <span className="text-xs text-gray-500">Fetching entities...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Legend - Floating Bottom Left */}
-      <div className="absolute bottom-6 left-6 z-10 bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 p-4 transition-opacity hover:opacity-100 opacity-90">
+      <div className="absolute bottom-6 left-6 z-10 bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-100 p-4 transition-opacity hover:opacity-100 opacity-90 hidden sm:block">
         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Legend</h4>
         <div className="space-y-2">
           {Object.entries(typeColors).map(([type, color]) => {
