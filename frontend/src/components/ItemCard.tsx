@@ -136,7 +136,6 @@ export default function ItemCard({ uri, label, description, type, imageUrl, subt
                   src={`https://placehold.co/600x400/f1f5f9/475569?text=${type.charAt(0).toUpperCase() + type.slice(1)}`}
                   alt="Placeholder"
                   fill
-                  unoptimized
                   className="object-cover opacity-70 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105"
                />
                <div className="absolute top-3 right-3 glass text-gray-800 text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg backdrop-blur-md shadow-lg border border-white/40">
