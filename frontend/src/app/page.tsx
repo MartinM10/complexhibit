@@ -10,6 +10,8 @@ import {
   getCompaniesCount 
 } from "@/lib/api";
 
+export const dynamic = 'force-dynamic';
+
 interface Category {
   name: string;
   description: string;
