@@ -60,7 +60,8 @@ docker-compose up -d --build
 - **Virtuoso Conductor**: [http://localhost:8890/conductor](http://localhost:8890/conductor)
 
 ## 🛡️ Seguridad y Características Nuevas
-
++ **Exportación de Datos**: Las páginas de detalle ahora permiten exportar información en formatos PDF, JSON y HTML.
++ **Consultas SPARQL de Ejemplo**: Integración de un catálogo dinámico de consultas SPARQL para facilitar la exploración del grafo.
 - **Autenticación JWT**: Los endpoints de escritura del backend ahora están protegidos.
 - **Contadores en Home**: Visualización en tiempo real de estadísticas del grafo en el frontend.
 - **Configuración Automática**: Scripts de inicialización mejorados y automatizados con Docker.

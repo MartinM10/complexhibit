@@ -327,6 +327,8 @@ Con esto, tu aplicación es resiliente a reinicios inesperados sin necesidad de 
 - [ ] Documentar proceso de despliegue
 - [ ] Crear runbooks para problemas comunes
 - [ ] Documentar variables de entorno
+- [ ] Comprobar funcionamiento de la exportación PDF
+- [ ] Verificar carga de Example Queries en el home
 
 ## Variables de Entorno
 
@@ -421,4 +423,4 @@ Para problemas de despliegue:
 
 ---
 
-**Última Actualización**: 2025-11-26
+**Última Actualización**: 2026-02-09

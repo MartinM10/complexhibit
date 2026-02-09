@@ -7,11 +7,13 @@ Esta guía detalla paso a paso cómo desplegar las aplicaciones Backend y Fronte
 Antes de subir nada al servidor, asegúrate de tener los archivos listos.
 
 ### 1.1. Certificados SSL
-Asegúrate de tener tus archivos de certificado a mano. Asumiremos que se llaman:
-- `server.crt` (El certificado público)
-- `server.key` (La clave privada)
+Asegúrate de tener tus archivos de certificado a mano. Según la configuración de `nginx.conf`, se esperan:
+- `fullchain.cer` (El certificado público + cadena intermedia)
+- `complexhibit_uma_es.key` (La clave privada)
 
-*(Si tienen otros nombres, renómbralos o edita `deployment/nginx.conf`)*
+> [!TIP]
+> Si tienes los certificados por separado, puedes crear el bundle así:
+> `cat complexhibit_uma_es_cert.cer complexhibit_uma_es_interm.cer > fullchain.cer`
 
 ### 1.2. Configuración de Variables de Entorno (`.env`)
 1. Copia el archivo `.env.template` a `.env` en la raíz del proyecto.
@@ -59,9 +61,9 @@ ssh ubuntu@1.2.3.4 "mkdir -p ~/complexhibit/deployment/certs"
 # Si lo tienes local:
 scp -r backend frontend deployment docker-compose.yml .env ubuntu@1.2.3.4:~/complexhibit/
 
-# 3. Subir certificados (¡IMPORTANTE!)
-scp ruta/a/tu/server.crt ubuntu@1.2.3.4:~/complexhibit/deployment/certs/server.crt
-scp ruta/a/tu/server.key ubuntu@1.2.3.4:~/complexhibit/deployment/certs/server.key
+# 3. Subir certificados
+scp ruta/a/tu/fullchain.cer ubuntu@1.2.3.4:~/complexhibit/deployment/certs/fullchain.cer
+scp ruta/a/tu/complexhibit_uma_es.key ubuntu@1.2.3.4:~/complexhibit/deployment/certs/complexhibit_uma_es.key
 ```
 
 ## 3. Configuración en el Servidor
@@ -98,8 +100,8 @@ Asegurate de que tienes esta estructura en `~/complexhibit`:
     ├── docker-compose.prod.yml
     ├── nginx.conf
     └── certs/
-        ├── server.crt
-        └── server.key
+        ├── fullchain.cer
+        └── complexhibit_uma_es.key
 ```
 
 ## 4. Despliegue

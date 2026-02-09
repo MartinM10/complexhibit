@@ -172,6 +172,9 @@ curl http://localhost:8000/api/v1/exhibitions/{id}
 
 # Obtener contadores (Catálogos, etc.)
 curl http://localhost:8000/api/v1/count_catalogs
+
+# Consultas SPARQL de ejemplo (nuevo)
+curl http://localhost:8000/api/v1/example-queries
 ```
 
 ## 🛠️ Comandos Útiles
@@ -275,6 +278,7 @@ Este proyecto está bajo la licencia MIT.
 
 ## ✨ Características
 
+- ✅ **Consultas SPARQL Dinámicas**: Sistema de gestión y ejecución de consultas de ejemplo desde la base de datos.
 - ✅ Carga automática de 2.7M tripletas
 - ✅ Configuración optimizada de Virtuoso
 - ✅ API REST sobre SPARQL

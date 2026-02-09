@@ -46,4 +46,6 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 - **Contadores en Home**: Visualización en tiempo real de la cantidad de entidades (Exposiciones, Obras, etc.) en las tarjetas de inicio.
 - **Búsqueda Semántica**: Interfaz para buscar en el grafo de conocimiento.
+- **Exportación de Detalle**: Descarga de fichas de detalle en formatos PDF (HTML), JSON y HTML plano.
+- **Consultas de Ejemplo**: Selector interactivo de consultas SPARQL con visualización de resultados integrada.
 - **Inserción de Datos**: Formularios protegidos (requiere login) para añadir nuevos datos.
