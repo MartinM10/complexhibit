@@ -143,7 +143,7 @@ export function ActorBiography({ actorData }: ActorBiographyProps) {
                   <span className="text-xs font-semibold text-gray-500 uppercase">{placeLabel}</span>
                   <span className="text-gray-900">
                     {originPlaceUri ? (
-                      <EntityLink label={cleanLabel(originPlace)} uri={originPlaceUri} fallbackType="site" className="text-indigo-600 hover:text-indigo-800 hover:underline" />
+                      <EntityLink label={cleanLabel(originPlace)} uri={originPlaceUri} className="text-indigo-600 hover:text-indigo-800 hover:underline" />
                     ) : (
                       cleanLabel(originPlace)
                     )}

@@ -19,7 +19,7 @@ export default function QueryLogger({ query, type }: QueryLoggerProps) {
     } else {
       console.log(`[QueryLogger] No query prop received for ${type}`);
     }
-  }, [query, type]);
+  }, [DEBUG, query, type]);
 
   return null; // Render nothing
 }

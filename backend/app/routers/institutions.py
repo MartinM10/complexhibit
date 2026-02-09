@@ -141,7 +141,7 @@ async def get_institution_exhibitions(id: str, client: SparqlClient = Depends(ge
             elif role == "funder":
                 grouped["funder"].append(exhibition)
         
-        return {"data": grouped}
+        return {"data": grouped, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -153,7 +153,7 @@ async def get_institution_lender_exhibitions(id: str, client: SparqlClient = Dep
     try:
         response = await client.query(query)
         data = parse_sparql_response(response)
-        return {"data": data}
+        return {"data": data, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -165,7 +165,7 @@ async def get_institution_owned_artworks(id: str, client: SparqlClient = Depends
     try:
         response = await client.query(query)
         data = parse_sparql_response(response)
-        return {"data": data}
+        return {"data": data, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -185,7 +185,7 @@ async def get_institution_collaborators(id: str, client: SparqlClient = Depends(
                 "label": item.get("collaborator_label")
             })
         
-        return {"data": collaborators}
+        return {"data": collaborators, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -205,7 +205,7 @@ async def get_institution_executives(id: str, client: SparqlClient = Depends(get
                 "label": item.get("person_label")
             })
         
-        return {"data": executives}
+        return {"data": executives, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -226,7 +226,7 @@ async def get_institution_parent(id: str, client: SparqlClient = Depends(get_spa
                 "label": item.get("parent_label")
             }
         
-        return {"data": parent}
+        return {"data": parent, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -246,7 +246,7 @@ async def get_institution_children(id: str, client: SparqlClient = Depends(get_s
                 "label": item.get("child_label")
             })
         
-        return {"data": children}
+        return {"data": children, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

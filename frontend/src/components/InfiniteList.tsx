@@ -12,7 +12,7 @@ import { getFromType, fetchFromApi } from "@/lib/api";
 import ItemCard from "@/components/ItemCard";
 import EntityFilters, { FILTER_OPTION_ENDPOINTS } from "@/components/EntityFilters";
 import { useIntersectionObserver } from "@/hooks/useIntersectionObserver";
-import { unCamel, cleanLabel } from "@/lib/utils";
+import { cleanLabel } from "@/lib/utils";
 import { Search, Loader2, Calendar, Building2, Users, Image as ImageIcon, BookOpen, Briefcase } from "lucide-react";
 import type { FilterOptions, Entity } from "@/lib/types";
 import { getCardExtra } from "@/lib/entity-helpers";
@@ -125,7 +125,7 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, filters, type]);
+  }, [searchQuery, filters, type, isInitialMount]);
 
   // Fetch filter options on mount
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function InfiniteList({ initialData, initialCursor, type }: Infin
           <input
             type="text"
             className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm shadow-sm transition-shadow hover:shadow-md"
-            placeholder={`Search ${unCamel(type)}s...`}
+            placeholder={`Search ${type}s...`}
             value={searchQuery}
             onChange={handleSearch}
           />

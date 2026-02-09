@@ -1068,11 +1068,15 @@ type MapClusterLayerProps<
     feature: GeoJSON.Feature<GeoJSON.Point, P>,
     coordinates: [number, number]
   ) => void;
-  /** Callback when a cluster is clicked. If not provided, zooms into the cluster */
+  /** 
+   * Callback when a cluster is clicked. If not provided, zooms into the cluster.
+   * The getLeaves function can be used to fetch all entities in the cluster.
+   */
   onClusterClick?: (
     clusterId: number,
     coordinates: [number, number],
-    pointCount: number
+    pointCount: number,
+    getLeaves: (limit?: number) => Promise<GeoJSON.Feature<GeoJSON.Point, P>[]>
   ) => void;
 };
 
@@ -1265,7 +1269,20 @@ function MapClusterLayer<
       ];
 
       if (onClusterClick) {
-        onClusterClick(clusterId, coordinates, pointCount);
+        // Create a getLeaves function that fetches cluster entities
+        const getLeaves = async (limit: number = 1000): Promise<GeoJSON.Feature<GeoJSON.Point, P>[]> => {
+          const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;
+          if (!source) return [];
+          
+          try {
+            const leaves = await source.getClusterLeaves(clusterId, limit, 0);
+            return leaves as GeoJSON.Feature<GeoJSON.Point, P>[];
+          } catch {
+            return [];
+          }
+        };
+        
+        onClusterClick(clusterId, coordinates, pointCount, getLeaves);
       } else {
         // Default behavior: zoom to cluster expansion zoom
         const source = map.getSource(sourceId) as MapLibreGL.GeoJSONSource;

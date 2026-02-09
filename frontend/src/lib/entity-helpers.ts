@@ -1,4 +1,4 @@
-import { Entity, Exhibition, Artwork, Actor, Institution } from "@/lib/types";
+import { Exhibition, Artwork, Actor } from "@/lib/types";
 
 // Helper to parse "Name:::URI|Name2:::URI2" format
 export const parseComplexField = (value: string | undefined): string[] | null => {
@@ -78,7 +78,6 @@ export const getCardExtra = (item: unknown, type: string): Record<string, string
     if (actants) extra["Participants"] = actants;
     if (artworks) extra["Artworks"] = artworks;
   } else if (type === 'artwork') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const artwork = item as Artwork;
     // Backend returns plural fields with "Name:::URI" format
     const authors = parseComplexField(artwork.authors);

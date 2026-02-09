@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { ArrowLeft, Filter, MapPin, Calendar, Building2, User, Landmark, X, Palette, Loader2 } from 'lucide-react';
+import { ArrowLeft, Filter, MapPin, Calendar, Building2, User, X, Palette, Loader2 } from 'lucide-react';
 
 const Map = dynamic(() => import('@/components/ui/map').then(mod => mod.Map), { 
   ssr: false,
@@ -15,6 +15,7 @@ const MapControls = dynamic(() => import('@/components/ui/map').then(mod => mod.
 import { getMapEntities, getMapMeta } from '@/lib/api';
 import DateRangeSlider from '@/components/ui/slider';
 import useDebounce from '@/hooks/useDebounce';
+import { ClusterPopup } from '@/components/map/ClusterPopup';
 
 interface MapEntity {
   id: string;
@@ -78,6 +79,11 @@ export default function MapPage() {
 
   // Popup state
   const [selectedEntity, setSelectedEntity] = useState<MapEntity | null>(null);
+
+  // Cluster popup state
+  const [clusterEntities, setClusterEntities] = useState<MapEntity[]>([]);
+  const [clusterCoords, setClusterCoords] = useState<[number, number] | null>(null);
+  // Pending zoom state removed as it was unused
 
   // Initial Data Load
   useEffect(() => {
@@ -189,7 +195,7 @@ export default function MapPage() {
 
       return s <= to && e >= from;
     });
-  }, [entities, selectedTypes, debouncedRange, minYear, maxYear]);
+  }, [entities, selectedTypes, debouncedRange]);
 
   // Convert to GeoJSON - Memoized
   const geoJsonData: GeoJsonCollection = useMemo(() => ({
@@ -205,10 +211,41 @@ export default function MapPage() {
   }), [filteredEntities]);
 
   const handlePointClick = useCallback((
-    feature: GeoJSON.Feature<GeoJSON.Point, Record<string, unknown> | null>,
-    coordinates: [number, number]
+    feature: GeoJSON.Feature<GeoJSON.Point, Record<string, unknown> | null>
   ) => {
     setSelectedEntity(feature.properties as unknown as MapEntity);
+    // Close cluster popup when clicking individual point
+    setClusterEntities([]);
+    setClusterCoords(null);
+  }, []);
+
+  // Handle cluster click to show popup with grouped entities
+  const handleClusterClick = useCallback(async (
+    clusterId: number,
+    coordinates: [number, number],
+    pointCount: number,
+    getLeaves: (limit?: number) => Promise<GeoJSON.Feature<GeoJSON.Point>[]>
+  ) => {
+    // Use MapLibre's getClusterLeaves to get actual entities in the cluster
+    try {
+      const leaves = await getLeaves(Math.min(pointCount, 500));
+      
+      // Convert GeoJSON features to MapEntity format
+      const clusterItems: MapEntity[] = leaves.map(feature => ({
+        ...feature.properties,
+        lat: feature.geometry.coordinates[1],
+        long: feature.geometry.coordinates[0],
+      })) as MapEntity[];
+
+      if (clusterItems.length > 0) {
+        setClusterEntities(clusterItems);
+        setClusterCoords(coordinates);
+        // Clear single entity popup
+        setSelectedEntity(null);
+      }
+    } catch (err) {
+      console.error('Failed to get cluster leaves:', err);
+    }
   }, []);
 
   const getTypeLabel = (type: string) => {
@@ -400,6 +437,7 @@ export default function MapPage() {
                 '#6b7280'
               ] as unknown as string}
               onPointClick={handlePointClick}
+              onClusterClick={handleClusterClick}
             />
           )}
 
@@ -480,6 +518,24 @@ export default function MapPage() {
           })}
         </div>
       </div>
+
+      {/* Cluster Popup */}
+      {clusterEntities.length > 0 && clusterCoords && (
+        <ClusterPopup
+          entities={clusterEntities}
+          coordinates={clusterCoords}
+          onClose={() => {
+            setClusterEntities([]);
+            setClusterCoords(null);
+          }}
+          onZoomIn={() => {
+            // Close popup and zoom to location
+            setClusterEntities([]);
+            setClusterCoords(null);
+            // The map will zoom in via default behavior when clicking cluster again
+          }}
+        />
+      )}
     </div>
   );
 }

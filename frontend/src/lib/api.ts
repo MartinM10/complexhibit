@@ -54,17 +54,17 @@ export async function getRolesPlayed(type: string, id: string) {
   return Promise.resolve({ data: {} });
 }
 
-export async function getParticipants(id: string) {
+export async function getParticipants() {
     // Not implemented in backend yet
   return Promise.resolve({ data: {} });
 }
 
-export async function getArtworks(id: string) {
+export async function getArtworks() {
     // Not implemented in backend yet
   return Promise.resolve({ data: {} });
 }
 
-export async function getExhibitionMaking(id: string) {
+export async function getExhibitionMaking() {
     // Not implemented in backend yet
   return Promise.resolve({ data: {} });
 }
@@ -225,4 +225,72 @@ export async function getMapEntities(types?: string[]) {
 
 export async function getMapMeta() {
   return fetchFromApi(`/map/meta`);
+}
+
+// Example Query API functions
+export interface ExampleQueryResponse {
+  id: number;
+  name: string;
+  description: string | null;
+  query: string;
+  category: string;
+  user_id: number;
+  username: string;
+  created_at: string;
+}
+
+export async function getExampleQueries(): Promise<{ data: ExampleQueryResponse[] }> {
+  const response = await fetch(`${API_URL}/example-queries`);
+  if (!response.ok) {
+    throw new Error(`API Error: ${response.statusText}`);
+  }
+  const data = await response.json();
+  return { data };
+}
+
+export async function createExampleQuery(
+  name: string,
+  description: string | null,
+  query: string,
+  category: string = 'custom'
+): Promise<ExampleQueryResponse> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+  if (!token) {
+    throw new Error('Authentication required');
+  }
+  
+  const response = await fetch(`${API_URL}/example-queries`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({ name, description, query, category })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error((errorData as { detail?: string }).detail || `API Error: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+export async function deleteExampleQuery(id: number): Promise<void> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+  if (!token) {
+    throw new Error('Authentication required');
+  }
+  
+  const response = await fetch(`${API_URL}/example-queries/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error((errorData as { detail?: string }).detail || `API Error: ${response.statusText}`);
+  }
 }

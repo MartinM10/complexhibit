@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, X, Loader2, ChevronDown } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
 
 interface AsyncFilterSelectProps {
   label?: string; // Optional label, usually placeholder is enough
@@ -12,8 +12,15 @@ interface AsyncFilterSelectProps {
   placeholder?: string;
 }
 
+// Map entity types to API endpoints - reusing existing ones
+const endpointMap: Record<string, string> = {
+  artwork: "/all_artworks",
+  actant: "/all_persons", 
+  institution: "/all_institutions",
+  exhibition: "/all_exhibitions",
+};
+
 export default function AsyncFilterSelect({
-  label,
   entityType,
   value,
   onChange,
@@ -28,19 +35,6 @@ export default function AsyncFilterSelect({
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Map entity types to API endpoints - reusing existing ones
-  const endpointMap: Record<string, string> = {
-    artwork: "/all_artworks",
-    actant: "/all_persons", 
-    institution: "/all_institutions",
-    exhibition: "/all_exhibitions",
-  };
-
-  // If value exists but no label, we might want to fetch it or just show value
-  // Ideally, when selecting, we set both. But if page reloads with filter, we only have URI.
-  // For now, we won't auto-resolve label on mount from URI to keep it simple. 
-  // If user has value, valid state is "Filter Active".
 
   // Debounced search
   const searchEntities = useCallback(async (query: string) => {

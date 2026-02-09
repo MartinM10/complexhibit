@@ -106,7 +106,7 @@ export function SearchableSelect({
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [endpointMap]);
 
   const handleSelect = (item: { uri: string; label: string }) => {
     if (multiple) {

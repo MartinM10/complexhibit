@@ -2,7 +2,7 @@
  * Shared utilities and components for detail pages.
  */
 
-import { cleanLabel, unCamel } from "@/lib/utils";
+import { cleanLabel } from "@/lib/utils";
 import EntityLink from "@/components/EntityLink";
 import type { LinkedEntity } from "@/lib/types";
 
@@ -86,10 +86,9 @@ interface EntityListProps {
   label: string;
   entities: LinkedEntity[];
   colorClass?: string;
-  fallbackType?: string;
 }
 
-export function EntityList({ label, entities, colorClass = "text-indigo-600 hover:text-indigo-800", fallbackType }: EntityListProps) {
+export function EntityList({ label, entities, colorClass = "text-indigo-600 hover:text-indigo-800" }: EntityListProps) {
   if (entities.length === 0) return null;
   
   return (
@@ -101,7 +100,6 @@ export function EntityList({ label, entities, colorClass = "text-indigo-600 hove
             <EntityLink 
               label={entity.label} 
               uri={entity.uri} 
-              fallbackType={fallbackType}
               className={`${colorClass} hover:underline`} 
             />
           </div>

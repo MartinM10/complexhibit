@@ -145,7 +145,7 @@ async def get_actor_roles(id: str, client: SparqlClient = Depends(get_sparql_cli
                 "type": item.get("item_type", "exhibition")
             })
         
-        return {"data": roles_by_type}
+        return {"data": roles_by_type, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -181,7 +181,7 @@ async def get_person_collaborators(id: str, client: SparqlClient = Depends(get_s
                 result["affiliations"].append(entry)
             # Remove fallback to generic collaborations as user requested strict semantics
         
-        return {"data": result}
+        return {"data": result, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -201,6 +201,6 @@ async def get_person_executive_positions(id: str, client: SparqlClient = Depends
                 "label": item.get("institution_label")
             })
         
-        return {"data": positions}
+        return {"data": positions, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

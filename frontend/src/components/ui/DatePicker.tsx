@@ -3,7 +3,7 @@
 import React from 'react';
 import ReactDatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { Calendar as CalendarIcon } from "lucide-react";
 
 interface DatePickerProps {
   selected?: Date | null;
@@ -26,7 +26,9 @@ export default function DatePicker({ selected, onChange, placeholder, className 
         scrollableYearDropdown
         yearDropdownItemNumber={100}
       />
-      <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 pointer-events-none" />
+      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <CalendarIcon className="h-4 w-4 text-gray-400" />
+      </div>
       <style jsx global>{`
         .react-datepicker-wrapper {
           display: block;

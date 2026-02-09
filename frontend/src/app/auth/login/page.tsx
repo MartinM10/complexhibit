@@ -4,17 +4,26 @@
  * Login page with email/password authentication.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogIn, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { isAuthenticated, fetchUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/");
+    }
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +47,8 @@ export default function LoginPage() {
       // Store token in localStorage
       localStorage.setItem("access_token", data.access_token);
       
-      // Force full page reload to update auth state in all components
+      // Force full page reload or at least fetch user
+      await fetchUser();
       window.location.href = "/";
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

@@ -6,7 +6,7 @@
  * Lists pending users and allows admins to approve/reject them.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -35,7 +35,7 @@ export default function AdminUsersPage() {
 
   const getToken = () => localStorage.getItem("access_token");
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError("");
     
@@ -66,11 +66,11 @@ export default function AdminUsersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [apiUrl, router]);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   const handleApprove = async (userId: number) => {
     setActionLoading(userId);

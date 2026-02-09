@@ -11,7 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import create_tables
 from app.dependencies import get_current_user
-from app.routers import artworks, exhibitions, institutions, misc, persons, auth, catalogs, companies, map
+from app.routers import artworks, exhibitions, institutions, misc, persons, auth, catalogs, companies, map, example_queries
+from app.core.seeding import seed_example_queries
 
 
 @asynccontextmanager
@@ -21,6 +22,9 @@ async def lifespan(app: FastAPI):
     try:
         create_tables()
         print("Database tables created successfully")
+        
+        # Seed default data
+        seed_example_queries()
         
         # Debug SMTP Config
         print("----------------------------------------------------------------")
@@ -65,6 +69,7 @@ app.include_router(misc.router)
 app.include_router(catalogs.router)
 app.include_router(companies.router)
 app.include_router(map.router)
+app.include_router(example_queries.router)
 
 
 @app.get(f"{settings.DEPLOY_PATH}/", tags=["root"])

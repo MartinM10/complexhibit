@@ -5,7 +5,7 @@
 import { cleanLabel } from "@/lib/utils";
 import { SidebarCard, DefinitionList, SectionWrapper, SectionHeader, PropertyRow, EntityList } from "./DetailUtils";
 import EntityLink from "@/components/EntityLink";
-import type { LinkedEntity } from "@/lib/types";
+import { LinkedEntity } from "@/lib/types";
 
 interface ExhibitionItem {
   uri: string;
@@ -69,7 +69,6 @@ export function InstitutionDetails({
                   <EntityLink 
                     label={cleanLabel(institution.label_place)} 
                     uri={institution.place_uri} 
-                    fallbackType="site" 
                     className="text-teal-600 hover:text-teal-800 hover:underline" 
                   />
                 ) : (
@@ -124,7 +123,6 @@ export function InstitutionDetails({
                       key={idx}
                       label={cleanLabel(exec.label || "Executive")} 
                       uri={exec.uri!} 
-                      fallbackType="actant"
                       className="text-amber-600 hover:text-amber-800 hover:underline"
                     />
                   ))}
@@ -142,7 +140,6 @@ export function InstitutionDetails({
                 <EntityLink 
                   label={cleanLabel(parentOrganization.label || "Parent")} 
                   uri={parentOrganization.uri!} 
-                  fallbackType="institution"
                   className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
                 />
               </div>
@@ -199,7 +196,6 @@ export function InstitutionSidebar({ exhibitions = {}, lenderExhibitions = [], o
               label="Exhibitions" 
               entities={toEntities(venueExhibitions)} 
               colorClass="text-indigo-600 hover:text-indigo-800"
-              fallbackType="exhibition"
             />
           </DefinitionList>
         </SidebarCard>
@@ -213,7 +209,6 @@ export function InstitutionSidebar({ exhibitions = {}, lenderExhibitions = [], o
               label="Exhibitions" 
               entities={toEntities(organizerExhibitions)} 
               colorClass="text-blue-600 hover:text-blue-800"
-              fallbackType="exhibition"
             />
           </DefinitionList>
         </SidebarCard>
@@ -227,7 +222,6 @@ export function InstitutionSidebar({ exhibitions = {}, lenderExhibitions = [], o
               label="Exhibitions" 
               entities={toEntities(funderExhibitions)} 
               colorClass="text-green-600 hover:text-green-800"
-              fallbackType="exhibition"
             />
           </DefinitionList>
         </SidebarCard>
@@ -241,7 +235,6 @@ export function InstitutionSidebar({ exhibitions = {}, lenderExhibitions = [], o
               label="Exhibitions" 
               entities={lenderEntities} 
               colorClass="text-purple-600 hover:text-purple-800"
-              fallbackType="exhibition"
             />
           </DefinitionList>
         </SidebarCard>
@@ -255,7 +248,6 @@ export function InstitutionSidebar({ exhibitions = {}, lenderExhibitions = [], o
               label="Artworks" 
               entities={artworkEntities} 
               colorClass="text-pink-600 hover:text-pink-800"
-              fallbackType="artwork"
             />
           </DefinitionList>
         </SidebarCard>
@@ -321,7 +313,6 @@ export function InstitutionExecutives({ executives }: InstitutionExecutivesProps
           label="Executives" 
           entities={executives} 
           colorClass="text-amber-600 hover:text-amber-800"
-          fallbackType="actant"
         />
       </DefinitionList>
     </SidebarCard>
@@ -342,7 +333,6 @@ export function InstitutionSubsidiaries({ childOrganizations = [] }: Institution
           label="Institutions" 
           entities={childOrganizations} 
           colorClass="text-emerald-600 hover:text-emerald-800"
-          fallbackType="institution"
         />
       </DefinitionList>
     </SidebarCard>

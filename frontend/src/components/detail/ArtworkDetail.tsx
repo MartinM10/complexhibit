@@ -12,7 +12,6 @@ import {
   parseLinkedEntities 
 } from "./DetailUtils";
 import type { LinkedEntity } from "@/lib/types";
-
 interface ArtworkData {
   label?: string;
   label_starting_date?: string;
@@ -74,7 +73,6 @@ export function ArtworkRelationsSidebar({ artworkData }: ArtworkRelationsSidebar
               label="Artists" 
               entities={authors} 
               colorClass="text-amber-600 hover:text-amber-800"
-              fallbackType="actant"
             />
           </DefinitionList>
         </SidebarCard>
@@ -88,7 +86,6 @@ export function ArtworkRelationsSidebar({ artworkData }: ArtworkRelationsSidebar
               label="Owners" 
               entities={owners} 
               colorClass="text-emerald-600 hover:text-emerald-800"
-              fallbackType="actant"
             />
           </DefinitionList>
         </SidebarCard>
@@ -102,7 +99,6 @@ export function ArtworkRelationsSidebar({ artworkData }: ArtworkRelationsSidebar
               label="Exhibitions" 
               entities={exhibitions} 
               colorClass="text-indigo-600 hover:text-indigo-800"
-              fallbackType="exhibition"
             />
           </DefinitionList>
         </SidebarCard>

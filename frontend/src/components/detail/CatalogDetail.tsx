@@ -10,7 +10,6 @@ import {
   DefinitionList, 
   EntityList,
   PropertyRow,
-  parseLinkedEntities 
 } from "./DetailUtils";
 import EntityLink from "@/components/EntityLink";
 import type { LinkedEntity } from "@/lib/types";
@@ -55,7 +54,6 @@ export function CatalogDetails({ data }: CatalogDetailsProps) {
                     <EntityLink 
                       label={cleanLabel(item.publication_place_label)} 
                       uri={item.publication_place_uri} 
-                      fallbackType="site" 
                       className="text-teal-600 hover:text-teal-800 hover:underline" 
                     />
                   ) : (

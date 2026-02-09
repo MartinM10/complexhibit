@@ -137,7 +137,7 @@ async def get_exhibition_museographers(id: str, client: SparqlClient = Depends(g
                 "label": item.get("company_label")
             })
         
-        return {"data": museographers}
+        return {"data": museographers, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

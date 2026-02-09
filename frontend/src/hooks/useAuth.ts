@@ -37,15 +37,17 @@ export function useAuth() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
   const fetchUser = useCallback(async () => {
-    const token = localStorage.getItem("access_token");
+    const token = typeof window !== 'undefined' ? localStorage.getItem("access_token") : null;
     
     if (!token) {
-      await Promise.resolve();
-      setState({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        isAdmin: false,
+      // Defer setState to avoid "set-state-in-effect" warning
+      Promise.resolve().then(() => {
+        setState({
+          user: null,
+          isLoading: false,
+          isAuthenticated: false,
+          isAdmin: false,
+        });
       });
       return;
     }
@@ -58,7 +60,6 @@ export function useAuth() {
       if (!response.ok) {
         // Token expired or invalid
         localStorage.removeItem("access_token");
-        await Promise.resolve();
         setState({
           user: null,
           isLoading: false,
@@ -87,7 +88,7 @@ export function useAuth() {
   }, [apiUrl]);
 
   useEffect(() => {
-    // eslint-disable-next-line
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUser();
   }, [fetchUser]);
 
@@ -112,6 +113,7 @@ export function useAuth() {
     ...state,
     logout,
     refresh,
+    fetchUser
   };
 }
 

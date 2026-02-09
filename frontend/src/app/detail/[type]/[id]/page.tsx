@@ -10,7 +10,6 @@ import { ArrowLeft } from "lucide-react";
 import { 
   getDataProperties, 
   getRolesPlayed, 
-  getTypesFromId, 
   getParticipants,
   getArtworks,
   getExhibitionMaking,
@@ -35,7 +34,7 @@ import {
   getCompanyMuseographerExhibitions,
   getExhibitionMuseographers
 } from "@/lib/api";
-import { unCamel, cleanLabel } from "@/lib/utils";
+import { cleanLabel, unCamel } from "@/lib/utils";
 import MapSection from '@/components/MapSection';
 import { CopyUri } from "@/components/CopyUri";
 import QueryLogger from "@/components/QueryLogger";
@@ -68,7 +67,8 @@ import {
   CompanySidebar,
   SidebarCard,
   DefinitionList,
-  EntityList
+  EntityList,
+  DetailExportButton
 } from "@/components/detail";
 
 interface PageProps {
@@ -92,7 +92,6 @@ export default async function DetailPage({ params }: PageProps) {
   
   // Base fetches (always needed)
   const dataPropertiesPromise = getDataProperties(decodedType, id).catch(() => null);
-  const typesPromise = getTypesFromId(decodedType, id).catch(() => null);
   
   // Actor-specific
   const rolesPromise = isActorType(decodedType) 
@@ -115,13 +114,15 @@ export default async function DetailPage({ params }: PageProps) {
   
   // Exhibition-specific
   const participantsPromise = decodedType === 'exhibition' 
-    ? getParticipants(id).catch(() => null) 
+    ? getParticipants().catch(() => null) 
     : Promise.resolve(null);
   const artworksPromise = decodedType === 'exhibition' 
-    ? getArtworks(id).catch(() => null) 
+    ? getArtworks().catch(() => null) 
     : Promise.resolve(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _unusedArtworks = artworksPromise;
   const makingPromise = decodedType === 'exhibition' 
-    ? getExhibitionMaking(id).catch(() => null) 
+    ? getExhibitionMaking().catch(() => null) 
     : Promise.resolve(null);
   const datesAndPlacePromise = decodedType === 'exhibition' 
     ? getDatesAndPlace(id).catch(() => null) 
@@ -188,8 +189,8 @@ export default async function DetailPage({ params }: PageProps) {
 
   // Await all promises
   const [
-    dataProperties, types, roles, actorDetails, artworkDetails,
-    participants, artworks, making, datesAndPlace, institutionExhibitions, 
+    dataProperties, roles, actorDetails, artworkDetails,
+    participants, making, datesAndPlace, institutionExhibitions, 
     institutionDetails, institutionLenderExhibitions, institutionOwnedArtworks,
     personCollaborators, institutionCollaboratorsData, personExecutivePositions,
     institutionExecutivesData, institutionParentData, institutionChildrenData,
@@ -197,12 +198,10 @@ export default async function DetailPage({ params }: PageProps) {
     companyDetails, companyMuseographerExhibitions, exhibitionMuseographers
   ] = await Promise.all([
     dataPropertiesPromise,
-    typesPromise,
     rolesPromise,
     actorDetailsPromise,
     artworkDetailsPromise,
     participantsPromise,
-    artworksPromise,
     makingPromise,
     datesAndPlacePromise,
     institutionExhibitionsPromise,
@@ -305,7 +304,7 @@ export default async function DetailPage({ params }: PageProps) {
 
   // For exhibitions, find matching data
   const exhibitionData = decodedType === 'exhibition' && datesAndPlaceData.length > 0 
-    ? (datesAndPlaceData.find((item: { uri?: string; [key: string]: any }) => item.uri?.includes(id)) || datesAndPlaceData[0])
+    ? (datesAndPlaceData.find((item: { uri?: string; [key: string]: unknown }) => item.uri?.includes(id)) || datesAndPlaceData[0])
     : null;
   
   // Properties with fallback
@@ -345,6 +344,32 @@ export default async function DetailPage({ params }: PageProps) {
   const label = getLabel();
   const fullUri = properties.uri || `https://w3id.org/OntoExhibit#${decodedType}/${id}`;
 
+  // Collect all SPARQL queries used
+  const allSparqlQueries = [
+    dataProperties?.sparql,
+    roles?.sparql,
+    actorDetails?.sparql,
+    artworkDetails?.sparql,
+    datesAndPlace?.sparql,
+    institutionDetails?.sparql,
+    institutionExhibitions?.sparql,
+    institutionLenderExhibitions?.sparql,
+    institutionOwnedArtworks?.sparql,
+    personCollaborators?.sparql,
+    institutionCollaboratorsData?.sparql,
+    personExecutivePositions?.sparql,
+    institutionExecutivesData?.sparql,
+    institutionParentData?.sparql,
+    institutionChildrenData?.sparql,
+    catalogDetails?.sparql,
+    exhibitionCatalogs?.sparql,
+    producedCatalogs?.sparql,
+    catalogExhibitions?.sparql,
+    companyDetails?.sparql,
+    companyMuseographerExhibitions?.sparql,
+    exhibitionMuseographers?.sparql
+  ].filter(Boolean) as string[];
+
   // ====================
   // Render
   // ====================
@@ -368,8 +393,14 @@ export default async function DetailPage({ params }: PageProps) {
                 </span>
               </div>
               <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">{label}</h1>
-              <div className="mt-2">
+              <div className="mt-2 flex items-center gap-3 flex-wrap">
                 <CopyUri uri={fullUri} label="URI" />
+                <DetailExportButton
+                  entityLabel={label}
+                  entityType={decodedType}
+                  entityData={properties}
+                  sparqlQueries={allSparqlQueries}
+                />
               </div>
             </div>
           </div>
@@ -422,7 +453,6 @@ export default async function DetailPage({ params }: PageProps) {
                             label="Museographer" 
                             entities={museographerEntities} 
                             colorClass="text-teal-600 hover:text-teal-800"
-                            fallbackType="company"
                           />
                         </DefinitionList>
                       </SidebarCard>
@@ -542,7 +572,6 @@ export default async function DetailPage({ params }: PageProps) {
                                 <EntityLink 
                                   label={artwork.label} 
                                   uri={artwork.uri} 
-                                  fallbackType="artwork"
                                   className="text-gray-900 hover:text-pink-600 hover:underline"
                                 />
                               </div>

@@ -46,7 +46,6 @@ export function CompanyDetails({ data }: CompanyDetailsProps) {
                   <EntityLink 
                     label={cleanLabel(company.location_label)} 
                     uri={company.location_uri} 
-                    fallbackType="site" 
                     className="text-teal-600 hover:text-teal-800 hover:underline" 
                   />
                 ) : (

@@ -13,19 +13,19 @@ interface ItemCardProps {
   type: string;
   imageUrl?: string;
   subtitle?: string;
-  extra?: Record<string, any>;
+  extra?: Record<string, unknown>;
   icon?: React.ElementType;
   color?: string;
 }
 
 // Client component wrapper for the expandable part
-function ExpandableExtra({ extra }: { extra: Record<string, any> }) {
+function ExpandableExtra({ extra }: { extra: Record<string, unknown> }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const MAX_VISIBLE_TAGS = 3;
   
   // Check if there's any content to show
-  const hasContent = Object.entries(extra).some(([_, v]) => 
-    v && (!Array.isArray(v) || v.length > 0)
+  const hasContent = Object.entries(extra).some(([, v]) => 
+    v && (!Array.isArray(v) || (v as unknown[]).length > 0)
   );
   
   if (!hasContent) return null;
@@ -58,7 +58,7 @@ function ExpandableExtra({ extra }: { extra: Record<string, any> }) {
                 <span className="font-bold text-gray-800 text-xs uppercase tracking-wide">{k}:</span>
                 {isArray ? (
                   <div className="flex flex-wrap gap-1.5">
-                    {visibleItems.map((val: React.ReactNode, i: number) => (
+                    {(visibleItems as unknown[]).map((val: unknown, i: number) => (
                       <span key={i} className="bg-gradient-to-r from-indigo-50 to-purple-50 px-3 py-1.5 rounded-lg text-indigo-700 border border-indigo-200/50 text-xs font-medium shadow-sm hover:shadow-md transition-shadow">
                         {String(val)}
                       </span>

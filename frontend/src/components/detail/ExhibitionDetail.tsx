@@ -11,7 +11,6 @@ import {
   EntityList,
   DefinitionList,
   PropertyRow,
-  parseLinkedEntities 
 } from "./DetailUtils";
 import EntityLink from "@/components/EntityLink";
 import type { LinkedEntity } from "@/lib/types";
@@ -70,7 +69,6 @@ export function ExhibitionSidebar({
               label="Curators" 
               entities={curators} 
               colorClass="text-indigo-600 hover:text-indigo-800"
-              fallbackType="actant"
             />
           </DefinitionList>
         </SidebarCard>
@@ -84,7 +82,6 @@ export function ExhibitionSidebar({
               label="Organizers" 
               entities={organizers} 
               colorClass="text-blue-600 hover:text-blue-800"
-              fallbackType="actant"
             />
           </DefinitionList>
         </SidebarCard>
@@ -98,7 +95,6 @@ export function ExhibitionSidebar({
               label="Funders" 
               entities={funders} 
               colorClass="text-green-600 hover:text-green-800"
-              fallbackType="actant"
             />
           </DefinitionList>
         </SidebarCard>
@@ -152,7 +148,7 @@ export function ExhibitionDetails({ data }: ExhibitionDetailsProps) {
                 <span className="text-xs font-semibold text-gray-500 uppercase">Location</span>
                 <span className="text-gray-900">
                   {item.place_uri ? (
-                    <EntityLink label={cleanLabel(item.label_place)} uri={item.place_uri} fallbackType="site" className="text-teal-600 hover:text-teal-800 hover:underline" />
+                    <EntityLink label={cleanLabel(item.label_place)} uri={item.place_uri} className="text-teal-600 hover:text-teal-800 hover:underline" />
                   ) : (
                     cleanLabel(item.label_place)
                   )}
@@ -166,7 +162,7 @@ export function ExhibitionDetails({ data }: ExhibitionDetailsProps) {
                 <span className="text-xs font-semibold text-gray-500 uppercase">Venue</span>
                 <span className="text-gray-900">
                   {item.venue_uri ? (
-                    <EntityLink label={cleanLabel(item.venue_label)} uri={item.venue_uri} fallbackType="institution" className="text-teal-600 hover:text-teal-800 hover:underline" />
+                    <EntityLink label={cleanLabel(item.venue_label)} uri={item.venue_uri} className="text-teal-600 hover:text-teal-800 hover:underline" />
                   ) : (
                     cleanLabel(item.venue_label)
                   )}

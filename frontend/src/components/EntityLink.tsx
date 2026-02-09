@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { cleanLabel } from "@/lib/utils";
+import { ExternalLink } from "lucide-react";
 
 // Helper to extract entity ID from URI for frontend links
 export function getEntityLink(uri: string): { type: string; id: string } | null {
@@ -50,7 +51,6 @@ export function getEntityLink(uri: string): { type: string; id: string } | null 
 interface EntityLinkProps {
   label: string;
   uri: string | null;
-  fallbackType?: string;
   className?: string;
   children?: React.ReactNode;
 }
@@ -58,7 +58,6 @@ interface EntityLinkProps {
 export default function EntityLink({ 
   label, 
   uri, 
-  fallbackType = 'actor',
   className = "hover:text-indigo-600 hover:underline",
   children
 }: EntityLinkProps) {
