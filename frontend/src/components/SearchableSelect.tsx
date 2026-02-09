@@ -19,6 +19,22 @@ interface SearchableSelectProps {
   required?: boolean;
 }
 
+// Map entity types to API endpoints (using correct English endpoints)
+const endpointMap: Record<string, string> = {
+  artwork: "/all_artworks",
+  actant: "/all_persons",
+  institution: "/all_institutions",
+  exhibition: "/all_exhibitions",
+};
+
+// Map entity types to form route (for "Create New" functionality)
+const formRouteMap: Record<string, string> = {
+  artwork: "/insert?type=artwork",
+  actant: "/insert?type=actant",
+  institution: "/insert?type=institution",
+  exhibition: "/insert?type=exhibition",
+};
+
 export function SearchableSelect({
   label,
   entityType,
@@ -35,22 +51,6 @@ export function SearchableSelect({
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Map entity types to API endpoints (using correct English endpoints)
-  const endpointMap: Record<string, string> = {
-    artwork: "/all_artworks",
-    actant: "/all_persons",
-    institution: "/all_institutions",
-    exhibition: "/all_exhibitions",
-  };
-
-  // Map entity types to form route (for "Create New" functionality)
-  const formRouteMap: Record<string, string> = {
-    artwork: "/insert?type=artwork",
-    actant: "/insert?type=actant",
-    institution: "/insert?type=institution",
-    exhibition: "/insert?type=exhibition",
-  };
 
   // Handle creating a new entity when not found
   const handleCreateNew = () => {
@@ -106,7 +106,7 @@ export function SearchableSelect({
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [endpointMap]);
+  }, []);
 
   const handleSelect = (item: { uri: string; label: string }) => {
     if (multiple) {

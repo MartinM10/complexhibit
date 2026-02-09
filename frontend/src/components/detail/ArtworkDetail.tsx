@@ -11,7 +11,7 @@ import {
   DefinitionList,
   parseLinkedEntities 
 } from "./DetailUtils";
-import type { LinkedEntity } from "@/lib/types";
+
 interface ArtworkData {
   label?: string;
   label_starting_date?: string;

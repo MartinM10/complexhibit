@@ -5,7 +5,7 @@
 import { cleanLabel } from "@/lib/utils";
 import { SidebarCard, DefinitionList, SectionWrapper, SectionHeader, PropertyRow, EntityList } from "./DetailUtils";
 import EntityLink from "@/components/EntityLink";
-import { LinkedEntity } from "@/lib/types";
+import type { LinkedEntity } from "@/lib/types";
 
 interface ExhibitionItem {
   uri: string;
@@ -270,7 +270,6 @@ export function InstitutionCollaborators({ collaborators }: InstitutionCollabora
           label="Persons" 
           entities={collaborators} 
           colorClass="text-indigo-600 hover:text-indigo-800"
-          fallbackType="actant"
         />
       </DefinitionList>
     </SidebarCard>

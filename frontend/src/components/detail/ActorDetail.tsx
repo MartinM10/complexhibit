@@ -31,7 +31,7 @@ export function ActorRolesSidebar({ roleData }: ActorRolesSidebarProps) {
   };
 
   // Filter out roles with no items
-  const validRoles = Object.entries(roleData).filter(([_, items]) => 
+  const validRoles = Object.entries(roleData).filter(([, items]) => 
     Array.isArray(items) && items.length > 0
   );
   
@@ -46,7 +46,6 @@ export function ActorRolesSidebar({ roleData }: ActorRolesSidebarProps) {
               label="Exhibitions" 
               entities={items} 
               colorClass={getColorClass(role)}
-              fallbackType="exhibition"
             />
           </DefinitionList>
         </SidebarCard>
@@ -244,7 +243,6 @@ export function ActorCollaborators({ collaborators }: ActorCollaboratorsProps) {
             label="Memberships" 
             entities={memberships} 
             colorClass="text-emerald-600 hover:text-emerald-800"
-            fallbackType="actant"
           />
         )}
         
@@ -253,7 +251,6 @@ export function ActorCollaborators({ collaborators }: ActorCollaboratorsProps) {
             label="Affiliations" 
             entities={affiliations} 
             colorClass="text-indigo-600 hover:text-indigo-800"
-            fallbackType="institution"
           />
         )}
       </DefinitionList>
@@ -275,7 +272,6 @@ export function ActorExecutivePositions({ positions }: ActorExecutivePositionsPr
           label="Institutions" 
           entities={positions} 
           colorClass="text-amber-600 hover:text-amber-800"
-          fallbackType="institution"
         />
       </DefinitionList>
     </SidebarCard>

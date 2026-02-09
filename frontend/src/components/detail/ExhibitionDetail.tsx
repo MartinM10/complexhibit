@@ -55,7 +55,6 @@ export function ExhibitionSidebar({
               label="Artists" 
               entities={exhibitors} 
               colorClass="text-pink-600 hover:text-pink-800"
-              fallbackType="actant"
             />
           </DefinitionList>
         </SidebarCard>
@@ -108,7 +107,6 @@ export function ExhibitionSidebar({
               label="Lenders" 
               entities={lenders} 
               colorClass="text-purple-600 hover:text-purple-800"
-              fallbackType="actant"
             />
           </DefinitionList>
         </SidebarCard>

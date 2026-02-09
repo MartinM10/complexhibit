@@ -78,7 +78,6 @@ export function CompanySidebar({ museographerExhibitions = [] }: CompanySidebarP
               label="Exhibitions" 
               entities={museographerExhibitions} 
               colorClass="text-indigo-600 hover:text-indigo-800"
-              fallbackType="exhibition"
             />
           </DefinitionList>
         </SidebarCard>
