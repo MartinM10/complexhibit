@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { cleanLabel } from "@/lib/utils";
-import { ExternalLink } from "lucide-react";
+
 
 // Helper to extract entity ID from URI for frontend links
 export function getEntityLink(uri: string): { type: string; id: string } | null {

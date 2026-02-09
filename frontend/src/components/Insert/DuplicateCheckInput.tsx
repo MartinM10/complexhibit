@@ -87,7 +87,7 @@ export function DuplicateCheckInput({
         return `/detail/${parts[1]}`;
       }
       return `/detail?uri=${encodeURIComponent(uri)}`;
-    } catch (e) {
+    } catch {
       return "#";
     }
   };
