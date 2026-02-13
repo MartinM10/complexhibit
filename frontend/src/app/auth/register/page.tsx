@@ -4,9 +4,9 @@
  * Registration page with email/password.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle, Loader2, Building } from "lucide-react";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -15,14 +15,51 @@ export default function RegisterPage() {
     password: "",
     confirmPassword: "",
     fullName: "",
+    userType: "individual",
+    institutionType: "",
   });
+  const [institutionTypes, setInstitutionTypes] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const FALLBACK_INSTITUTION_TYPES = [
+    "Museum",
+    "University",
+    "Art School",
+    "Art Center",
+    "Cultural Center",
+    "Foundation",
+    "Library",
+    "Archive",
+    "Gallery",
+    "Other"
+  ];
+
+  useEffect(() => {
+    const fetchInstitutionTypes = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+        const response = await fetch(`${apiUrl}/filter_options/institution_type`);
+        if (response.ok) {
+          const data = await response.json();
+          const types = data.data || [];
+          setInstitutionTypes(types.length > 0 ? types : FALLBACK_INSTITUTION_TYPES);
+        } else {
+          setInstitutionTypes(FALLBACK_INSTITUTION_TYPES);
+        }
+      } catch (error) {
+        console.error("Failed to fetch institution types", error);
+        setInstitutionTypes(FALLBACK_INSTITUTION_TYPES);
+      }
+    };
+
+    fetchInstitutionTypes();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +90,7 @@ export default function RegisterPage() {
           username: formData.username,
           password: formData.password,
           full_name: formData.fullName || null,
+          institution_type: formData.userType === 'institution' ? formData.institutionType : null,
         }),
       });
 
@@ -175,11 +213,85 @@ export default function RegisterPage() {
                 name="fullName"
                 type="text"
                 value={formData.fullName}
-                onChange={handleChange}
                 className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 placeholder="Your full name"
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                User Type *
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <label className={`
+                  relative flex items-center justify-center px-4 py-3 border rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none transition-all
+                  ${formData.userType === 'individual' ? 'border-indigo-500 ring-2 ring-indigo-500 bg-indigo-50' : 'border-gray-300'}
+                `}>
+                  <input
+                    type="radio"
+                    name="userType"
+                    value="individual"
+                    checked={formData.userType === 'individual'}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center gap-2">
+                    <User className={`h-5 w-5 ${formData.userType === 'individual' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                    <span className={`text-sm font-medium ${formData.userType === 'individual' ? 'text-indigo-900' : 'text-gray-900'}`}>
+                      Individual
+                    </span>
+                  </div>
+                </label>
+                
+                <label className={`
+                  relative flex items-center justify-center px-4 py-3 border rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none transition-all
+                  ${formData.userType === 'institution' ? 'border-indigo-500 ring-2 ring-indigo-500 bg-indigo-50' : 'border-gray-300'}
+                `}>
+                  <input
+                    type="radio"
+                    name="userType"
+                    value="institution"
+                    checked={formData.userType === 'institution'}
+                    onChange={handleChange}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Building className={`h-5 w-5 ${formData.userType === 'institution' ? 'text-indigo-600' : 'text-gray-400'}`} />
+                    <span className={`text-sm font-medium ${formData.userType === 'institution' ? 'text-indigo-900' : 'text-gray-900'}`}>
+                      Institution
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {formData.userType === 'institution' && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                <label htmlFor="institutionType" className="block text-sm font-medium text-gray-700 mb-1">
+                  Institution Type *
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Building className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <select
+                    id="institutionType"
+                    name="institutionType"
+                    required={formData.userType === 'institution'}
+                    value={formData.institutionType}
+                    onChange={handleChange}
+                    className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  >
+                    <option value="">Select institution type</option>
+                    {institutionTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">

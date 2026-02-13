@@ -10,8 +10,12 @@ import Link from "next/link";
 import { LogIn, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
+import { useSearchParams } from "next/navigation";
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
   const { isAuthenticated, fetchUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,9 +25,9 @@ export default function LoginPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/");
+      router.push(callbackUrl);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, callbackUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +53,7 @@ export default function LoginPage() {
       
       // Force full page reload or at least fetch user
       await fetchUser();
-      window.location.href = "/";
+      window.location.href = callbackUrl;
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
