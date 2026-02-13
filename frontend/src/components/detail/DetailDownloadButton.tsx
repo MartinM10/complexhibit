@@ -2,6 +2,7 @@
 
 import { Download, ChevronDown, FileSpreadsheet, FileJson } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { trackEvent } from "@/lib/metrics";
 
 interface DetailDownloadButtonProps {
   /** Label of the entity */
@@ -75,6 +76,12 @@ export function DetailDownloadButton({
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     setIsOpen(false);
+    
+    trackEvent("download", { 
+      format: "json", 
+      type: entityType, 
+      label: entityLabel 
+    });
   };
 
   const downloadAsCSV = () => {
@@ -120,6 +127,12 @@ export function DetailDownloadButton({
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     setIsOpen(false);
+    
+    trackEvent("download", { 
+      format: "csv", 
+      type: entityType, 
+      label: entityLabel 
+    });
   };
 
   return (

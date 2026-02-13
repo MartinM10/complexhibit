@@ -10,6 +10,7 @@ import {
   downloadAsNTriples, 
   getTimestampFilename 
 } from "@/lib/downloadUtils";
+import { trackEvent } from "@/lib/metrics";
 
 type DownloadFormat = "csv" | "json" | "html" | "rdf" | "ntriples";
 
@@ -68,6 +69,13 @@ export function DownloadButton({
   const handleDownload = (format: DownloadFormat) => {
     const timestampedFilename = getTimestampFilename(filename);
     
+    trackEvent("download", { 
+      format, 
+      filename: timestampedFilename,
+      type: "search_results",
+      count: data?.length || 0
+    });
+
     switch (format) {
       case "csv":
         downloadAsCSV(data, timestampedFilename, sparqlQuery);
