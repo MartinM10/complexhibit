@@ -4,7 +4,6 @@ const API_URL = (typeof window === 'undefined' && process.env.API_URL)
 
 export async function fetchFromApi(endpoint: string, params: Record<string, string> = {}) {
   const url = new URL(`${API_URL}${endpoint}`);
-  //console.log(`Fetching from: ${url.toString()}`);
   Object.keys(params).forEach((key) => url.searchParams.append(key, params[key]));
 
   const response = await fetch(url.toString(), {
@@ -31,7 +30,6 @@ export async function getFromType(type: string, params: Record<string, string> =
   else if (type === 'actant' || type === 'actor' || type === 'human_actant' || type === 'person') endpoint = '/all_persons';
   else endpoint = `/get_object_any_type/${encodeURIComponent((type === 'person' ? 'human actant' : type).replace(/_/g, ' '))}`;
 
-  //console.log(`Mapped type '${type}' to endpoint: ${endpoint}`);
   return fetchFromApi(endpoint, params);
 }
 

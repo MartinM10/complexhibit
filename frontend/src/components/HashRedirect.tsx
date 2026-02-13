@@ -19,7 +19,6 @@ export default function HashRedirect() {
       const link = getEntityLink(dummyUri);
       
       if (link) {
-        console.log(`[HashRedirect] Redirecting from ${hash} to /detail/${link.type}/${link.id}`);
         // Redirect to the internal detail page
         router.push(`/detail/${link.type}/${link.id}`);
       }

@@ -13,7 +13,6 @@ export default function QueryLogger({ query, type }: QueryLoggerProps) {
   useEffect(() => {
     if (!DEBUG) return;
 
-    console.log(`[QueryLogger] Mounted for type: ${type}`);
     if (query) {
       console.log(`[SPARQL QUERY - ${type || 'General'}]:\n`, query);
     } else {

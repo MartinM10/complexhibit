@@ -6,7 +6,8 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Menu, X, Home, Search, Code, FileText, Users, LogIn, LogOut, Shield, User, PlusCircle, Map as MapIcon } from "lucide-react";
+import { Menu, X, Home, Search, Code, FileText, Users, LogIn, LogOut, Shield, User, PlusCircle, Map as MapIcon, BarChart } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -22,6 +23,7 @@ const navigation = [
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const pathname = usePathname();
   const { user, isAuthenticated, isAdmin, isLoading, logout } = useAuth();
 
   useEffect(() => {
@@ -73,13 +75,22 @@ export default function Navbar() {
               </Link>
             )}
             {isAdmin && (
-              <Link 
-                href="/admin/users" 
-                className="text-sm font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1.5 transition-colors"
-              >
-                <Shield className="h-4 w-4" />
-                Admin
-              </Link>
+              <>
+                <Link 
+                  href="/admin/users" 
+                  className="text-sm font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1.5 transition-colors"
+                >
+                  <Shield className="h-4 w-4" />
+                  Users
+                </Link>
+                <Link 
+                  href="/admin/metrics" 
+                  className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1.5 transition-colors"
+                >
+                  <BarChart className="h-4 w-4" />
+                  Metrics
+                </Link>
+              </>
             )}
           </div>
 
@@ -113,7 +124,7 @@ export default function Navbar() {
                   Register
                 </Link>
                 <Link 
-                  href="/auth/login" 
+                  href={`/auth/login?callbackUrl=${encodeURIComponent(pathname)}`}
                   className="text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                 >
                   <LogIn className="h-4 w-4" />
@@ -218,7 +229,7 @@ export default function Navbar() {
                 ) : (
                   <div className="space-y-2">
                     <Link
-                      href="/auth/login"
+                      href={`/auth/login?callbackUrl=${encodeURIComponent(pathname)}`}
                       className="-mx-3 flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-3 py-2.5 text-base font-medium text-white hover:bg-indigo-700"
                       onClick={() => setMobileMenuOpen(false)}
                     >

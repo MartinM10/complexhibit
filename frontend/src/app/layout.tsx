@@ -19,6 +19,9 @@ export const metadata: Metadata = {
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Suspense } from "react";
+import { AuthProvider } from "@/hooks/useAuth";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 
 export default function RootLayout({
   children,
@@ -28,11 +31,16 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
-        <Navbar />
-        <main className="flex-grow bg-gray-50">
-          {children}
-        </main>
-        <Footer />
+        <AuthProvider>
+          <Suspense fallback={null}>
+            <AnalyticsTracker />
+          </Suspense>
+          <Navbar />
+          <main className="flex-grow bg-gray-50">
+            {children}
+          </main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

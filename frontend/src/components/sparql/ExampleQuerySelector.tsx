@@ -31,7 +31,6 @@ export function ExampleQuerySelector({ onSelect, className = "" }: ExampleQueryS
       setLoading(true);
       try {
         const resp = await getExampleQueries();
-        console.log("Fetched queries:", resp.data);
         setQueries(resp.data);
       } catch (err) {
         console.error("Failed to fetch example queries:", err);

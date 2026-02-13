@@ -1,10 +1,3 @@
-/**
- * Dynamic detail page for various entity types.
- * 
- * Handles exhibitions, artworks, actors/persons, and institutions.
- * Uses entity-specific components extracted to src/components/detail/
- */
-
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { 
@@ -36,9 +29,9 @@ import {
 } from "@/lib/api";
 import { cleanLabel, unCamel } from "@/lib/utils";
 import MapSection from '@/components/MapSection';
-import { CopyUri } from "@/components/CopyUri";
 import QueryLogger from "@/components/QueryLogger";
 import EntityLink from "@/components/EntityLink";
+import { DetailClient } from "@/components/detail/DetailClient"; 
 
 // Import entity-specific components
 import {
@@ -68,7 +61,6 @@ import {
   SidebarCard,
   DefinitionList,
   EntityList,
-  DetailExportButton
 } from "@/components/detail";
 
 interface PageProps {
@@ -383,30 +375,13 @@ export default async function DetailPage({ params }: PageProps) {
           <ArrowLeft className="h-4 w-4" /> Back to list
         </Link>
 
-        <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-10 text-white">
-            <div className="flex flex-col gap-3 mb-4">
-              <div className="flex items-center gap-3 opacity-90">
-                <span className="uppercase tracking-wider text-xs font-bold bg-white/20 px-3 py-1 rounded-full">
-                  {unCamel(decodedType)}
-                </span>
-              </div>
-              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">{label}</h1>
-              <div className="mt-2 flex items-center gap-3 flex-wrap">
-                <CopyUri uri={fullUri} label="URI" />
-                <DetailExportButton
-                  entityLabel={label}
-                  entityType={decodedType}
-                  entityData={properties}
-                  sparqlQueries={allSparqlQueries}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="px-8 py-8">
+        <DetailClient
+          label={label}
+          type={decodedType}
+          fullUri={fullUri}
+          properties={properties}
+          sparqlQueries={allSparqlQueries}
+        >
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               
               {/* Left Column: Sidebar */}
@@ -584,8 +559,7 @@ export default async function DetailPage({ params }: PageProps) {
                 )}
               </div>
             </div>
-          </div>
-        </div>
+        </DetailClient>
       </div>
     </div>
   );
