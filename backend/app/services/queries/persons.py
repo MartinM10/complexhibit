@@ -5,7 +5,7 @@ from rdflib import RDF, RDFS
 from app.core.config import settings
 from app.models.domain import Persona
 from app.services.queries.base import OBJECT_PROPERTIES, PREFIXES, URI_ONTOLOGIA, uri_ontologia
-from app.utils.helpers import convertir_fecha, hash_sha256, pascal_case_to_camel_case, validar_fecha
+from app.utils.helpers import convertir_fecha, hash_sha256, pascal_case_to_camel_case, validar_fecha, normalize_name
 from app.services.queries.utils import escape_sparql_string
 
 
@@ -504,38 +504,41 @@ class PersonQueries:
         else:
             persona.type = "human actant"
 
-        data_to_hash = f"{persona.name} - {persona.type}"
+        normalized = normalize_name(persona.name)
+        data_to_hash = f"{normalized} - {persona.type}"
         sujeto = f'{uri_ontologia}{quote("human_actant").lower()}/{hash_sha256(data_to_hash)}'
 
         if "group" == persona.type.lower():
             POST_PERSONA += (
-                f"\t\t{sujeto}> <{RDF.type}> <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> .\n"
+                f"\t\t<{sujeto}> <{RDF.type}> <https://cidoc-crm.org/cidoc-crm/7.1.1/E74_Group> .\n"
             )
-        elif "individual" == persona.type.lower():
+        elif "individual" == persona.type.lower() or "person" == persona.type.lower():
             POST_PERSONA += (
-                f"\t\t{sujeto}> <{RDF.type}> <https://cidoc-crm.org/cidoc-crm/7.1.1/E21_Person> .\n"
+                f"\t\t<{sujeto}> <{RDF.type}> <https://cidoc-crm.org/cidoc-crm/7.1.1/E21_Person> .\n"
             )
         else:
-            POST_PERSONA += f"\t\t{sujeto}> <{RDF.type}> {uri_ontologia}Human_Actant> .\n"
+            POST_PERSONA += f"\t\t<{sujeto}> <{RDF.type}> <{uri_ontologia}Human_Actant> .\n"
 
         if persona.name:
-            POST_PERSONA += f'\t\t{sujeto}> <{RDFS.label}> "{persona.name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
-            POST_PERSONA += f'\t\t{sujeto}> {uri_ontologia}person_name> "{persona.name.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+            escaped_name = escape_sparql_string(persona.name.title())
+            POST_PERSONA += f'\t\t<{sujeto}> <{RDFS.label}> "{escaped_name}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+            POST_PERSONA += f'\t\t<{sujeto}> <{uri_ontologia}person_name> "{escaped_name}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
 
         if persona.country or persona.birth_date:
-            POST_PERSONA += f"\t\t{sujeto}> {uri_ontologia}hasBirth> {sujeto}/birth> .\n"
-            POST_PERSONA += f"\t\t{sujeto}/birth> {uri_ontologia}isBirthOf> {sujeto}> .\n"
+            POST_PERSONA += f"\t\t<{sujeto}> <{uri_ontologia}hasBirth> <{sujeto}/birth> .\n"
+            POST_PERSONA += f"\t\t<{sujeto}/birth> <{uri_ontologia}isBirthOf> <{sujeto}> .\n"
 
             if persona.country:
+                escaped_country = escape_sparql_string(persona.country.title())
                 uri_lugar = (
                     f"{uri_ontologia}territorialEntity/{hash_sha256(persona.country.title())}"
                 )
                 POST_PERSONA += (
-                    f"\t\t{uri_lugar}> <{RDF.type}> {uri_ontologia}TerritorialEntity> .\n"
+                    f"\t\t<{uri_lugar}> <{RDF.type}> <{uri_ontologia}TerritorialEntity> .\n"
                 )
-                POST_PERSONA += f'\t\t{uri_lugar}> <{RDFS.label}> "{persona.country.title()}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
-                POST_PERSONA += f"\t\t{sujeto}/birth> <https://w3id.org/OntoExhibit#hasPlaceOfBirth> {uri_lugar}> .\n"
-                POST_PERSONA += f"\t\t{uri_lugar}> <https://w3id.org/OntoExhibit#isPlaceOfBirthOf> {sujeto}/birth> .\n"
+                POST_PERSONA += f'\t\t<{uri_lugar}> <{RDFS.label}> "{escaped_country}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+                POST_PERSONA += f"\t\t<{sujeto}/birth> <https://w3id.org/OntoExhibit#hasPlaceOfBirth> <{uri_lugar}> .\n"
+                POST_PERSONA += f"\t\t<{uri_lugar}> <https://w3id.org/OntoExhibit#isPlaceOfBirthOf> <{sujeto}/birth> .\n"
 
             if persona.birth_date:
                 fecha = validar_fecha(persona.birth_date)
@@ -564,15 +567,15 @@ class PersonQueries:
                         POST_PERSONA += f'\t\t{uri_fecha} <{RDFS.label}> "{fecha_str}"^^<http://www.w3.org/2001/XMLSchema#date> .\n'
 
                     POST_PERSONA += (
-                        f"\t\t{sujeto}/birth> {uri_ontologia}hasTimeSpan> {uri_fecha} .\n"
+                        f"\t\t<{sujeto}/birth> <{uri_ontologia}hasTimeSpan> {uri_fecha} .\n"
                     )
                     POST_PERSONA += (
-                        f"\t\t{uri_fecha} {uri_ontologia}isTimeSpanOf> {sujeto}/birth> .\n"
+                        f"\t\t{uri_fecha} <{uri_ontologia}isTimeSpanOf> <{sujeto}/birth> .\n"
                     )
 
         if persona.death_date:
-            POST_PERSONA += f"\t\t{sujeto}> {uri_ontologia}hasDeath> {sujeto}/death> .\n"
-            POST_PERSONA += f"\t\t{sujeto}/death> {uri_ontologia}isDeathOf> {sujeto}> .\n"
+            POST_PERSONA += f"\t\t<{sujeto}> <{uri_ontologia}hasDeath> <{sujeto}/death> .\n"
+            POST_PERSONA += f"\t\t<{sujeto}/death> <{uri_ontologia}isDeathOf> <{sujeto}> .\n"
 
             fecha = validar_fecha(persona.death_date)
             if fecha:
@@ -593,21 +596,83 @@ class PersonQueries:
                     )
                     POST_PERSONA += f'\t\t{uri_fecha} <{RDFS.label}> "{fecha_str}"^^<http://www.w3.org/2001/XMLSchema#date> .\n'
 
-                POST_PERSONA += f"\t\t{sujeto}/death> {uri_ontologia}hasTimeSpan> {uri_fecha} .\n"
+                POST_PERSONA += f"\t\t<{sujeto}/death> <{uri_ontologia}hasTimeSpan> {uri_fecha} .\n"
                 POST_PERSONA += (
-                    f"\t\t{uri_fecha} {uri_ontologia}isTimeSpanOf> {sujeto}/death> .\n"
+                    f"\t\t{uri_fecha} <{uri_ontologia}isTimeSpanOf> <{sujeto}/death> .\n"
                 )
 
         if persona.activity:
             if isinstance(persona.activity, list):
                 for act in persona.activity:
-                    POST_PERSONA += f'\t\t{sujeto}> <https://w3id.org/OntoExhibit#activity_type> "{act}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+                    POST_PERSONA += f'\t\t<{sujeto}> <https://w3id.org/OntoExhibit#activity_type> "{act}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
             else:
-                POST_PERSONA += f'\t\t{sujeto}> <https://w3id.org/OntoExhibit#activity_type> "{persona.activity}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+                POST_PERSONA += f'\t\t<{sujeto}> <https://w3id.org/OntoExhibit#activity_type> "{persona.activity}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
 
         if persona.gender:
-            POST_PERSONA += f'\t\t{sujeto}> <https://w3id.org/OntoExhibit#gender> "{persona.gender}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
+            POST_PERSONA += f'\t\t<{sujeto}> <https://w3id.org/OntoExhibit#gender> "{persona.gender}"^^<http://www.w3.org/2001/XMLSchema#string> .\n'
 
         POST_PERSONA += "\t}\n}"
         uri = f"https://w3id.org/OntoExhibit#{quote('human_actant').lower()}/{hash_sha256(data_to_hash)}"
         return POST_PERSONA, uri
+
+    @staticmethod
+    def delete_persona(uri: str) -> list:
+        """Generate SPARQL DELETE queries to remove all triples for a person.
+        
+        Args:
+            uri: The full URI of the person to delete
+            
+        Returns:
+            List of SPARQL DELETE query strings to execute in order
+        """
+        # Clean up the URI - remove any surrounding brackets if present
+        clean_uri = uri.strip().lstrip('<').rstrip('>')
+        graph_url = settings.DEFAULT_GRAPH_URL
+        
+        queries = []
+        
+        # Delete all triples where this entity is the subject
+        queries.append(f"""
+            WITH <{graph_url}>
+            DELETE {{
+                <{clean_uri}> ?p ?o .
+            }}
+            WHERE {{
+                <{clean_uri}> ?p ?o .
+            }}
+        """)
+        
+        # Delete all triples where this entity is the object
+        queries.append(f"""
+            WITH <{graph_url}>
+            DELETE {{
+                ?s ?p <{clean_uri}> .
+            }}
+            WHERE {{
+                ?s ?p <{clean_uri}> .
+            }}
+        """)
+        
+        # Delete birth-related triples
+        queries.append(f"""
+            WITH <{graph_url}>
+            DELETE {{
+                <{clean_uri}/birth> ?p ?o .
+            }}
+            WHERE {{
+                <{clean_uri}/birth> ?p ?o .
+            }}
+        """)
+        
+        # Delete death-related triples
+        queries.append(f"""
+            WITH <{graph_url}>
+            DELETE {{
+                <{clean_uri}/death> ?p ?o .
+            }}
+            WHERE {{
+                <{clean_uri}/death> ?p ?o .
+            }}
+        """)
+        
+        return queries

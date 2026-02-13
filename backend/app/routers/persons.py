@@ -125,6 +125,36 @@ async def create_person(
         raise HTTPException(status_code=500, detail=f"Error adding person: {str(e)}")
 
 
+@router.put("/update_person", status_code=status.HTTP_200_OK)
+async def update_person(
+    persona: Persona, 
+    client: SparqlClient = Depends(get_sparql_client),
+    user: User = Depends(require_user)
+):
+    """Update an existing person in the knowledge graph.
+    
+    This performs a delete of existing triples followed by re-insert with new data.
+    """
+    try:
+        if not persona.uri:
+            raise HTTPException(status_code=400, detail="URI is required for update")
+        
+        # Delete existing triples for this entity (execute each query separately)
+        delete_queries = PersonQueries.delete_persona(persona.uri)
+        for delete_query in delete_queries:
+            await client.update(delete_query)
+        
+        # Insert new triples with updated data
+        insert_query, uri = PersonQueries.add_persona(persona)
+        await client.update(insert_query)
+        
+        return {"uri": uri, "label": persona.name, "updated": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating person: {str(e)}")
+
+
 @router.get("/get_actor_roles/{id:path}")
 async def get_actor_roles(id: str, client: SparqlClient = Depends(get_sparql_client)):
     """Get all exhibitions and artworks where the actor participated in any role."""

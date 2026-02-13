@@ -4,7 +4,7 @@ from rdflib import RDF, RDFS
 
 from app.core.config import settings
 from app.services.queries.base import OBJECT_PROPERTIES, URI_ONTOLOGIA, uri_ontologia
-from app.utils.helpers import convertir_fecha, hash_sha256, pascal_case_to_camel_case
+from app.utils.helpers import convertir_fecha, hash_sha256, normalize_name, pascal_case_to_camel_case
 
 
 def escape_sparql_string(value: str) -> str:
@@ -114,6 +114,7 @@ def add_any_type(arg, type_arg):
         # Fallback or default
         tipo_sujeto = type_arg.lower().replace(" ", "_") if type_arg else "thing"
 
+    normalized = normalize_name(arg.name) if hasattr(arg, "name") and arg.name else ""
     if hasattr(arg, "type") and arg.type:
         # If type is a list, take the first one or join? Original code uses arg.type directly in string
         # Assuming arg.type is a string here based on usage
@@ -121,9 +122,9 @@ def add_any_type(arg, type_arg):
             t = arg.type[0]
         else:
             t = arg.type
-        data_to_hash = f"{arg.name} - {t}"
+        data_to_hash = f"{normalized} - {t}"
     else:
-        data_to_hash = f"{arg.name} - {tipo_sujeto.replace('_', ' ')}"
+        data_to_hash = f"{normalized} - {tipo_sujeto.replace('_', ' ')}"
 
     sujeto = f"{uri_ontologia}{quote(tipo_sujeto)}/{hash_sha256(data_to_hash)}>"
 

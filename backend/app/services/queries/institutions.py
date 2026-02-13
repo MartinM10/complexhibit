@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.models.domain import Institucion
 from app.services.queries.base import OBJECT_PROPERTIES, PREFIXES, URI_ONTOLOGIA, uri_ontologia
 from app.services.queries.utils import add_any_type, escape_sparql_string
-from app.utils.helpers import generate_hashed_id, hash_sha256
+from app.utils.helpers import generate_hashed_id, hash_sha256, normalize_name
 
 
 class InstitutionQueries:
@@ -328,7 +328,8 @@ class InstitutionQueries:
     def add_institucion(entidad: Institucion) -> str:
         # Generate ID
         if not entidad.id:
-            data_to_hash = f"{entidad.nombre} - institution"
+            normalized = normalize_name(entidad.nombre)
+            data_to_hash = f"{normalized}"
             entidad.id = hash_sha256(data_to_hash)
             
         # Base URI
@@ -421,3 +422,30 @@ class InstitutionQueries:
         query += "\t}\n}"
 
         return query
+
+    @staticmethod
+    def delete_institucion(uri: str) -> list:
+        """Generate SPARQL DELETE queries to remove all triples for an institution."""
+        clean_uri = uri.strip().lstrip('<').rstrip('>')
+        graph_url = settings.DEFAULT_GRAPH_URL
+        
+        queries = []
+        queries.append(f"""
+            WITH <{graph_url}>
+            DELETE {{
+                <{clean_uri}> ?p ?o .
+            }}
+            WHERE {{
+                <{clean_uri}> ?p ?o .
+            }}
+        """)
+        queries.append(f"""
+            WITH <{graph_url}>
+            DELETE {{
+                ?s ?p <{clean_uri}> .
+            }}
+            WHERE {{
+                ?s ?p <{clean_uri}> .
+            }}
+        """)
+        return queries

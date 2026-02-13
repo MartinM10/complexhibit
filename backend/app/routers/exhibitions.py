@@ -122,6 +122,33 @@ async def create_exhibition(
         raise HTTPException(status_code=500, detail=f"Error adding exhibition: {str(e)}")
 
 
+@router.put("/update_exhibition", status_code=status.HTTP_200_OK)
+async def update_exhibition(
+    exposicion: Exposicion, 
+    client: SparqlClient = Depends(get_sparql_client),
+    user: User = Depends(require_user)
+):
+    """Update an existing exhibition in the knowledge graph."""
+    try:
+        if not exposicion.uri:
+            raise HTTPException(status_code=400, detail="URI is required for update")
+        
+        # Delete existing triples for this entity (execute each query separately)
+        delete_queries = ExhibitionQueries.delete_exposicion(exposicion.uri)
+        for delete_query in delete_queries:
+            await client.update(delete_query)
+        
+        # Insert new triples with updated data
+        insert_query, uri = ExhibitionQueries.add_exposicion(exposicion)
+        await client.update(insert_query)
+        
+        return {"uri": uri, "label": exposicion.name, "updated": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating exhibition: {str(e)}")
+
+
 @router.get("/get_exhibition_museographers/{id:path}")
 async def get_exhibition_museographers(id: str, client: SparqlClient = Depends(get_sparql_client)):
     """Get companies that provided museography services for this exhibition."""

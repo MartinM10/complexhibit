@@ -184,6 +184,7 @@ async def get_object_any_type(
     try:
         response = await client.query(query)
         flat_data = parse_sparql_response(response)
+        print(f"DEBUG: get_object_any_type({type}, {id}) response: {flat_data}")
         
         # Pivot data: convert list of {p, o} to single dict {p: o}
         # This matches what frontend expects (properties object)

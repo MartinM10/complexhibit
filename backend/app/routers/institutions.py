@@ -99,6 +99,33 @@ async def create_institution(
         raise HTTPException(status_code=500, detail=f"Error adding institution: {str(e)}")
 
 
+@router.put("/update_institution", status_code=status.HTTP_200_OK)
+async def update_institution(
+    entidad: Institucion, 
+    client: SparqlClient = Depends(get_sparql_client),
+    user: User = Depends(require_user)
+):
+    """Update an existing institution in the knowledge graph."""
+    try:
+        if not entidad.uri:
+            raise HTTPException(status_code=400, detail="URI is required for update")
+        
+        # Delete existing triples for this entity (execute each query separately)
+        delete_queries = InstitutionQueries.delete_institucion(entidad.uri)
+        for delete_query in delete_queries:
+            await client.update(delete_query)
+        
+        # Insert new triples with updated data
+        insert_query = InstitutionQueries.add_institucion(entidad)
+        await client.update(insert_query)
+        
+        return {"uri": entidad.uri, "label": entidad.nombre, "updated": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating institution: {str(e)}")
+
+
 @router.get("/get_institution/{id:path}")
 async def get_institution(id: str, client: SparqlClient = Depends(get_sparql_client)):
     """Get detailed information for a specific institution by ID."""

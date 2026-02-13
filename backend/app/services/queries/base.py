@@ -8,7 +8,7 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 """
 
 URI_ONTOLOGIA = settings.URI_ONTOLOGIA
-uri_ontologia = f"<{URI_ONTOLOGIA}"
+uri_ontologia = URI_ONTOLOGIA
 
 OBJECT_PROPERTIES = [
     "isRoleOf",

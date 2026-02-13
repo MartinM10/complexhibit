@@ -116,6 +116,33 @@ async def create_artwork(
         raise HTTPException(status_code=500, detail=f"Error adding artwork: {str(e)}")
 
 
+@router.put("/update_artwork", status_code=status.HTTP_200_OK)
+async def update_artwork(
+    obra: ObraDeArte, 
+    client: SparqlClient = Depends(get_sparql_client),
+    user: User = Depends(require_user)
+):
+    """Update an existing artwork in the knowledge graph."""
+    try:
+        if not obra.uri:
+            raise HTTPException(status_code=400, detail="URI is required for update")
+        
+        # Delete existing triples for this entity (execute each query separately)
+        delete_queries = ArtworkQueries.delete_obra(obra.uri)
+        for delete_query in delete_queries:
+            await client.update(delete_query)
+        
+        # Insert new triples with updated data
+        insert_query, uri = ArtworkQueries.add_obra(obra)
+        await client.update(insert_query)
+        
+        return {"uri": uri, "label": obra.name, "updated": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating artwork: {str(e)}")
+
+
 @router.get("/get_artwork/{id:path}")
 async def get_artwork(id: str, client: SparqlClient = Depends(get_sparql_client)):
     """Get detailed information for a specific artwork by ID."""
