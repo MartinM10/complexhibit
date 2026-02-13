@@ -75,6 +75,18 @@ def hash_sha256(data: str) -> str:
         return ""
 
 
+def normalize_name(name: str) -> str:
+    """Normalize a name for consistent URI generation.
+    
+    Applies strip, collapses multiple whitespace, and title-cases
+    so that 'pablo picasso', 'PABLO PICASSO', and ' Pablo  Picasso '
+    all produce the same hash input.
+    """
+    if not name:
+        return ""
+    return sub(r'\s+', ' ', name.strip()).title()
+
+
 def desglozarJSON(diccionario: dict, num_param_dict: int) -> dict:
     """Parse SPARQL JSON results into a simpler format."""
     result = {}

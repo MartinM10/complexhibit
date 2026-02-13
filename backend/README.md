@@ -285,7 +285,10 @@ Este proyecto está bajo la licencia MIT.
 - ✅ Scripts de inicialización multiplataforma
 - ✅ Docker Compose para fácil despliegue
 - ✅ Healthchecks automáticos
+- ✅ Healthchecks automáticos
 - ✅ Documentación completa
+- ✅ **Sistema de Métricas**: Endpoints para registrar y consultar analíticas de uso (descargas, page views).
+- ✅ **Gestión de Usuarios Extendida**: Soporte para tipos de institución en el registro de usuarios.
 
 ## 🔄 Actualizar Datos
 

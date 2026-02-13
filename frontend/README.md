@@ -49,3 +49,5 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 - **Exportación de Detalle**: Descarga de fichas de detalle en formatos PDF (HTML), JSON y HTML plano.
 - **Consultas de Ejemplo**: Selector interactivo de consultas SPARQL con visualización de resultados integrada.
 - **Inserción de Datos**: Formularios protegidos (requiere login) para añadir nuevos datos.
+- **Registro Mejorado**: Registro de usuarios con selección de tipo de institución.
+- **Analíticas y Dashboard**: Panel de administración para visualizar métricas de uso (descargas, visitas) y sistema de tracking integrado.

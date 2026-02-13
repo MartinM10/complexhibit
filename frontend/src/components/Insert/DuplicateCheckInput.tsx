@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { Entity } from "@/lib/types";
-import { Loader2, AlertTriangle, ExternalLink } from "lucide-react";
+import { Loader2, AlertTriangle, ExternalLink, Edit2 } from "lucide-react";
 import { getFromType } from "@/lib/api";
 
 interface DuplicateCheckInputProps {
@@ -9,6 +9,7 @@ interface DuplicateCheckInputProps {
   name: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSelectDuplicate?: (entity: Entity) => void;
   required?: boolean;
   placeholder?: string;
   className?: string;
@@ -19,6 +20,7 @@ export function DuplicateCheckInput({
   name,
   value,
   onChange,
+  onSelectDuplicate,
   required,
   placeholder,
   className,
@@ -92,6 +94,12 @@ export function DuplicateCheckInput({
     }
   };
 
+  const handleEditClick = (entity: Entity) => {
+    if (onSelectDuplicate) {
+      onSelectDuplicate(entity);
+    }
+  };
+
   return (
     <div className="relative">
       <div className="relative">
@@ -121,18 +129,29 @@ export function DuplicateCheckInput({
           </div>
           <ul className="space-y-1 ml-6">
             {matches.map((match: Entity, index: number) => (
-              <li key={match.uri || index} className="text-amber-700 flex items-center gap-1">
-                <span className="truncate max-w-[200px] inline-block" title={match.label}>
+              <li key={match.uri || index} className="text-amber-700 flex items-center gap-2">
+                <span className="truncate max-w-[180px] inline-block" title={match.label}>
                   {match.label}
                 </span>
-                <a 
-                  href={getDetailLink(match.uri)}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-amber-600 hover:text-amber-900 inline-flex items-center gap-0.5 text-xs underline"
-                >
-                  View <ExternalLink className="h-3 w-3" />
-                </a>
+                <div className="flex items-center gap-1">
+                  {onSelectDuplicate && (
+                    <button
+                      type="button"
+                      onClick={() => handleEditClick(match)}
+                      className="text-emerald-600 hover:text-emerald-800 inline-flex items-center gap-0.5 text-xs underline"
+                    >
+                      Edit <Edit2 className="h-3 w-3" />
+                    </button>
+                  )}
+                  <a 
+                    href={getDetailLink(match.uri)}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-amber-600 hover:text-amber-900 inline-flex items-center gap-0.5 text-xs underline"
+                  >
+                    View <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
               </li>
             ))}
           </ul>

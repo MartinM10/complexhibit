@@ -9,10 +9,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, PlusCircle, Loader2, AlertCircle, CheckCircle, Database } from "lucide-react";
+import { ArrowLeft, PlusCircle, Loader2, AlertCircle, CheckCircle, Database, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { SearchableSelect } from "@/components/SearchableSelect";
 import { DuplicateCheckInput } from "@/components/Insert/DuplicateCheckInput";
+import { Entity } from "@/lib/types";
 
 type EntityType = "exhibition" | "artwork" | "actant" | "institution";
 
@@ -79,6 +80,14 @@ const entityEndpoints: Record<EntityType, string> = {
   institution: "/create_institution",
 };
 
+// Map entity types to their update endpoints
+const updateEndpoints: Record<EntityType, string> = {
+  exhibition: "/update_exhibition",
+  artwork: "/update_artwork",
+  actant: "/update_person",
+  institution: "/update_institution",
+};
+
 export default function InsertDataPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
@@ -91,6 +100,8 @@ export default function InsertDataPage() {
   const [createdUri, setCreatedUri] = useState("");
   const [dynamicOptions, setDynamicOptions] = useState<Record<string, string[]>>({});
   const [loadingOptions, setLoadingOptions] = useState<Record<string, boolean>>({});
+  const [editingUri, setEditingUri] = useState<string | null>(null);
+  const [isLoadingEntity, setIsLoadingEntity] = useState(false);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -139,6 +150,118 @@ export default function InsertDataPage() {
     setSuccess(false);
     setError("");
     setCreatedUri("");
+    setEditingUri(null);
+  };
+
+  const handleSelectDuplicate = async (entity: Entity) => {
+    setIsLoadingEntity(true);
+    setError("");
+    
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      
+      // Extract the entity ID from the URI
+      const parts = entity.uri.split("#");
+      if (parts.length < 2) {
+        throw new Error("Invalid entity URI format");
+      }
+      const entityPath = parts[1]; // e.g., "human_actant/abc123"
+      const pathParts = entityPath.split("/");
+      const entityTypeFromUri = pathParts[0]; // e.g., "human_actant"
+      const entityId = pathParts.slice(1).join("/"); // e.g., "abc123"
+      
+      // Fetch full entity details using get_object_any_type endpoint
+      const response = await fetch(`${apiUrl}/get_object_any_type/${entityTypeFromUri}/${entityId}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch entity details");
+      }
+      
+      const result = await response.json();
+      let entityData = result.data || result;
+      if (Array.isArray(entityData)) {
+        entityData = entityData[0] || {};
+      }
+      
+      // Map the entity data to form fields based on entity type
+      const newFormData: Record<string, string> = {};
+      const newSearchableData: Record<string, Array<{ uri: string; label: string }>> = {};
+      
+      if (entityType === "actant") {
+        newFormData.name = entityData.label || entityData.name || "";
+        newFormData.type = entityData.type || "";
+        newFormData.gender = entityData.gender || "";
+        newFormData.birth_date = entityData.birth_date || entityData.label_birth_date || "";
+        newFormData.country = entityData.country || entityData.birth_place || "";
+        newFormData.death_date = entityData.death_date || entityData.label_death_date || "";
+        newFormData.activity = entityData.activity || "";
+      } else if (entityType === "artwork") {
+        newFormData.name = entityData.label || entityData.name || "";
+        newFormData.apelation = entityData.apelation || "";
+        newFormData.type = entityData.type || "";
+        newFormData.production_start_date = entityData.label_starting_date || "";
+        newFormData.production_end_date = entityData.label_ending_date || "";
+        newFormData.production_place = entityData.production_place || "";
+        // Handle author if present
+        if (entityData.authors) {
+          const authors = entityData.authors.split("|").map((a: string) => {
+            const [label, uri] = a.split(":::");
+            return { label, uri };
+          }).filter((a: { label: string; uri: string }) => a.label && a.uri);
+          if (authors.length > 0) {
+            newSearchableData.author = authors;
+          }
+        }
+      } else if (entityType === "exhibition") {
+        newFormData.name = entityData.label || entityData.name || "";
+        newFormData.fecha_inicio = entityData.label_starting_date || "";
+        newFormData.fecha_fin = entityData.label_ending_date || "";
+        newFormData.sede = entityData.venue_label || "";
+        newFormData.lugar_celebracion = entityData.label_place || "";
+        newFormData.tipo_exposicion = entityData.type_label || "";
+        // Handle curators, organizers, etc.
+        if (entityData.curators) {
+          newSearchableData.comisario = parseEntityList(entityData.curators);
+        }
+        if (entityData.organizers) {
+          newSearchableData.organiza = parseEntityList(entityData.organizers);
+        }
+      } else if (entityType === "institution") {
+        newFormData.nombre = entityData.label || entityData.name || "";
+        newFormData.nombre_alternativo = entityData.nombre_alternativo || "";
+        newFormData.tipo_institucion = entityData.type || "";
+        newFormData.lugar_sede = entityData.location || "";
+        newFormData.direccion_postal = entityData.address || "";
+        newFormData.pagina_web = entityData.website || "";
+      }
+      
+      setFormData(newFormData);
+      setSearchableData(newSearchableData);
+      setEditingUri(entity.uri);
+      setSuccess(false);
+      setCreatedUri("");
+      
+    } catch (err) {
+      console.error("Failed to load entity for editing:", err);
+      setError(err instanceof Error ? err.message : "Failed to load entity for editing");
+    } finally {
+      setIsLoadingEntity(false);
+    }
+  };
+  
+  const parseEntityList = (data: string): Array<{ uri: string; label: string }> => {
+    if (!data) return [];
+    return data.split("|").map((item: string) => {
+      const [label, uri] = item.split(":::");
+      return { label: label || "", uri: uri || "" };
+    }).filter(item => item.label && item.uri);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUri(null);
+    setFormData({});
+    setSearchableData({});
+    setError("");
+    setSuccess(false);
   };
 
   // Transform form data to match backend model structure
@@ -198,16 +321,21 @@ export default function InsertDataPage() {
     try {
       const token = localStorage.getItem("access_token");
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-      const endpoint = entityEndpoints[entityType];
+      
+      // Use update endpoint if editing, create endpoint otherwise
+      const endpoint = editingUri ? updateEndpoints[entityType] : entityEndpoints[entityType];
+      const method = editingUri ? "PUT" : "POST";
       
       // Transform data to match backend expectations
       const payload = transformFormData(entityType, formData, searchableData);
       
-      console.log("Submitting to:", `${apiUrl}${endpoint}`);
-      console.log("Payload:", payload);
+      // If editing, include the URI
+      if (editingUri) {
+        payload.uri = editingUri;
+      }
       
       const response = await fetch(`${apiUrl}${endpoint}`, {
-        method: "POST",
+        method,
         headers: { 
           "Content-Type": "application/json",
           ...(token && { "Authorization": `Bearer ${token}` })
@@ -217,16 +345,16 @@ export default function InsertDataPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || `Failed to create ${entityType}`);
+        throw new Error(errorData.detail || `Failed to ${editingUri ? 'update' : 'create'} ${entityType}`);
       }
 
       const result = await response.json();
-      console.log("Created:", result);
       
       setSuccess(true);
       setCreatedUri(result.uri || result.label || "");
       setFormData({});
       setSearchableData({});
+      setEditingUri(null);
     } catch (err) {
       console.error("Error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -265,12 +393,14 @@ export default function InsertDataPage() {
 
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-8 py-8 text-white">
+          <div className={`px-8 py-8 text-white ${editingUri ? 'bg-gradient-to-r from-blue-600 to-indigo-600' : 'bg-gradient-to-r from-emerald-600 to-teal-600'}`}>
             <div className="flex items-center gap-3">
               <Database className="h-8 w-8" />
               <div>
-                <h1 className="text-3xl font-bold">Insert Data</h1>
-                <p className="text-emerald-100 mt-1">Add new entities to the knowledge graph</p>
+                <h1 className="text-3xl font-bold">{editingUri ? 'Edit Data' : 'Insert Data'}</h1>
+                <p className={`mt-1 ${editingUri ? 'text-blue-100' : 'text-emerald-100'}`}>
+                  {editingUri ? 'Update an existing entity in the knowledge graph' : 'Add new entities to the knowledge graph'}
+                </p>
               </div>
             </div>
           </div>
@@ -283,10 +413,11 @@ export default function InsertDataPage() {
                 <button
                   key={type}
                   onClick={() => handleEntityTypeChange(type)}
+                  disabled={editingUri !== null}
                   className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                     entityType === type
-                      ? "bg-emerald-600 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? editingUri ? "bg-blue-600 text-white shadow-md" : "bg-emerald-600 text-white shadow-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
                   }`}
                 >
                   {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -294,6 +425,29 @@ export default function InsertDataPage() {
               ))}
             </div>
           </div>
+
+          {/* Edit Mode Banner */}
+          {editingUri && (
+            <div className="px-8 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
+              <div className="text-sm text-blue-700">
+                <span className="font-medium">Editing existing entity:</span> {formData.name || formData.nombre || 'Unknown'}
+              </div>
+              <button 
+                onClick={handleCancelEdit}
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Cancel Edit
+              </button>
+            </div>
+          )}
+
+          {/* Loading Entity Overlay */}
+          {isLoadingEntity && (
+            <div className="px-8 py-4 bg-gray-50 border-b border-gray-200 flex items-center gap-2 text-gray-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading entity data...</span>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="px-8 py-6 space-y-6">
@@ -308,7 +462,7 @@ export default function InsertDataPage() {
               <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 flex-shrink-0" />
-                  <span className="font-medium">Successfully created!</span>
+                  <span className="font-medium">{editingUri ? 'Successfully updated!' : 'Successfully created!'}</span>
                 </div>
                 {createdUri && (
                   <p className="text-sm mt-1 text-green-600 break-all">URI: {createdUri}</p>
@@ -373,6 +527,7 @@ export default function InsertDataPage() {
                         name={field.name}
                         value={formData[field.name] || ""}
                         onChange={handleChange}
+                        onSelectDuplicate={handleSelectDuplicate}
                         required={field.required}
                         placeholder={field.placeholder}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
@@ -398,10 +553,19 @@ export default function InsertDataPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className={`w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all ${
+                  editingUri 
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:ring-blue-500'
+                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 focus:ring-emerald-500'
+                }`}
               >
                 {isSubmitting ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
+                ) : editingUri ? (
+                  <>
+                    <RefreshCw className="h-5 w-5" />
+                    Update {entityType.charAt(0).toUpperCase() + entityType.slice(1)}
+                  </>
                 ) : (
                   <>
                     <PlusCircle className="h-5 w-5" />
