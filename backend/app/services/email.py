@@ -215,13 +215,15 @@ def send_registration_confirmation(user_email: str, user_name: str) -> bool:
     return send_email(user_email, subject, body_html)
 
 
-def send_admin_notification(user_email: str, user_name: str) -> bool:
+def send_admin_notification(user_email: str, user_name: str, user_type: str = None, institution_type: str = None) -> bool:
     """
     Notify admin of a new user registration.
     
     Args:
         user_email: New user's email
         user_name: New user's name
+        user_type: Type of user (individual or institution)
+        institution_type: Type of institution (if applicable)
         
     Returns:
         True if sent successfully
@@ -244,6 +246,14 @@ def send_admin_notification(user_email: str, user_name: str) -> bool:
                     <td style="padding: 8px 16px; background: #F3F4F6; font-weight: bold;">Email:</td>
                     <td style="padding: 8px 16px;">{user_email}</td>
                 </tr>
+                <tr>
+                    <td style="padding: 8px 16px; background: #F3F4F6; font-weight: bold;">User Type:</td>
+                    <td style="padding: 8px 16px;">{user_type.capitalize() if user_type else 'Not specified'}</td>
+                </tr>
+                {f'''<tr>
+                    <td style="padding: 8px 16px; background: #F3F4F6; font-weight: bold;">Institution Type:</td>
+                    <td style="padding: 8px 16px;">{institution_type}</td>
+                </tr>''' if institution_type else ''}
             </table>
             
             <p>Please log in to the admin panel to approve or reject this registration:</p>

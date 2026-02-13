@@ -14,6 +14,18 @@ def hash_sha256(data: str) -> Optional[str]:
     return result
 
 
+def normalize_name(name: str) -> str:
+    """Normalize a name for consistent URI generation.
+    
+    Applies strip, collapses multiple whitespace, and title-cases
+    so that 'pablo picasso', 'PABLO PICASSO', and ' Pablo  Picasso '
+    all produce the same hash input.
+    """
+    if not name:
+        return ""
+    return re.sub(r'\s+', ' ', name.strip()).title()
+
+
 def validar_fecha(value: str) -> Optional[datetime.date]:
     """Parse date string in multiple formats: YYYY-MM-DD, DD/MM/YYYY, or just YYYY."""
     valid_date = None

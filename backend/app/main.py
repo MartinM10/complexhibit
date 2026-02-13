@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import create_tables
 from app.dependencies import get_current_user
-from app.routers import artworks, exhibitions, institutions, misc, persons, auth, catalogs, companies, map, example_queries
+from app.routers import artworks, exhibitions, institutions, misc, persons, auth, catalogs, companies, map, example_queries, metrics
 from app.core.seeding import seed_example_queries
 
 
@@ -70,7 +70,9 @@ app.include_router(catalogs.router)
 app.include_router(companies.router)
 app.include_router(map.router)
 app.include_router(example_queries.router)
-
+app.include_router(map.router)
+app.include_router(example_queries.router)
+app.include_router(metrics.router)
 
 @app.get(f"{settings.DEPLOY_PATH}/", tags=["root"])
 async def root():

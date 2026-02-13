@@ -43,6 +43,7 @@ class User(Base):
     username = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=True)
+    institution_type = Column(String(255), nullable=True)
     
     role = Column(SQLEnum(UserRole), default=UserRole.USER, nullable=False)
     status = Column(SQLEnum(UserStatus), default=UserStatus.PENDING, nullable=False)

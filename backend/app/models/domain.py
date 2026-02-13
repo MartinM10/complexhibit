@@ -38,6 +38,7 @@ class Empresa(CuratedModel):
 
 class Institucion(CuratedModel):
     id: Optional[str] = None
+    uri: Optional[str] = None
     nombre: str
     nombre_alternativo: Optional[str] = None
     coordenadas: Optional[str] = None
@@ -58,6 +59,7 @@ class Institucion(CuratedModel):
 
 class Persona(CuratedModel):
     id: Optional[str] = None
+    uri: Optional[str] = None
     name: str
     gender: Optional[str] = None
     activity: Optional[Union[List[str], str]] = None
@@ -72,6 +74,7 @@ class ObraDeArte(CuratedModel):
         arbitrary_types_allowed = True
 
     id: Optional[str] = None
+    uri: Optional[str] = None
     name: str
     apelation: Optional[str] = None
     author: Optional[Dict] = None
@@ -101,6 +104,7 @@ class DispositivoDeInscripcion(CuratedModel):
 
 class Exposicion(CuratedModel):
     id: Optional[str] = None
+    uri: Optional[str] = None
     name: str
     fecha_inicio: str
     fecha_fin: str

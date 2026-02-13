@@ -15,6 +15,7 @@ class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_]+$")
     password: str = Field(..., min_length=8)
     full_name: Optional[str] = None
+    institution_type: Optional[str] = None
 
 
 class UserLogin(BaseModel):
@@ -29,6 +30,7 @@ class UserResponse(BaseModel):
     email: str
     username: str
     full_name: Optional[str]
+    institution_type: Optional[str] = None
     role: UserRole
     status: UserStatus
     created_at: datetime
@@ -42,6 +44,7 @@ class UserUpdate(BaseModel):
     status: Optional[UserStatus] = None
     role: Optional[UserRole] = None
     full_name: Optional[str] = None
+    institution_type: Optional[str] = None
 
 
 class Token(BaseModel):

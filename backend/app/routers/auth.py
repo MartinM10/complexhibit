@@ -62,6 +62,7 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
         username=user_data.username,
         hashed_password=hash_password(user_data.password),
         full_name=user_data.full_name,
+        institution_type=user_data.institution_type,
         status=UserStatus.PENDING,
         role=UserRole.USER
     )
@@ -74,7 +75,13 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     email_success = send_registration_confirmation(user.email, user.full_name or user.username)
     
     # Notify admin about new registration
-    send_admin_notification(user.email, user.full_name or user.username)
+    user_type = "institution" if user_data.institution_type else "individual"
+    send_admin_notification(
+        user.email, 
+        user.full_name or user.username,
+        user_type=user_type,
+        institution_type=user_data.institution_type
+    )
     
     msg = "Registration successful. Please wait for admin approval."
     if not email_success:
@@ -231,6 +238,8 @@ async def update_user(
         user.role = updates.role
     if updates.full_name is not None:
         user.full_name = updates.full_name
+    if updates.institution_type is not None:
+        user.institution_type = updates.institution_type
     
     db.commit()
     db.refresh(user)
