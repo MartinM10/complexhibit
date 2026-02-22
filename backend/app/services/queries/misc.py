@@ -125,3 +125,20 @@ class MiscQueries:
         }} ORDER BY ?value
     """
 
+    GET_COMPANY_ISIC4_CATEGORIES = f"""
+        {PREFIXES}
+        SELECT DISTINCT ?value WHERE {{
+            ?s rdf:type <https://w3id.org/OntoExhibit#Company> .
+            ?s <https://w3id.org/OntoExhibit#ISIC4Category> ?value .
+            FILTER(STRLEN(STR(?value)) > 0)
+        }} ORDER BY ?value
+    """
+
+    GET_COMPANY_SIZES = f"""
+        {PREFIXES}
+        SELECT DISTINCT ?value WHERE {{
+            ?s rdf:type <https://w3id.org/OntoExhibit#Company> .
+            ?s <https://w3id.org/OntoExhibit#size> ?value .
+            FILTER(STRLEN(STR(?value)) > 0)
+        }} ORDER BY ?value
+    """

@@ -48,6 +48,9 @@ async def all_companies(
     cursor: Optional[str] = None,
     page_size: int = 10, 
     q: Optional[str] = None,
+    isic4_category: Optional[str] = None,
+    size: Optional[str] = None,
+    location: Optional[str] = None,
     client: SparqlClient = Depends(get_sparql_client)
 ):
     """
@@ -67,7 +70,10 @@ async def all_companies(
         limit=page_size + 1, 
         last_label=last_label, 
         last_uri=last_uri, 
-        text_search=q
+        text_search=q,
+        isic4_category=isic4_category,
+        size=size,
+        location=location
     )
     
     # Use shared pagination utility

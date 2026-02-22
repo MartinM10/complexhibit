@@ -6,6 +6,7 @@ listing, detail retrieval, and museographer role relationships.
 """
 
 from app.services.queries.base import PREFIXES
+from app.services.queries.utils import escape_sparql_string
 
 
 class CompanyQueries:
@@ -18,8 +19,45 @@ class CompanyQueries:
     """
 
     @staticmethod
-    def get_companies_ids(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None) -> str:
-        filter_clause = f'FILTER regex(?label, "{text_search}", "i")' if text_search else ""
+    def get_companies_ids(
+        limit: int,
+        last_label: str = None,
+        last_uri: str = None,
+        text_search: str = None,
+        isic4_category: str = None,
+        size: str = None,
+        location: str = None,
+    ) -> str:
+        filters = []
+        joins = ["?uri rdfs:label ?label ."]
+
+        if text_search:
+            escaped = escape_sparql_string(text_search)
+            filters.append(f'regex(?label, "{escaped}", "i")')
+
+        if isic4_category:
+            escaped = escape_sparql_string(isic4_category)
+            joins.append('OPTIONAL { ?uri <https://w3id.org/OntoExhibit#ISIC4Category> ?inner_isic }')
+            filters.append(f'regex(?inner_isic, "{escaped}", "i")')
+
+        if size:
+            escaped = escape_sparql_string(size)
+            joins.append('OPTIONAL { ?uri <https://w3id.org/OntoExhibit#size> ?inner_size }')
+            filters.append(f'regex(?inner_size, "{escaped}", "i")')
+
+        if location:
+            escaped = escape_sparql_string(location)
+            joins.append("""
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasLocation> ?inner_location .
+                    ?inner_location <https://w3id.org/OntoExhibit#hasPlaceOfLocation> ?inner_location_uri .
+                    ?inner_location_uri rdfs:label ?inner_location_label .
+                }
+            """)
+            filters.append(f'regex(?inner_location_label, "{escaped}", "i")')
+
+        filter_clause = f"FILTER ({' && '.join(filters)})" if filters else ""
+        joins_str = "\n".join(joins)
         
         pagination_filter = ""
         if last_label and last_uri:
@@ -33,7 +71,7 @@ class CompanyQueries:
             WHERE 
             {{
                 ?uri rdf:type <https://w3id.org/OntoExhibit#Company> .
-                ?uri rdfs:label ?label .
+                {joins_str}
                 
                 {filter_clause}
                 {pagination_filter}

@@ -5,6 +5,7 @@ Provides queries for fetching catalog (inscription devices/documentation resourc
 """
 
 from app.services.queries.base import PREFIXES
+from app.services.queries.utils import escape_sparql_string
 
 
 class CatalogQueries:
@@ -19,15 +20,69 @@ class CatalogQueries:
     """
 
     @staticmethod
-    def get_catalogs_ids(limit: int, last_label: str = None, last_uri: str = None, 
-                         text_search: str = None) -> str:
+    def get_catalogs_ids(
+        limit: int,
+        last_label: str = None,
+        last_uri: str = None,
+        text_search: str = None,
+        publication_date: str = None,
+        publication_place: str = None,
+        producer: str = None,
+        exhibition: str = None,
+    ) -> str:
         filters = []
         inner_joins = []
         
         inner_joins.append("?uri rdfs:label ?inner_label .")
         
         if text_search:
-            filters.append(f'regex(?inner_label, "{text_search}", "i")')
+            escaped = escape_sparql_string(text_search)
+            filters.append(f'regex(?inner_label, "{escaped}", "i")')
+
+        if publication_date:
+            escaped = escape_sparql_string(publication_date)
+            inner_joins.append("""
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasPublication> ?inner_publication .
+                    ?inner_publication <https://w3id.org/OntoExhibit#hasTimeSpan> ?inner_timespan .
+                    ?inner_timespan rdfs:label ?inner_publication_date .
+                }
+            """)
+            filters.append(f'regex(str(?inner_publication_date), "{escaped}", "i")')
+
+        if publication_place:
+            escaped = escape_sparql_string(publication_place)
+            inner_joins.append("""
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasPublication> ?inner_publication_place_node .
+                    ?inner_publication_place_node <https://w3id.org/OntoExhibit#hasPlaceOfPublication> ?inner_publication_place_uri .
+                    ?inner_publication_place_uri rdfs:label ?inner_publication_place .
+                }
+            """)
+            filters.append(f'regex(?inner_publication_place, "{escaped}", "i")')
+
+        if producer:
+            escaped = escape_sparql_string(producer)
+            inner_joins.append("""
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#hasProduction> ?inner_production .
+                    ?inner_production <https://w3id.org/OntoExhibit#hasProducer> ?inner_producer_role .
+                    ?inner_producer_uri <https://w3id.org/OntoExhibit#hasRole> ?inner_producer_role .
+                    ?inner_producer_uri rdfs:label ?inner_producer_label .
+                }
+            """)
+            filters.append(f'regex(?inner_producer_label, "{escaped}", "i")')
+
+        if exhibition:
+            escaped = escape_sparql_string(exhibition)
+            inner_joins.append("""
+                OPTIONAL {
+                    ?uri <https://w3id.org/OntoExhibit#servesAsDocumentationResourceOf> ?inner_doc_dispositif .
+                    ?inner_doc_dispositif <https://w3id.org/OntoExhibit#isDocumentationDispositifOf> ?inner_exhibition_uri .
+                    ?inner_exhibition_uri rdfs:label ?inner_exhibition_label .
+                }
+            """)
+            filters.append(f'regex(?inner_exhibition_label, "{escaped}", "i")')
         
         filter_clause = f"FILTER ({' && '.join(filters)})" if filters else ""
         

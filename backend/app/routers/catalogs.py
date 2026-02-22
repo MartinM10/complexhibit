@@ -48,6 +48,10 @@ async def all_catalogs(
     cursor: Optional[str] = None,
     page_size: int = 20, 
     q: Optional[str] = None,
+    publication_date: Optional[str] = None,
+    publication_place: Optional[str] = None,
+    producer: Optional[str] = None,
+    exhibition: Optional[str] = None,
     client: SparqlClient = Depends(get_sparql_client)
 ):
     """
@@ -65,7 +69,11 @@ async def all_catalogs(
         limit=page_size + 1, 
         last_label=last_label, 
         last_uri=last_uri, 
-        text_search=q
+        text_search=q,
+        publication_date=publication_date,
+        publication_place=publication_place,
+        producer=producer,
+        exhibition=exhibition
     )
     
     result = await paginated_query(

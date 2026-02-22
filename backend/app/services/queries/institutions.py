@@ -28,8 +28,53 @@ class InstitutionQueries:
     """
 
     @staticmethod
-    def get_instituciones_ids(limit: int, last_label: str = None, last_uri: str = None, text_search: str = None) -> str:
-        filter_clause = f'FILTER regex(?label, "{text_search}", "i")' if text_search else ""
+    def get_instituciones_ids(
+        limit: int,
+        last_label: str = None,
+        last_uri: str = None,
+        text_search: str = None,
+        place: str = None,
+        apelation: str = None,
+        institution_type: str = None,
+    ) -> str:
+        filters = []
+        optional_joins = []
+
+        if text_search:
+            escaped = escape_sparql_string(text_search)
+            filters.append(f'regex(?label, "{escaped}", "i")')
+
+        if place:
+            escaped = escape_sparql_string(place)
+            optional_joins.append("""
+                OPTIONAL { 
+                    ?uri <https://w3id.org/OntoExhibit#hasLocation> ?inner_location .
+                    ?inner_location (<https://w3id.org/OntoExhibit#isLocatedAt>|<https://w3id.org/OntoExhibit#hasPlaceOfLocation>) ?inner_place_uri .
+                    ?inner_place_uri rdfs:label ?inner_place_label .
+                }
+            """)
+            filters.append(f'regex(?inner_place_label, "{escaped}", "i")')
+
+        if apelation:
+            escaped = escape_sparql_string(apelation)
+            optional_joins.append('OPTIONAL { ?uri <https://w3id.org/OntoExhibit#apelation> ?inner_apelation }')
+            filters.append(f'regex(?inner_apelation, "{escaped}", "i")')
+
+        if institution_type:
+            escaped = escape_sparql_string(institution_type)
+            optional_joins.append("""
+                OPTIONAL {
+                    ?uri rdf:type ?inner_type_uri .
+                    OPTIONAL { ?inner_type_uri rdfs:label ?inner_type_label }
+                }
+            """)
+            filters.append(
+                f'((BOUND(?inner_type_label) && regex(?inner_type_label, "{escaped}", "i")) || '
+                f'(BOUND(?inner_type_uri) && regex(str(?inner_type_uri), "{escaped}", "i")))'
+            )
+
+        filter_clause = f"FILTER ({' && '.join(filters)})" if filters else ""
+        optional_joins_str = "\n".join(optional_joins)
         
         pagination_filter = ""
         if last_label and last_uri:
@@ -58,6 +103,7 @@ class InstitutionQueries:
                 UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#University> . ?uri rdfs:label ?label }}
                 UNION {{ ?uri rdf:type <https://w3id.org/OntoExhibit#Foundation_(Institution)> . ?uri rdfs:label ?label }}
                 
+                {optional_joins_str}
                 {filter_clause}
                 {pagination_filter}
             }} 

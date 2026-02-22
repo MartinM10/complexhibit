@@ -49,6 +49,9 @@ async def all_institutions(
     cursor: Optional[str] = None,
     page_size: int = 10, 
     q: Optional[str] = None,
+    place: Optional[str] = None,
+    apelation: Optional[str] = None,
+    institution_type: Optional[str] = None,
     client: SparqlClient = Depends(get_sparql_client)
 ):
     """
@@ -68,7 +71,10 @@ async def all_institutions(
         limit=page_size + 1, 
         last_label=last_label, 
         last_uri=last_uri, 
-        text_search=q
+        text_search=q,
+        place=place,
+        apelation=apelation,
+        institution_type=institution_type
     )
     
     # Use shared pagination utility
@@ -276,4 +282,3 @@ async def get_institution_children(id: str, client: SparqlClient = Depends(get_s
         return {"data": children, "sparql": query}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
