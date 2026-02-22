@@ -1,12 +1,8 @@
 "use client";
 
-/**
- * Registration page with email/password.
- */
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
-import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle, Loader2, Building } from "lucide-react";
+import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle, Loader2, Building, ChevronDown } from "lucide-react";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -23,65 +19,41 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const FALLBACK_TYPES = ["Museum", "University", "Gallery", "Art Center", "Other"];
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const FALLBACK_INSTITUTION_TYPES = [
-    "Museum",
-    "University",
-    "Art School",
-    "Art Center",
-    "Cultural Center",
-    "Foundation",
-    "Library",
-    "Archive",
-    "Gallery",
-    "Other"
-  ];
 
   useEffect(() => {
     const fetchInstitutionTypes = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://complexhibit.uma.es/api/v1";
         const response = await fetch(`${apiUrl}/filter_options/institution_type`);
         if (response.ok) {
           const data = await response.json();
-          const types = data.data || [];
-          setInstitutionTypes(types.length > 0 ? types : FALLBACK_INSTITUTION_TYPES);
+          setInstitutionTypes(data.data && data.data.length > 0 ? data.data : FALLBACK_TYPES);
         } else {
-          setInstitutionTypes(FALLBACK_INSTITUTION_TYPES);
+          setInstitutionTypes(FALLBACK_TYPES);
         }
       } catch (error) {
-        console.error("Failed to fetch institution types", error);
-        setInstitutionTypes(FALLBACK_INSTITUTION_TYPES);
+        setInstitutionTypes(FALLBACK_TYPES);
       }
     };
-
     fetchInstitutionTypes();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
-
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
-      setIsLoading(false);
       return;
     }
-
-    // Validate password length
-    if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters");
-      setIsLoading(false);
-      return;
-    }
+    setIsLoading(true);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://complexhibit.uma.es/api/v1";
       const response = await fetch(`${apiUrl}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,19 +62,16 @@ export default function RegisterPage() {
           username: formData.username,
           password: formData.password,
           full_name: formData.fullName || null,
+          user_type: formData.userType,
           institution_type: formData.userType === 'institution' ? formData.institutionType : null,
         }),
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Registration failed");
-      }
-
+      if (!response.ok) throw new Error(data.detail || "Registration failed");
       setSuccess(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+    } catch (err: any) {
+      setError(err.message || "An error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -110,19 +79,14 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50 py-12 px-4">
-        <div className="max-w-md w-full text-center space-y-6">
-          <div className="mx-auto h-20 w-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-emerald-50 py-12 px-4 shadow-[inset_0_0_100px_rgba(0,0,0,0.02)]">
+        <div className="max-w-md w-full space-y-8 p-10 bg-white rounded-3xl shadow-2xl border border-white text-center animate-in fade-in zoom-in duration-500">
+          <div className="mx-auto h-20 w-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-green-100">
             <CheckCircle className="h-10 w-10 text-white" />
           </div>
-          <h2 className="text-3xl font-extrabold text-gray-900">Registration Successful!</h2>
-          <p className="text-gray-600">
-            Your account has been created and is pending approval. You will receive an email once an administrator reviews your registration.
-          </p>
-          <Link
-            href="/"
-            className="inline-block px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 transition-all"
-          >
+          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Registration Sent!</h2>
+          <p className="text-gray-600 leading-relaxed">Your account has been created and is <b>pending administrator approval</b>. We will notify you by email once it is reviewed.</p>
+          <Link href="/" className="inline-block px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-bold hover:shadow-xl hover:shadow-indigo-200 transition-all active:scale-95">
             Back to Home
           </Link>
         </div>
@@ -131,225 +95,81 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4">
+      <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-xl p-10 rounded-3xl shadow-2xl border border-white">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+          <div className="mx-auto h-16 w-16 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-100">
             <UserPlus className="h-8 w-8 text-white" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Already have an account?{" "}
-            <Link href="/auth/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-              Sign in
-            </Link>
-          </p>
+          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-gray-900 to-gray-600">Create account</h2>
         </div>
 
-        {/* Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
+            <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl flex items-center gap-3 text-sm">
+              <AlertCircle className="h-5 w-5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email address *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="you@example.com"
-                />
-              </div>
+            <div className="relative group">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+              <input name="email" type="email" required placeholder="Email address" onChange={handleChange}
+                className="block w-full pl-10 pr-4 py-3 bg-gray-50/50 border-gray-200 border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none" />
             </div>
 
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  required
-                  pattern="[a-zA-Z0-9_]+"
-                  minLength={3}
-                  value={formData.username}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="username"
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-500">Letters, numbers, and underscores only</p>
+            <div className="relative group">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+              <input name="username" type="text" required placeholder="Username" onChange={handleChange}
+                className="block w-full pl-10 pr-4 py-3 bg-gray-50/50 border-gray-200 border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none" />
             </div>
 
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
-              <input
-                id="fullName"
-                name="fullName"
-                type="text"
-                value={formData.fullName}
-                className="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Your full name"
-              />
+            <div className="relative group">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+              <input name="fullName" type="text" placeholder="Full name" value={formData.fullName} onChange={handleChange}
+                className="block w-full pl-10 pr-4 py-3 bg-gray-50/50 border-gray-200 border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none" />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                User Type *
-              </label>
-              <div className="grid grid-cols-2 gap-4">
-                <label className={`
-                  relative flex items-center justify-center px-4 py-3 border rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none transition-all
-                  ${formData.userType === 'individual' ? 'border-indigo-500 ring-2 ring-indigo-500 bg-indigo-50' : 'border-gray-300'}
-                `}>
-                  <input
-                    type="radio"
-                    name="userType"
-                    value="individual"
-                    checked={formData.userType === 'individual'}
-                    onChange={handleChange}
-                    className="sr-only"
-                  />
-                  <div className="flex items-center gap-2">
-                    <User className={`h-5 w-5 ${formData.userType === 'individual' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                    <span className={`text-sm font-medium ${formData.userType === 'individual' ? 'text-indigo-900' : 'text-gray-900'}`}>
-                      Individual
-                    </span>
-                  </div>
-                </label>
-                
-                <label className={`
-                  relative flex items-center justify-center px-4 py-3 border rounded-lg cursor-pointer hover:bg-gray-50 focus:outline-none transition-all
-                  ${formData.userType === 'institution' ? 'border-indigo-500 ring-2 ring-indigo-500 bg-indigo-50' : 'border-gray-300'}
-                `}>
-                  <input
-                    type="radio"
-                    name="userType"
-                    value="institution"
-                    checked={formData.userType === 'institution'}
-                    onChange={handleChange}
-                    className="sr-only"
-                  />
-                  <div className="flex items-center gap-2">
-                    <Building className={`h-5 w-5 ${formData.userType === 'institution' ? 'text-indigo-600' : 'text-gray-400'}`} />
-                    <span className={`text-sm font-medium ${formData.userType === 'institution' ? 'text-indigo-900' : 'text-gray-900'}`}>
-                      Institution
-                    </span>
-                  </div>
-                </label>
-              </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setFormData({...formData, userType: 'individual'})}
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-semibold ${formData.userType==='individual'?'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-100':'border-gray-100 bg-gray-50/50 text-gray-500 hover:border-gray-200'}`}>
+                <User className="h-4 w-4" /> Individual
+              </button>
+              <button type="button" onClick={() => setFormData({...formData, userType: 'institution'})}
+                className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all font-semibold ${formData.userType==='institution'?'border-indigo-600 bg-indigo-50 text-indigo-700 shadow-sm shadow-indigo-100':'border-gray-100 bg-gray-50/50 text-gray-500 hover:border-gray-200'}`}>
+                <Building className="h-4 w-4" /> Institution
+              </button>
             </div>
 
             {formData.userType === 'institution' && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-                <label htmlFor="institutionType" className="block text-sm font-medium text-gray-700 mb-1">
-                  Institution Type *
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Building className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <select
-                    id="institutionType"
-                    name="institutionType"
-                    required={formData.userType === 'institution'}
-                    value={formData.institutionType}
-                    onChange={handleChange}
-                    className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  >
-                    <option value="">Select institution type</option>
-                    {institutionTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="relative animate-in slide-in-from-top-2 duration-300">
+                <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <select name="institutionType" required onChange={handleChange}
+                  className="block w-full pl-10 pr-10 py-3 bg-gray-50/50 border-gray-200 border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none appearance-none cursor-pointer">
+                  <option value="">Select Institution type</option>
+                  {institutionTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
               </div>
             )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="At least 8 characters"
-                />
-              </div>
+            <div className="relative group">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+              <input name="password" type="password" required placeholder="Password" onChange={handleChange}
+                className="block w-full pl-10 pr-4 py-3 bg-gray-50/50 border-gray-200 border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none" />
             </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm Password *
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full pl-10 pr-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  placeholder="Confirm your password"
-                />
-              </div>
+            <div className="relative group">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+              <input name="confirmPassword" type="password" required placeholder="Confirm Password" onChange={handleChange}
+                className="block w-full pl-10 pr-4 py-3 bg-gray-50/50 border-gray-200 border rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none" />
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <>
-                <UserPlus className="h-5 w-5 mr-2" />
-                Create account
-              </>
-            )}
+          <button type="submit" disabled={isLoading}
+            className="w-full flex justify-center items-center py-4 px-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-2xl font-bold shadow-xl shadow-indigo-100 transition-all disabled:opacity-50 active:scale-[0.98]">
+            {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : <><UserPlus className="h-5 w-5 mr-2" /> Create account</>}
           </button>
         </form>
       </div>
