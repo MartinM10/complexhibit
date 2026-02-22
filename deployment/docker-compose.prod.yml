@@ -11,12 +11,10 @@ services:
       # Map the host's certificate directory to the container
       # IMPORTANT: Ensure 'fullchain.cer' exists (cat complexhibit_uma_es_cert.cer complexhibit_uma_es_interm.cer > fullchain.cer)
       - /root/certificados/2025:/etc/nginx/certs:ro
-    depends_on:
-      - frontend
-      - backend
-    restart: always
     networks:
       - complexhibit-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # Monitoring & Management (Portainer)
   portainer:
@@ -31,7 +29,6 @@ services:
     networks:
       - complexhibit-network
 
-  # Application Backend
   backend:
     build:
       context: ../backend
@@ -40,13 +37,13 @@ services:
         HTTP_PROXY: ${HTTP_PROXY}
         HTTPS_PROXY: ${HTTPS_PROXY}
     container_name: complexhibit-api
-    expose:
-      - "8000"
     env_file:
-      - ../.env
+      - .env
     environment:
-      - VIRTUOSO_URL=http://virtuoso:8890/sparql
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-complexhibit}:${POSTGRES_PASSWORD:-complexhibit}@postgres:5432/${POSTGRES_DB:-complexhibit_auth}
+      - VIRTUOSO_URL=http://localhost:8890/sparql
+      - DEFAULT_GRAPH_URL=${DEFAULT_GRAPH_URL}
+      - VIRTUOSO_PASSWORD=${VIRTUOSO_DBA_PASSWORD}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-complexhibit}:${POSTGRES_PASSWORD:-complexhibit}@localhost:5432/${POSTGRES_DB:-complexhibit_auth}
       - DEPLOY_PATH=/api/v1
       # Force SMTP config explicitly
       - SMTP_HOST=${SMTP_HOST}
@@ -66,15 +63,14 @@ services:
       # Proxies
       - HTTP_PROXY=${HTTP_PROXY}
       - HTTPS_PROXY=${HTTPS_PROXY}
-      - NO_PROXY=virtuoso,postgres,localhost,127.0.0.1
+      - NO_PROXY=localhost,127.0.0.1
     volumes:
       - ../backend/app:/app/app
     depends_on:
       - virtuoso
       - postgres
     restart: unless-stopped
-    networks:
-      - complexhibit-network
+    network_mode: host
     healthcheck:
       test: [ "CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/v1/')" ]
       interval: 30s
@@ -96,6 +92,8 @@ services:
       - "3000" # Only expose to internal network
     networks:
       - complexhibit-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
       - API_URL=${API_URL}
@@ -105,9 +103,9 @@ services:
   virtuoso:
     image: openlink/virtuoso-opensource-7:latest
     container_name: complexhibit-virtuoso
-    expose:
-      - "8890"
-      - "1111"
+    ports:
+      - "8890:8890"
+      - "1111:1111"
     environment:
       - DBA_PASSWORD=${VIRTUOSO_DBA_PASSWORD:-dba}
       - SPARQL_UPDATE=true
@@ -130,8 +128,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: complexhibit-postgres
-    expose:
-      - "5432"
+    ports:
+      - "5432:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-complexhibit}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-complexhibit}

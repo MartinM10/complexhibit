@@ -160,4 +160,41 @@ Para gestionar tus contenedores, ver logs y reiniciar servicios desde el navegad
   - **Solo los puertos 80 y 443 deberían estar abiertos al mundo.**
   - Docker gestiona iptables, pero nuestro `docker-compose.prod.yml` usa `expose` en lugar de `ports` para los servicios internos, lo cual ya los protege de acceso externo directo, excepto Nginx. ¡Buen trabajo!
 
+## 7. Solución de Problemas (Entornos UMA / Proxies)
+
+Durante el despliegue en la infraestructura de la UMA, se identificaron desafíos específicos relacionados con la red corporativa y el proxy `jano8.sci.uma.es`.
+
+### 7.1. Envío de Emails (SMTP)
+
+**Problema:** El backend no podía enviar correos mediante la librería estándar de Python, devolviendo errores de `Network is unreachable` o fallos en el túnel del proxy.
+
+**Causa:**
+1. **Restricción de Protocolos**: El proxy Squid corporativo a menudo bloquea el comando `CONNECT` en puertos que no sean el 443 (bloqueando el 587/STARTTLS).
+2. **Conflictos de IPv6**: El sistema intentaba resolver el proxy o Gmail por IPv6, lo cual no estaba habilitado en la pila de red de Docker del servidor.
+3. **Contraseñas de Aplicación**: Google bloquea accesos desde IPs "desconocidas" (el servidor nuevo) invalidando contraseñas de aplicación antiguas.
+
+**Solución aplicada:**
+- **Cambio a Puerto 465 (SSL)**: Se configuró el servicio de email para usar `smtplib.SMTP_SSL` directamente al puerto 465 de Gmail. Se validó que este tráfico **no requiere proxy** si el contenedor está en modo `network_mode: host` dentro de la red de la UMA.
+- **Limpieza de Credenciales**: El `.env` debe contener la "Contraseña de aplicación" de 16 caracteres de Gmail **sin espacios** (`abcd efgh ijkl mnop` -> `abcdefghijklmnop`).
+- **Código "Quirúrgico"**: El archivo `backend/app/services/email.py` se simplificó para intentar primero la conexión directa IPv4 (forzada), que es la más fiable en esta infraestructura.
+
+### 7.2. Errores "Blocked by Client" en el Navegador
+
+**Problema:** La web carga pero los contadores de la Home aparecen como guiones `-` y el login falla con `Failed to fetch`.
+
+**Causa:** El Frontend se construye (build time) con una URL de API por defecto (`localhost:8000`). En producción, el navegador bloquea peticiones a `localhost` por política de seguridad (CORS/Mixed Content).
+
+**Solución:**
+Reconstruir el contenedor asegurando que las variables de entorno se pasen correctamente durante el empaquetado:
+```bash
+docker compose -f docker-compose.prod.yml build --no-cache frontend
+docker compose -f docker-compose.prod.yml up -d
+```
+
+### 7.3. Proxy en Docker (Construcción)
+
+Si el servidor necesita proxy para descargar paquetes durante el `docker build`, se debe configurar el proxy en el archivo `deployment/docker-compose.prod.yml` bajo la sección `args` de cada servicio, o mediante variables de entorno en el host.
+
+---
+
 ¡Listo! Tu aplicación está desplegada en producción.
