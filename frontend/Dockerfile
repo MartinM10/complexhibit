@@ -14,7 +14,22 @@ ENV http_proxy=$HTTP_PROXY
 ENV https_proxy=$HTTPS_PROXY
 
 # Ver https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine para entender por qué podría necesitarse libc6-compat.
-RUN apk add --no-cache libc6-compat
+RUN set -e; \
+    normalize_proxy() { \
+        if [ -n "$1" ]; then \
+            echo "$1" | sed -E 's|^([^:/]+:[0-9]+)$|http://\1|'; \
+        fi \
+    }; \
+    FIXED_HTTP=$(normalize_proxy "$HTTP_PROXY"); \
+    FIXED_HTTPS=$(normalize_proxy "$HTTPS_PROXY"); \
+    if [ -n "$FIXED_HTTP" ]; then \
+        export http_proxy="$FIXED_HTTP"; \
+        export https_proxy="$FIXED_HTTPS"; \
+        export HTTP_PROXY="$FIXED_HTTP"; \
+        export HTTPS_PROXY="$FIXED_HTTPS"; \
+    fi; \
+    apk add --no-cache libc6-compat
+
 WORKDIR /app
 
 # Instalar dependencias basándose en el gestor de paquetes preferido

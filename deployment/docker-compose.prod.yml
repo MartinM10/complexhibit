@@ -43,7 +43,7 @@ services:
     expose:
       - "8000"
     env_file:
-      - ./.env
+      - ../.env
     environment:
       - VIRTUOSO_URL=http://virtuoso:8890/sparql
       - DATABASE_URL=postgresql://${POSTGRES_USER:-complexhibit}:${POSTGRES_PASSWORD:-complexhibit}@postgres:5432/${POSTGRES_DB:-complexhibit_auth}

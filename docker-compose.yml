@@ -1,6 +1,11 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      network: host
+      args:
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
     container_name: complexhibit-api
     ports:
       - "8000:8000"
@@ -44,8 +49,11 @@ services:
   frontend:
     build:
       context: ./frontend
+      network: host
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        HTTP_PROXY: ${HTTP_PROXY}
+        HTTPS_PROXY: ${HTTPS_PROXY}
     container_name: complexhibit-frontend
     ports:
       - "3000:3000"
