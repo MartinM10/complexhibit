@@ -15,6 +15,7 @@ class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, pattern=r"^[a-zA-Z0-9_]+$")
     password: str = Field(..., min_length=8)
     full_name: Optional[str] = None
+    user_type: Optional[str] = "individual"
     institution_type: Optional[str] = None
 
 
@@ -30,6 +31,7 @@ class UserResponse(BaseModel):
     email: str
     username: str
     full_name: Optional[str]
+    user_type: Optional[str] = "individual"
     institution_type: Optional[str] = None
     role: UserRole
     status: UserStatus
