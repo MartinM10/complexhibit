@@ -4,6 +4,7 @@
 
 import Link from "next/link";
 import { cleanLabel, unCamel } from "@/lib/utils";
+import { buildDetailHref } from "@/lib/entity-routing";
 import { 
   SidebarCard, 
   SectionHeader, 
@@ -227,7 +228,7 @@ export function ParticipantsSection({ data, title, colorClass, linkColorClass }:
               {Array.isArray(items) && items.map((item: LinkedEntity, idx: number) => (
                 <li key={idx}>
                   <Link 
-                    href={`/detail/actant/${item.uri?.split('/').pop()}`} 
+                    href={buildDetailHref("actant", item.uri?.split('/').pop() || "")}
                     className={`text-sm text-gray-700 ${linkColorClass} hover:underline flex items-start gap-2`}
                   >
                     <span className={linkColorClass.replace('hover:text-', 'text-').replace('600', '400')} style={{marginTop: '0.25rem'}}>•</span>

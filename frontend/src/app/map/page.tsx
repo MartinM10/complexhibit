@@ -16,6 +16,7 @@ import { getMapEntities, getMapMeta } from '@/lib/api';
 import DateRangeSlider from '@/components/ui/slider';
 import useDebounce from '@/hooks/useDebounce';
 import { ClusterPopup } from '@/components/map/ClusterPopup';
+import { buildDetailHref } from '@/lib/entity-routing';
 
 interface MapEntity {
   id: string;
@@ -261,7 +262,7 @@ export default function MapPage() {
   const getDetailUrl = (entity: MapEntity) => {
     const cleanId = entity.id.replace(/_(residence|birth)$/, '');
     const type = entity.type === 'person' ? 'actant' : entity.type;
-    return `/detail/${type}/${cleanId}`;
+    return buildDetailHref(type, cleanId);
   };
 
   if (error) {

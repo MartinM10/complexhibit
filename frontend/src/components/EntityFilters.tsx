@@ -34,7 +34,20 @@ export const FILTER_CONFIGS: Record<string, FilterConfig[]> = {
     { key: 'exhibition_uri', type: 'async_select', placeholder: 'Shown in Exhibition', entityType: 'exhibition' },
   ],
   institution: [
-    { key: 'activity', type: 'select', placeholder: 'Project / Activity', optionsKey: 'activity' },
+    { key: 'institution_type', type: 'select', placeholder: 'Institution Type', optionsKey: 'institution_type' },
+    { key: 'place', type: 'text', placeholder: 'Place' },
+    { key: 'apelation', type: 'text', placeholder: 'Alternative Name' },
+  ],
+  catalog: [
+    { key: 'publication_date', type: 'text', placeholder: 'Publication Date' },
+    { key: 'publication_place', type: 'text', placeholder: 'Publication Place' },
+    { key: 'producer', type: 'text', placeholder: 'Producer' },
+    { key: 'exhibition', type: 'text', placeholder: 'Related Exhibition' },
+  ],
+  company: [
+    { key: 'isic4_category', type: 'select', placeholder: 'ISIC4 Category', optionsKey: 'company_isic4_category' },
+    { key: 'size', type: 'select', placeholder: 'Size', optionsKey: 'company_size' },
+    { key: 'location', type: 'text', placeholder: 'Location' },
   ],
   person: [
     { key: 'entity_type', type: 'select', placeholder: 'Type', optionsKey: 'entity_type' },
@@ -59,7 +72,8 @@ FILTER_CONFIGS['actor'] = FILTER_CONFIGS['person'];
 export const FILTER_OPTION_ENDPOINTS: Record<string, string[]> = {
   exhibition: ['exhibition_type', 'exhibition_theme'],
   artwork: ['artwork_type', 'topic'],
-  institution: ['activity'],
+  institution: ['institution_type'],
+  company: ['company_isic4_category', 'company_size'],
   person: ['gender', 'activity', 'entity_type'],
   actant: ['gender', 'activity', 'entity_type'],
   human_actant: ['gender', 'activity', 'entity_type'],
