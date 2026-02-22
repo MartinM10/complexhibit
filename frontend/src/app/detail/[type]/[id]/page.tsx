@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { 
+import {
   getDataProperties, 
   getRolesPlayed, 
   getParticipants,
@@ -28,6 +28,7 @@ import {
   getExhibitionMuseographers
 } from "@/lib/api";
 import { cleanLabel, unCamel } from "@/lib/utils";
+import { getListTypeFromDetailType } from "@/lib/entity-routing";
 import MapSection from '@/components/MapSection';
 import QueryLogger from "@/components/QueryLogger";
 import EntityLink from "@/components/EntityLink";
@@ -65,6 +66,7 @@ import {
 
 interface PageProps {
   params: Promise<{ type: string; id: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 // Helper type guards
@@ -74,34 +76,44 @@ const isActorType = (type: string) =>
 const isArtworkType = (type: string) => 
   ['artwork', 'obra'].includes(type);
 
-export default async function DetailPage({ params }: PageProps) {
+export default async function DetailPage({ params, searchParams }: PageProps) {
   const { type, id } = await params;
-  const decodedType = decodeURIComponent(type);
+  const rawType = decodeURIComponent(type);
+  const decodedType = rawType.toLowerCase();
+  const decodedId = decodeURIComponent(id);
+  const isCanonicalEntityId = !decodedId.includes("/");
+  const listType = getListTypeFromDetailType(decodedType);
+  const queryParams = await searchParams;
+  const from = typeof queryParams.from === "string" ? queryParams.from : undefined;
+  const safeFrom = from?.startsWith("/") ? from : undefined;
+  const hasListTarget = Boolean(safeFrom || listType);
+  const backHref = safeFrom || (listType ? `/all/${listType}` : "/search");
+  const backLabel = hasListTarget ? "Back to list" : "Back to search";
   
   // ====================
   // Data Fetching
   // ====================
   
   // Base fetches (always needed)
-  const dataPropertiesPromise = getDataProperties(decodedType, id).catch(() => null);
+  const dataPropertiesPromise = getDataProperties(rawType, decodedId).catch(() => null);
   
   // Actor-specific
-  const rolesPromise = isActorType(decodedType) 
-    ? getRolesPlayed(decodedType, id).catch(() => null) 
+  const rolesPromise = isActorType(decodedType) && isCanonicalEntityId
+    ? getRolesPlayed(decodedType, decodedId).catch(() => null) 
     : Promise.resolve(null);
-  const actorDetailsPromise = isActorType(decodedType) 
-    ? getActorDetails(id).catch(() => null) 
+  const actorDetailsPromise = isActorType(decodedType) && isCanonicalEntityId
+    ? getActorDetails(decodedId).catch(() => null) 
     : Promise.resolve(null);
-  const personCollaboratorsPromise = isActorType(decodedType)
-    ? getPersonCollaborators(id).catch(() => null)
+  const personCollaboratorsPromise = isActorType(decodedType) && isCanonicalEntityId
+    ? getPersonCollaborators(decodedId).catch(() => null)
     : Promise.resolve(null);
-  const personExecutivePositionsPromise = isActorType(decodedType)
-    ? getPersonExecutivePositions(id).catch(() => null)
+  const personExecutivePositionsPromise = isActorType(decodedType) && isCanonicalEntityId
+    ? getPersonExecutivePositions(decodedId).catch(() => null)
     : Promise.resolve(null);
   
   // Artwork-specific
-  const artworkDetailsPromise = isArtworkType(decodedType) 
-    ? getArtworkDetails(id).catch(() => null) 
+  const artworkDetailsPromise = isArtworkType(decodedType) && isCanonicalEntityId
+    ? getArtworkDetails(decodedId).catch(() => null) 
     : Promise.resolve(null);
   
   // Exhibition-specific
@@ -116,67 +128,67 @@ export default async function DetailPage({ params }: PageProps) {
   const makingPromise = decodedType === 'exhibition' 
     ? getExhibitionMaking().catch(() => null) 
     : Promise.resolve(null);
-  const datesAndPlacePromise = decodedType === 'exhibition' 
-    ? getDatesAndPlace(id).catch(() => null) 
+  const datesAndPlacePromise = decodedType === 'exhibition' && isCanonicalEntityId
+    ? getDatesAndPlace(decodedId).catch(() => null) 
     : Promise.resolve(null);
 
   // Institution-specific
-  const institutionExhibitionsPromise = decodedType === 'institution'
-    ? getInstitutionExhibitions(id).catch(() => null)
+  const institutionExhibitionsPromise = decodedType === 'institution' && isCanonicalEntityId
+    ? getInstitutionExhibitions(decodedId).catch(() => null)
     : Promise.resolve(null);
-  const institutionDetailsPromise = decodedType === 'institution'
-    ? getInstitutionDetails(id).catch(() => null)
+  const institutionDetailsPromise = decodedType === 'institution' && isCanonicalEntityId
+    ? getInstitutionDetails(decodedId).catch(() => null)
     : Promise.resolve(null);
-  const institutionLenderExhibitionsPromise = decodedType === 'institution'
-    ? getInstitutionLenderExhibitions(id).catch(() => null)
+  const institutionLenderExhibitionsPromise = decodedType === 'institution' && isCanonicalEntityId
+    ? getInstitutionLenderExhibitions(decodedId).catch(() => null)
     : Promise.resolve(null);
-  const institutionOwnedArtworksPromise = decodedType === 'institution'
-    ? getInstitutionOwnedArtworks(id).catch(() => null)
+  const institutionOwnedArtworksPromise = decodedType === 'institution' && isCanonicalEntityId
+    ? getInstitutionOwnedArtworks(decodedId).catch(() => null)
     : Promise.resolve(null);
-  const institutionCollaboratorsPromise = decodedType === 'institution'
-    ? getInstitutionCollaborators(id).catch(() => null)
+  const institutionCollaboratorsPromise = decodedType === 'institution' && isCanonicalEntityId
+    ? getInstitutionCollaborators(decodedId).catch(() => null)
     : Promise.resolve(null);
-  const institutionExecutivesPromise = decodedType === 'institution'
-    ? getInstitutionExecutives(id).catch(() => null)
+  const institutionExecutivesPromise = decodedType === 'institution' && isCanonicalEntityId
+    ? getInstitutionExecutives(decodedId).catch(() => null)
     : Promise.resolve(null);
-  const institutionParentPromise = decodedType === 'institution'
-    ? getInstitutionParent(id).catch(() => null)
+  const institutionParentPromise = decodedType === 'institution' && isCanonicalEntityId
+    ? getInstitutionParent(decodedId).catch(() => null)
     : Promise.resolve(null);
-  const institutionChildrenPromise = decodedType === 'institution'
-    ? getInstitutionChildren(id).catch(() => null)
+  const institutionChildrenPromise = decodedType === 'institution' && isCanonicalEntityId
+    ? getInstitutionChildren(decodedId).catch(() => null)
     : Promise.resolve(null);
 
   // Catalog-specific
-  const catalogDetailsPromise = decodedType === 'catalog'
-    ? getCatalogDetails(id).catch(() => null)
+  const catalogDetailsPromise = decodedType === 'catalog' && isCanonicalEntityId
+    ? getCatalogDetails(decodedId).catch(() => null)
     : Promise.resolve(null);
   
   // Catalogs for exhibitions
-  const exhibitionCatalogsPromise = decodedType === 'exhibition'
-    ? getExhibitionCatalogs(id).catch(() => null)
+  const exhibitionCatalogsPromise = decodedType === 'exhibition' && isCanonicalEntityId
+    ? getExhibitionCatalogs(decodedId).catch(() => null)
     : Promise.resolve(null);
   
   // Produced catalogs for actants and institutions
-  const producedCatalogsPromise = (isActorType(decodedType) || decodedType === 'institution')
-    ? getProducerCatalogs(id).catch(() => null)
+  const producedCatalogsPromise = (isActorType(decodedType) || decodedType === 'institution') && isCanonicalEntityId
+    ? getProducerCatalogs(decodedId).catch(() => null)
     : Promise.resolve(null);
   
   // Exhibitions for a catalog
-  const catalogExhibitionsPromise = decodedType === 'catalog'
-    ? getCatalogExhibitions(id).catch(() => null)
+  const catalogExhibitionsPromise = decodedType === 'catalog' && isCanonicalEntityId
+    ? getCatalogExhibitions(decodedId).catch(() => null)
     : Promise.resolve(null);
 
   // Company-specific
-  const companyDetailsPromise = decodedType === 'company'
-    ? getCompanyDetails(id).catch(() => null)
+  const companyDetailsPromise = decodedType === 'company' && isCanonicalEntityId
+    ? getCompanyDetails(decodedId).catch(() => null)
     : Promise.resolve(null);
-  const companyMuseographerExhibitionsPromise = decodedType === 'company'
-    ? getCompanyMuseographerExhibitions(id).catch(() => null)
+  const companyMuseographerExhibitionsPromise = decodedType === 'company' && isCanonicalEntityId
+    ? getCompanyMuseographerExhibitions(decodedId).catch(() => null)
     : Promise.resolve(null);
   
   // Museographers for exhibitions
-  const exhibitionMuseographersPromise = decodedType === 'exhibition'
-    ? getExhibitionMuseographers(id).catch(() => null)
+  const exhibitionMuseographersPromise = decodedType === 'exhibition' && isCanonicalEntityId
+    ? getExhibitionMuseographers(decodedId).catch(() => null)
     : Promise.resolve(null);
 
   // Await all promises
@@ -296,7 +308,7 @@ export default async function DetailPage({ params }: PageProps) {
 
   // For exhibitions, find matching data
   const exhibitionData = decodedType === 'exhibition' && datesAndPlaceData.length > 0 
-    ? (datesAndPlaceData.find((item: { uri?: string; [key: string]: unknown }) => item.uri?.includes(id)) || datesAndPlaceData[0])
+    ? (datesAndPlaceData.find((item: { uri?: string; [key: string]: unknown }) => item.uri?.includes(decodedId)) || datesAndPlaceData[0])
     : null;
   
   // Properties with fallback
@@ -334,7 +346,7 @@ export default async function DetailPage({ params }: PageProps) {
   };
 
   const label = getLabel();
-  const fullUri = properties.uri || `https://w3id.org/OntoExhibit#${decodedType}/${id}`;
+  const fullUri = properties.uri || `https://w3id.org/OntoExhibit#${rawType}/${decodedId}`;
 
   // Collect all SPARQL queries used
   const allSparqlQueries = [
@@ -371,8 +383,8 @@ export default async function DetailPage({ params }: PageProps) {
       <QueryLogger query={debugQuery} type={decodedType} />
       
       <div className="mb-8">
-        <Link href={`/all/${type}`} className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1 mb-4 transition-colors">
-          <ArrowLeft className="h-4 w-4" /> Back to list
+        <Link href={backHref} className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1 mb-4 transition-colors">
+          <ArrowLeft className="h-4 w-4" /> {backLabel}
         </Link>
 
         <DetailClient

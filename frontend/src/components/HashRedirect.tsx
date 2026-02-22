@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getEntityLink } from "./EntityLink";
+import { buildDetailHref } from "@/lib/entity-routing";
 
 export default function HashRedirect() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function HashRedirect() {
       
       if (link) {
         // Redirect to the internal detail page
-        router.push(`/detail/${link.type}/${link.id}`);
+        router.push(buildDetailHref(link.type, link.id));
       }
     }
   }, [router]);

@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { X, MapPin, Calendar, Building2, User, Palette, ZoomIn, ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
+import { buildDetailHref } from "@/lib/entity-routing";
 
 interface ClusterEntity {
   id: string;
@@ -78,7 +79,7 @@ export function ClusterPopup({ entities, onClose, onZoomIn }: ClusterPopupProps)
   const getDetailUrl = (entity: ClusterEntity) => {
     const cleanId = entity.id.replace(/_(residence|birth)$/, '');
     const type = entity.type === 'person' ? 'actant' : entity.type;
-    return `/detail/${type}/${cleanId}`;
+    return buildDetailHref(type, cleanId);
   };
 
   const totalCount = entities.length;

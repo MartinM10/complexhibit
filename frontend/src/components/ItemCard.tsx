@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
+import { buildDetailHref } from "@/lib/entity-routing";
 
 
 interface ItemCardProps {
@@ -99,7 +100,7 @@ export default function ItemCard({ uri, label, description, type, imageUrl, subt
   
   return (
     <Link 
-      href={`/detail/${type}/${id}`}
+      href={buildDetailHref(type, id)}
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-md hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 hover:border-transparent hover:ring-2 hover:ring-indigo-400/50"
     >
       {/* Gradient overlay on hover */}

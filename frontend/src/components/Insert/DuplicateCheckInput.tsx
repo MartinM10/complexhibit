@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Entity } from "@/lib/types";
 import { Loader2, AlertTriangle, ExternalLink, Edit2 } from "lucide-react";
 import { getFromType } from "@/lib/api";
+import { buildDetailHref, parseEntityUri } from "@/lib/entity-routing";
 
 interface DuplicateCheckInputProps {
   type: string;
@@ -82,11 +83,9 @@ export function DuplicateCheckInput({
   const getDetailLink = (uri: string) => {
     try {
       if (!uri) return "#";
-      // Expected format from backend: https://w3id.org/OntoExhibit#type/id
-      const parts = uri.split("#");
-      if (parts.length > 1) {
-        // parts[1] should be "type/id", e.g. "person/123" or "exhibition/456"
-        return `/detail/${parts[1]}`;
+      const link = parseEntityUri(uri);
+      if (link) {
+        return buildDetailHref(link.type, link.id);
       }
       return `/detail?uri=${encodeURIComponent(uri)}`;
     } catch {
